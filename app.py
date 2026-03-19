@@ -134,7 +134,7 @@ body {
     border-radius: 10px;
     margin: 12px auto;
     width: 100%;
-    max-width: 500px;
+    max-width: 350px;
     text-align: center;
     font-size: 22px;
     color: #e5e7eb;
@@ -307,18 +307,43 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
  
 # ------------------------------
-# RESPOSTAS — CAIXAS CLICÁVEIS
+# RESPOSTAS — CAIXAS CLICÁVEIS EM DUAS COLUNAS
 # ------------------------------
+ 
+col1, col2 = st.columns(2)
  
 for i, opcao in enumerate(opcoes, start=1):
  
-    if st.button(f"{i}) {opcao}", key=f"btn_{idx}_{i}"):
-        st.session_state.respostas.append(i)
-        st.session_state.pergunta += 1
+    letra = chr(64 + i)  # A, B, C, D
  
-        if st.session_state.pergunta >= len(perguntas):
-            st.session_state.terminou = True
+    caixa_html = f"""
+<div class='answer-btn'>{letra}) {opcao}</div>
+    """
  
-        st.rerun()
+    # Primeiras duas respostas na coluna 1
+    if i <= 2:
+        with col1:
+            if st.button(f"{letra}) {opcao}", key=f"btn_{idx}_{i}"):
+                st.session_state.respostas.append(i)
+                st.session_state.pergunta += 1
  
-    st.markdown(f"<div class='answer-btn'>{i}) {opcao}</div>", unsafe_allow_html=True)
+                if st.session_state.pergunta >= len(perguntas):
+                    st.session_state.terminou = True
+ 
+                st.experimental_rerun()
+ 
+            st.markdown(caixa_html, unsafe_allow_html=True)
+ 
+    # Últimas duas respostas na coluna 2
+    else:
+        with col2:
+            if st.button(f"{letra}) {opcao}", key=f"btn_{idx}_{i}"):
+                st.session_state.respostas.append(i)
+                st.session_state.pergunta += 1
+ 
+                if st.session_state.pergunta >= len(perguntas):
+                    st.session_state.terminou = True
+ 
+                st.rerun()
+ 
+            st.markdown(caixa_html, unsafe_allow_html=True)
