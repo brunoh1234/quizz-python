@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import json
 import os
 from datetime import datetime
@@ -79,98 +80,7 @@ perguntas = [
 
 st.set_page_config(page_title="Quem Quer Ser Produtivo?", layout="wide")
 
-# Música de fundo persistente via YouTube IFrame API
-# O objeto window.ytPlayer persiste entre reruns do Streamlit (SPA)
-st.markdown("""
-<div id="yt-music-wrapper" style="
-    position: fixed;
-    bottom: 16px;
-    right: 20px;
-    z-index: 99999;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: linear-gradient(135deg, #0a1a4a 0%, #001030 100%);
-    border: 2px solid #1e90ff;
-    border-radius: 10px;
-    padding: 6px 14px;
-    box-shadow: 0 0 15px rgba(30, 144, 255, 0.5);
-    cursor: pointer;
-    user-select: none;
-">
-    <span id="music-icon" style="font-size:18px;">🎵</span>
-    <span id="music-label" style="color:#7eb8ff; font-size:13px; font-weight:bold; letter-spacing:1px;">MÚSICA</span>
-    <div id="yt-player-container" style="width:1px;height:1px;overflow:hidden;position:absolute;opacity:0;pointer-events:none;">
-        <div id="yt-player"></div>
-    </div>
-</div>
 
-<script>
-(function() {
-    // Só inicializa uma vez — persiste no window entre reruns do Streamlit
-    if (window._ytMusicInit) return;
-    window._ytMusicInit = true;
-    window._ytMusicMuted = false;
-
-    function loadYTApi() {
-        if (window.YT && window.YT.Player) {
-            createPlayer();
-        } else {
-            var tag = document.createElement('script');
-            tag.src = "https://www.youtube.com/iframe_api";
-            document.head.appendChild(tag);
-            window.onYouTubeIframeAPIReady = createPlayer;
-        }
-    }
-
-    function createPlayer() {
-        window.ytPlayer = new YT.Player('yt-player', {
-            height: '1',
-            width: '1',
-            videoId: 'dWVEE2QlckY',
-            playerVars: {
-                autoplay: 1,
-                loop: 1,
-                playlist: 'dWVEE2QlckY',
-                controls: 0,
-                mute: 0,
-                start: 373
-            },
-            events: {
-                onReady: function(e) {
-                    e.target.setVolume(60);
-                    e.target.playVideo();
-                }
-            }
-        });
-    }
-
-    // Botão de mute/unmute
-    function setupToggle() {
-        var wrapper = document.getElementById('yt-music-wrapper');
-        if (!wrapper) { setTimeout(setupToggle, 500); return; }
-        wrapper.onclick = function() {
-            if (!window.ytPlayer) return;
-            if (window._ytMusicMuted) {
-                window.ytPlayer.unMute();
-                window.ytPlayer.setVolume(60);
-                document.getElementById('music-icon').textContent = '🎵';
-                document.getElementById('music-label').textContent = 'MÚSICA';
-                window._ytMusicMuted = false;
-            } else {
-                window.ytPlayer.mute();
-                document.getElementById('music-icon').textContent = '🔇';
-                document.getElementById('music-label').textContent = 'MUDO';
-                window._ytMusicMuted = true;
-            }
-        };
-    }
-
-    loadYTApi();
-    setupToggle();
-})();
-</script>
-""", unsafe_allow_html=True)
 
 # ------------------------------
 # CSS — DESIGN QUEM QUER SER MILIONÁRIO
@@ -406,6 +316,90 @@ if "resposta_dada" not in st.session_state:
     st.session_state.resposta_dada = None
 
 resultados = carregar_resultados()
+
+# ------------------------------
+# MÚSICA DE FUNDO (components.html persiste entre reruns)
+# ------------------------------
+
+_MUSIC_HTML = """
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: transparent; overflow: hidden; display: flex; justify-content: flex-end; align-items: center; height: 54px; padding-right: 8px; }
+  #btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: linear-gradient(135deg, #0a1a4a, #001030);
+    border: 2px solid #1e90ff; border-radius: 10px;
+    padding: 9px 18px; cursor: pointer;
+    box-shadow: 0 0 14px rgba(30,144,255,0.55);
+    color: #7eb8ff; font-size: 14px; font-weight: bold;
+    letter-spacing: 1px; font-family: sans-serif;
+    transition: box-shadow 0.2s;
+    white-space: nowrap;
+  }
+  #btn:hover { box-shadow: 0 0 24px rgba(30,144,255,0.9); }
+  #player { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+</style>
+</head>
+<body>
+  <button id="btn" onclick="toggleMusic()">🎵 LIGAR MÚSICA</button>
+  <div id="player"></div>
+  <script>
+    var ytPlayer = null;
+    var isPlaying = false;
+    var isMuted = false;
+
+    function toggleMusic() {
+      if (!isPlaying) {
+        document.getElementById('btn').textContent = '⏳ A carregar...';
+        if (window.YT && window.YT.Player) {
+          createPlayer();
+        } else {
+          var tag = document.createElement('script');
+          tag.src = 'https://www.youtube.com/iframe_api';
+          document.head.appendChild(tag);
+          window.onYouTubeIframeAPIReady = createPlayer;
+        }
+      } else {
+        if (isMuted) {
+          ytPlayer.unMute(); ytPlayer.setVolume(65);
+          document.getElementById('btn').innerHTML = '🔊 MÚSICA ON';
+          isMuted = false;
+        } else {
+          ytPlayer.mute();
+          document.getElementById('btn').innerHTML = '🔇 MUDO';
+          isMuted = true;
+        }
+      }
+    }
+
+    function createPlayer() {
+      ytPlayer = new YT.Player('player', {
+        height: '1', width: '1',
+        videoId: 'dWVEE2QlckY',
+        playerVars: { autoplay: 1, loop: 1, playlist: 'dWVEE2QlckY', start: 373, controls: 0 },
+        events: {
+          onReady: function(e) {
+            e.target.unMute();
+            e.target.setVolume(65);
+            e.target.playVideo();
+            isPlaying = true;
+            document.getElementById('btn').innerHTML = '🔊 MÚSICA ON';
+          },
+          onError: function() {
+            document.getElementById('btn').innerHTML = '❌ Erro';
+          }
+        }
+      });
+    }
+  </script>
+</body>
+</html>
+"""
+
+components.html(_MUSIC_HTML, height=54)
 
 # Título principal
 st.markdown('<div class="main-title">🎯 QUEM QUER SER PRODUTIVO?</div>', unsafe_allow_html=True)
