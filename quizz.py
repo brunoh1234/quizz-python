@@ -7,6 +7,72 @@ from datetime import datetime
 RESULTADOS_FICHEIRO = "resultados.json"
 
 # ------------------------------
+# Música persistente (window.parent)
+# ------------------------------
+def inject_persistent_music(is_intro=False):
+    """
+    Injeta um player de YouTube em window.parent via iframe srcdoc (same-origin).
+    O flag _ytMusicInit em window.parent garante que o player só é criado UMA VEZ,
+    sobrevivendo a todos os st.rerun() do Streamlit sem quebrar a música.
+    """
+    import html as _html
+
+    is_intro_js = "true" if is_intro else "false"
+
+    script = (
+        "(function(){"
+        "var p=window.parent;"
+        "if(p._ytMusicInit)return;"
+        "p._ytMusicInit=true;"
+        "var isIntro=" + is_intro_js + ";"
+        "var introVid='2oPVdx3QaAM';"
+        "var quizVid='ren6rd9FfV8';"
+        "var d=p.document.createElement('div');"
+        "d.id='_yt_persist';"
+        "d.style.cssText='position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;';"
+        "p.document.body.appendChild(d);"
+        "function build(){"
+        "  var vid=isIntro?introVid:quizVid;"
+        "  var pv={autoplay:1,controls:0,disablekb:1,fs:0,rel:0};"
+        "  if(!isIntro){pv.loop=1;pv.playlist=quizVid;}"
+        "  p._ytPlayer=new p.YT.Player('_yt_persist',{"
+        "    width:'1',height:'1',videoId:vid,playerVars:pv,"
+        "    events:{"
+        "      onReady:function(e){e.target.setVolume(70);},"
+        "      onStateChange:function(e){"
+        "        if(e.data===0&&isIntro){"
+        "          isIntro=false;"
+        "          setTimeout(function(){"
+        "            p._ytPlayer.loadVideoById(quizVid);"
+        "            setTimeout(function(){p._ytPlayer.setLoop(true);},1500);"
+        "          },3000);"
+        "        }"
+        "      }"
+        "    }"
+        "  });"
+        "}"
+        "if(p.YT&&p.YT.Player){build();}"
+        "else{"
+        "  p.onYouTubeIframeAPIReady=build;"
+        "  var t=p.document.createElement('script');"
+        "  t.src='https://www.youtube.com/iframe_api';"
+        "  p.document.head.appendChild(t);"
+        "}"
+        "})();"
+    )
+
+    esc = _html.escape(script)
+    st.markdown(
+        f'<iframe srcdoc="<!DOCTYPE html><html><body>'
+        f'<script>{esc}</script>'
+        f'</body></html>" '
+        f'style="display:none;position:absolute;width:0;height:0;" '
+        f'width="0" height="0"></iframe>',
+        unsafe_allow_html=True,
+    )
+
+
+# ------------------------------
 # Funções de armazenamento
 # ------------------------------
 
@@ -515,122 +581,8 @@ if st.session_state.user_id is None:
                 st.session_state.user_id = user_id.strip()
                 st.rerun()
 
-        # Música no login — autoplay sem botão visível (utilizador já interagiu no splash)
-        _already_played = "true" if st.session_state.quiz_completed else "false"
-
-        _LOGIN_MUSIC = f"""<!DOCTYPE html>
-<html><head><style>
-  * {{ box-sizing: border-box; margin: 0; padding: 0; }}
-  body {{
-    background: transparent;
-    overflow: hidden;
-    height: 1px;
-  }}
-  #btn {{
-    display: none;
-  }}
-  @keyframes pulse {{
-    0%   {{ box-shadow: 0 0 10px rgba(30,144,255,0.4); }}
-    50%  {{ box-shadow: 0 0 25px rgba(30,144,255,0.9); }}
-    100% {{ box-shadow: 0 0 10px rgba(30,144,255,0.4); }}
-  }}
-  #btn.on    {{ border-color: #00e676; box-shadow: 0 0 18px rgba(0,230,118,0.5); color: #00e676; animation: none; }}
-  #btn.next  {{ border-color: #ffd700; box-shadow: 0 0 18px rgba(255,215,0,0.5); color: #ffd700; animation: pulse2 1s infinite; }}
-  #btn.muted {{ border-color: #ff5252; box-shadow: 0 0 12px rgba(255,82,82,0.4); color: #ff8a80; animation: none; }}
-  @keyframes pulse2 {{
-    0%   {{ box-shadow: 0 0 10px rgba(255,215,0,0.4); }}
-    50%  {{ box-shadow: 0 0 25px rgba(255,215,0,0.9); }}
-    100% {{ box-shadow: 0 0 10px rgba(255,215,0,0.4); }}
-  }}
-  #yt-div {{ position: fixed; top: -9999px; left: -9999px; width: 1px; height: 1px; }}
-</style></head>
-<body>
-  <button id="btn" onclick="startMusic()">🎵 Carregue aqui para ser mais interactivo</button>
-  <div id="yt-div"></div>
-
-  <script>
-    var player;
-    var started = false;
-    var isMuted = false;
-    var onQuizMusic = {_already_played};
-    var countdownInterval = null;
-    var QUIZ_VID = "ren6rd9FfV8";
-    var INTRO_VID = "2oPVdx3QaAM";
-
-    // Carrega a API do YouTube
-    function loadYTApi() {{
-      var tag = document.createElement('script');
-      tag.src = 'https://www.youtube.com/iframe_api';
-      document.head.appendChild(tag);
-    }}
-
-    // Chamada automática pela API do YouTube quando está pronta
-    window.onYouTubeIframeAPIReady = function() {{
-      createPlayer();
-    }};
-
-    function createPlayer() {{
-      var vid = onQuizMusic ? QUIZ_VID : INTRO_VID;
-      var vars = {{
-        autoplay: 1,
-        controls: 0,
-        disablekb: 1,
-        fs: 0,
-        rel: 0
-      }};
-      if (onQuizMusic) {{
-        vars.loop = 1;
-        vars.playlist = QUIZ_VID;
-      }}
-
-      player = new YT.Player('yt-div', {{
-        width: '1',
-        height: '1',
-        videoId: vid,
-        playerVars: vars,
-        events: {{
-          'onReady': onPlayerReady,
-          'onStateChange': onPlayerStateChange
-        }}
-      }});
-    }}
-
-    function onPlayerReady(event) {{
-      event.target.setVolume(70);
-    }}
-
-    function onPlayerStateChange(event) {{
-      // YT.PlayerState.ENDED = 0 — só acontece na intro (sem loop)
-      if (event.data === 0 && !onQuizMusic) {{
-        startCountdown();
-      }}
-    }}
-
-    function startCountdown() {{
-      var secs = 3;
-      countdownInterval = setInterval(function() {{
-        secs--;
-        if (secs <= 0) {{
-          clearInterval(countdownInterval);
-          switchToQuizMusic();
-        }}
-      }}, 1000);
-    }}
-
-    function switchToQuizMusic() {{
-      onQuizMusic = true;
-      player.loadVideoById({{ videoId: QUIZ_VID, startSeconds: 0 }});
-    }}
-
-    // Autostart — utilizador já interagiu no splash
-    window.addEventListener('load', function() {{
-      started = true;
-      if (window.YT && window.YT.Player) {{ createPlayer(); }}
-      else {{ loadYTApi(); }}
-    }});
-  </script>
-</body></html>"""
-        components.html(_LOGIN_MUSIC, height=1)
+        # Música persistente — sobrevive a reruns via window.parent
+        inject_persistent_music(is_intro=not st.session_state.quiz_completed)
 
     # ------------------------------
     # HISTÓRICO DE PARTICIPANTES
@@ -697,92 +649,8 @@ if st.session_state.user_id is None:
 
     st.stop()
 
-# ------------------------------
-# MÚSICA DO QUIZ (loop via API oficial do YouTube)
-# ------------------------------
-_QUIZ_MUSIC = """<!DOCTYPE html>
-<html><head><style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: transparent; overflow: hidden; display: flex; justify-content: flex-end; align-items: center; height: 54px; padding-right: 8px; font-family: sans-serif; }
-  #btn {
-    display: inline-flex; align-items: center; gap: 8px;
-    background: linear-gradient(135deg, #0a1a4a, #001030);
-    border: 2px solid #1e90ff; border-radius: 10px;
-    padding: 9px 18px; cursor: pointer;
-    box-shadow: 0 0 14px rgba(30,144,255,0.4);
-    color: #7eb8ff; font-size: 13px; font-weight: bold;
-    letter-spacing: 1px; transition: all 0.2s; white-space: nowrap;
-  }
-  #btn.on    { border-color: #00e676; box-shadow: 0 0 14px rgba(0,230,118,0.5); color: #00e676; }
-  #btn.muted { border-color: #ff5252; box-shadow: 0 0 10px rgba(255,82,82,0.4); color: #ff8a80; }
-  #yt-div { position: fixed; top: -9999px; left: -9999px; width: 1px; height: 1px; }
-</style></head>
-<body>
-  <button id="btn" onclick="toggleMute()">⏳ A carregar...</button>
-  <div id="yt-div"></div>
-  <script>
-    var player;
-    var isMuted = false;
-
-    // Carrega a API do YouTube imediatamente (o utilizador já clicou em COMEÇAR)
-    var tag = document.createElement('script');
-    tag.src = 'https://www.youtube.com/iframe_api';
-    document.head.appendChild(tag);
-
-    window.onYouTubeIframeAPIReady = function() {
-      player = new YT.Player('yt-div', {
-        width: '1',
-        height: '1',
-        videoId: 'ren6rd9FfV8',
-        playerVars: {
-          autoplay: 1,
-          controls: 0,
-          disablekb: 1,
-          fs: 0,
-          rel: 0,
-          loop: 1,
-          playlist: 'ren6rd9FfV8'
-        },
-        events: {
-          'onReady': function(e) {
-            e.target.setVolume(70);
-            document.getElementById('btn').innerHTML = '🔊 MÚSICA';
-            document.getElementById('btn').className = 'on';
-          },
-          'onStateChange': function(e) {
-            // YT.PlayerState.PLAYING = 1
-            if (e.data === 1) {
-              document.getElementById('btn').innerHTML = '🔊 MÚSICA';
-              document.getElementById('btn').className = 'on';
-            }
-            // YT.PlayerState.ENDED = 0 — reinicia o loop manualmente como fallback
-            if (e.data === 0) {
-              player.seekTo(0);
-              player.playVideo();
-            }
-          }
-        }
-      });
-    };
-
-    function toggleMute() {
-      if (!player) return;
-      if (isMuted) {
-        player.unMute();
-        player.setVolume(70);
-        isMuted = false;
-        document.getElementById('btn').innerHTML = '🔊 MÚSICA';
-        document.getElementById('btn').className = 'on';
-      } else {
-        player.mute();
-        isMuted = true;
-        document.getElementById('btn').innerHTML = '🔇 MUDO';
-        document.getElementById('btn').className = 'muted';
-      }
-    }
-  </script>
-</body></html>"""
-components.html(_QUIZ_MUSIC, height=54)
+# Música persistente — já inicializada no login, apenas garante continuidade
+inject_persistent_music(is_intro=False)
 
 # ------------------------------
 # ECRÃ FINAL
