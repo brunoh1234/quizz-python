@@ -317,90 +317,6 @@ if "resposta_dada" not in st.session_state:
 
 resultados = carregar_resultados()
 
-# ------------------------------
-# MÚSICA DE FUNDO (components.html persiste entre reruns)
-# ------------------------------
-
-_MUSIC_HTML = """
-<!DOCTYPE html>
-<html>
-<head>
-<style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: transparent; overflow: hidden; display: flex; justify-content: flex-end; align-items: center; height: 54px; padding-right: 8px; }
-  #btn {
-    display: inline-flex; align-items: center; gap: 8px;
-    background: linear-gradient(135deg, #0a1a4a, #001030);
-    border: 2px solid #1e90ff; border-radius: 10px;
-    padding: 9px 18px; cursor: pointer;
-    box-shadow: 0 0 14px rgba(30,144,255,0.55);
-    color: #7eb8ff; font-size: 14px; font-weight: bold;
-    letter-spacing: 1px; font-family: sans-serif;
-    transition: box-shadow 0.2s;
-    white-space: nowrap;
-  }
-  #btn:hover { box-shadow: 0 0 24px rgba(30,144,255,0.9); }
-  #player { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
-</style>
-</head>
-<body>
-  <button id="btn" onclick="toggleMusic()">🎵 LIGAR MÚSICA</button>
-  <div id="player"></div>
-  <script>
-    var ytPlayer = null;
-    var isPlaying = false;
-    var isMuted = false;
-
-    function toggleMusic() {
-      if (!isPlaying) {
-        document.getElementById('btn').textContent = '⏳ A carregar...';
-        if (window.YT && window.YT.Player) {
-          createPlayer();
-        } else {
-          var tag = document.createElement('script');
-          tag.src = 'https://www.youtube.com/iframe_api';
-          document.head.appendChild(tag);
-          window.onYouTubeIframeAPIReady = createPlayer;
-        }
-      } else {
-        if (isMuted) {
-          ytPlayer.unMute(); ytPlayer.setVolume(65);
-          document.getElementById('btn').innerHTML = '🔊 MÚSICA ON';
-          isMuted = false;
-        } else {
-          ytPlayer.mute();
-          document.getElementById('btn').innerHTML = '🔇 MUDO';
-          isMuted = true;
-        }
-      }
-    }
-
-    function createPlayer() {
-      ytPlayer = new YT.Player('player', {
-        height: '1', width: '1',
-        videoId: 'dWVEE2QlckY',
-        playerVars: { autoplay: 1, loop: 1, playlist: 'dWVEE2QlckY', start: 373, controls: 0 },
-        events: {
-          onReady: function(e) {
-            e.target.unMute();
-            e.target.setVolume(65);
-            e.target.playVideo();
-            isPlaying = true;
-            document.getElementById('btn').innerHTML = '🔊 MÚSICA ON';
-          },
-          onError: function() {
-            document.getElementById('btn').innerHTML = '❌ Erro';
-          }
-        }
-      });
-    }
-  </script>
-</body>
-</html>
-"""
-
-components.html(_MUSIC_HTML, height=54)
-
 # Título principal
 st.markdown('<div class="main-title">🎯 QUEM QUER SER PRODUTIVO?</div>', unsafe_allow_html=True)
 
@@ -504,7 +420,148 @@ if st.session_state.user_id is None:
         </div>
         """, unsafe_allow_html=True)
 
+    # ------------------------------
+    # MÚSICA DA PÁGINA DE LOGIN (toca uma vez)
+    # ------------------------------
+    _LOGIN_MUSIC = """<!DOCTYPE html>
+<html><head><style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: transparent; overflow: hidden; display: flex; justify-content: flex-end; align-items: center; height: 54px; padding-right: 8px; }
+  #btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: linear-gradient(135deg, #0a1a4a, #001030);
+    border: 2px solid #1e90ff; border-radius: 10px;
+    padding: 9px 18px; cursor: pointer;
+    box-shadow: 0 0 14px rgba(30,144,255,0.55);
+    color: #7eb8ff; font-size: 14px; font-weight: bold;
+    letter-spacing: 1px; font-family: sans-serif;
+    transition: box-shadow 0.2s; white-space: nowrap;
+  }
+  #btn:hover { box-shadow: 0 0 24px rgba(30,144,255,0.9); }
+  #player { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+</style></head>
+<body>
+  <button id="btn" onclick="toggleMute()">🔊 MÚSICA</button>
+  <div id="player"></div>
+  <script>
+    var ytPlayer = null;
+    var isMuted = false;
+    function loadAPI() {
+      if (window.YT && window.YT.Player) { createPlayer(); }
+      else {
+        var tag = document.createElement('script');
+        tag.src = 'https://www.youtube.com/iframe_api';
+        document.head.appendChild(tag);
+        window.onYouTubeIframeAPIReady = createPlayer;
+      }
+    }
+    function createPlayer() {
+      ytPlayer = new YT.Player('player', {
+        height: '1', width: '1',
+        videoId: '2oPVdx3QaAM',
+        playerVars: { autoplay: 1, loop: 0, controls: 0, mute: 1 },
+        events: {
+          onReady: function(e) {
+            e.target.playVideo();
+            setTimeout(function() {
+              try { e.target.unMute(); e.target.setVolume(70); } catch(ex) {}
+            }, 300);
+          },
+          onStateChange: function(e) {
+            if (e.data === YT.PlayerState.ENDED) {
+              document.getElementById('btn').innerHTML = '🎵 FIM';
+            }
+          },
+          onError: function() { document.getElementById('btn').innerHTML = '❌ Erro'; }
+        }
+      });
+    }
+    function toggleMute() {
+      if (!ytPlayer) return;
+      if (isMuted) {
+        ytPlayer.unMute(); ytPlayer.setVolume(70);
+        document.getElementById('btn').innerHTML = '🔊 MÚSICA';
+        isMuted = false;
+      } else {
+        ytPlayer.mute();
+        document.getElementById('btn').innerHTML = '🔇 MUDO';
+        isMuted = true;
+      }
+    }
+    loadAPI();
+  </script>
+</body></html>"""
+    components.html(_LOGIN_MUSIC, height=54)
+
     st.stop()
+
+# ------------------------------
+# MÚSICA DO QUIZ (loop contínuo — persiste entre perguntas)
+# ------------------------------
+_QUIZ_MUSIC = """<!DOCTYPE html>
+<html><head><style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: transparent; overflow: hidden; display: flex; justify-content: flex-end; align-items: center; height: 54px; padding-right: 8px; }
+  #btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: linear-gradient(135deg, #0a1a4a, #001030);
+    border: 2px solid #1e90ff; border-radius: 10px;
+    padding: 9px 18px; cursor: pointer;
+    box-shadow: 0 0 14px rgba(30,144,255,0.55);
+    color: #7eb8ff; font-size: 14px; font-weight: bold;
+    letter-spacing: 1px; font-family: sans-serif;
+    transition: box-shadow 0.2s; white-space: nowrap;
+  }
+  #btn:hover { box-shadow: 0 0 24px rgba(30,144,255,0.9); }
+  #player { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+</style></head>
+<body>
+  <button id="btn" onclick="toggleMute()">🔊 MÚSICA</button>
+  <div id="player"></div>
+  <script>
+    var ytPlayer = null;
+    var isMuted = false;
+    function loadAPI() {
+      if (window.YT && window.YT.Player) { createPlayer(); }
+      else {
+        var tag = document.createElement('script');
+        tag.src = 'https://www.youtube.com/iframe_api';
+        document.head.appendChild(tag);
+        window.onYouTubeIframeAPIReady = createPlayer;
+      }
+    }
+    function createPlayer() {
+      ytPlayer = new YT.Player('player', {
+        height: '1', width: '1',
+        videoId: 'dWVEE2QlckY',
+        playerVars: { autoplay: 1, loop: 1, playlist: 'dWVEE2QlckY', start: 373, controls: 0, mute: 1 },
+        events: {
+          onReady: function(e) {
+            e.target.playVideo();
+            setTimeout(function() {
+              try { e.target.unMute(); e.target.setVolume(65); } catch(ex) {}
+            }, 300);
+          },
+          onError: function() { document.getElementById('btn').innerHTML = '❌ Erro'; }
+        }
+      });
+    }
+    function toggleMute() {
+      if (!ytPlayer) return;
+      if (isMuted) {
+        ytPlayer.unMute(); ytPlayer.setVolume(65);
+        document.getElementById('btn').innerHTML = '🔊 MÚSICA';
+        isMuted = false;
+      } else {
+        ytPlayer.mute();
+        document.getElementById('btn').innerHTML = '🔇 MUDO';
+        isMuted = true;
+      }
+    }
+    loadAPI();
+  </script>
+</body></html>"""
+components.html(_QUIZ_MUSIC, height=54)
 
 # ------------------------------
 # ECRÃ FINAL
