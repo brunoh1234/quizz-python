@@ -359,6 +359,112 @@ if st.session_state.user_id is None:
                 st.session_state.user_id = user_id.strip()
                 st.rerun()
 
+        # Botão de música — carrega o iframe só no clique (100% fiável)
+        if st.session_state.quiz_completed:
+            _login_vid = "dWVEE2QlckY"
+            _login_loop = "loop=1&playlist=dWVEE2QlckY"
+            _login_start = "start=373"
+        else:
+            _login_vid = "2oPVdx3QaAM"
+            _login_loop = "loop=0"
+            _login_start = "start=0"
+
+        _LOGIN_MUSIC = f"""<!DOCTYPE html>
+<html><head><style>
+  * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+  body {{
+    background: transparent;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 60px;
+    font-family: 'Georgia', serif;
+  }}
+  #btn {{
+    display: inline-flex; align-items: center; gap: 10px;
+    background: linear-gradient(135deg, #0a1a4a, #001030);
+    border: 2px solid #1e90ff; border-radius: 12px;
+    padding: 12px 28px; cursor: pointer;
+    box-shadow: 0 0 16px rgba(30,144,255,0.5);
+    color: #7eb8ff; font-size: 14px; font-weight: bold;
+    letter-spacing: 1px; white-space: nowrap;
+    transition: all 0.3s;
+    animation: pulse 2s infinite;
+    width: 100%;
+    justify-content: center;
+  }}
+  @keyframes pulse {{
+    0%   {{ box-shadow: 0 0 10px rgba(30,144,255,0.4); }}
+    50%  {{ box-shadow: 0 0 25px rgba(30,144,255,0.9); }}
+    100% {{ box-shadow: 0 0 10px rgba(30,144,255,0.4); }}
+  }}
+  #btn.on  {{ border-color: #00e676; box-shadow: 0 0 18px rgba(0,230,118,0.5); color: #00e676; animation: none; }}
+  #btn.muted {{ border-color: #ff5252; box-shadow: 0 0 12px rgba(255,82,82,0.4); color: #ff8a80; animation: none; }}
+  #yt-container {{ display: none; }}
+</style></head>
+<body>
+  <button id="btn" onclick="startMusic()">🎵 Carregue aqui para ser mais interactivo</button>
+  <div id="yt-container"></div>
+  <script>
+    var isMuted = false;
+    var started = false;
+
+    function startMusic() {{
+      if (started) {{
+        toggleMute();
+        return;
+      }}
+      started = true;
+      document.getElementById('btn').innerHTML = '⏳ A carregar...';
+
+      var iframe = document.createElement('iframe');
+      iframe.id = 'yt';
+      iframe.src = 'https://www.youtube.com/embed/{_login_vid}?autoplay=1&mute=0&{_login_loop}&{_login_start}&controls=0&enablejsapi=1';
+      iframe.allow = 'autoplay; encrypted-media';
+      iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;';
+      iframe.frameBorder = '0';
+      document.getElementById('yt-container').appendChild(iframe);
+
+      window.addEventListener('message', function(e) {{
+        if (!e.data) return;
+        try {{
+          var d = (typeof e.data === 'string') ? JSON.parse(e.data) : e.data;
+          if (d.event === 'onReady' || (d.info && d.info.playerState === 1)) {{
+            document.getElementById('btn').innerHTML = '🔊 Música a tocar!';
+            document.getElementById('btn').className = 'on';
+          }}
+        }} catch(ex) {{}}
+      }});
+
+      setTimeout(function() {{
+        if (document.getElementById('btn').innerHTML === '⏳ A carregar...') {{
+          document.getElementById('btn').innerHTML = '🔊 Música a tocar!';
+          document.getElementById('btn').className = 'on';
+        }}
+      }}, 3000);
+    }}
+
+    function toggleMute() {{
+      var yt = document.getElementById('yt');
+      if (!yt) return;
+      if (isMuted) {{
+        yt.contentWindow.postMessage(JSON.stringify({{event:'command', func:'unMute', args:''}}), '*');
+        yt.contentWindow.postMessage(JSON.stringify({{event:'command', func:'setVolume', args:[70]}}), '*');
+        document.getElementById('btn').innerHTML = '🔊 Música a tocar!';
+        document.getElementById('btn').className = 'on';
+        isMuted = false;
+      }} else {{
+        yt.contentWindow.postMessage(JSON.stringify({{event:'command', func:'mute', args:''}}), '*');
+        document.getElementById('btn').innerHTML = '🔇 Música em mudo';
+        document.getElementById('btn').className = 'muted';
+        isMuted = true;
+      }}
+    }}
+  </script>
+</body></html>"""
+        components.html(_LOGIN_MUSIC, height=60)
+
     # ------------------------------
     # HISTÓRICO DE PARTICIPANTES
     # ------------------------------
@@ -421,135 +527,6 @@ if st.session_state.user_id is None:
             Ainda não há participantes. Sê o primeiro! 🚀
         </div>
         """, unsafe_allow_html=True)
-
-    # ------------------------------
-    # MÚSICA DA PÁGINA DE LOGIN
-    # - 1ª vez: toca intro (2oPVdx3QaAM) uma só vez
-    # - Após jogar: continua com o loop do quiz (dWVEE2QlckY)
-    # ------------------------------
-    if st.session_state.quiz_completed:
-        _video_id = "dWVEE2QlckY"
-        _loop_param = "loop=1&playlist=dWVEE2QlckY"
-        _start_param = "start=373"
-        _loop_js = "true"
-    else:
-        _video_id = "2oPVdx3QaAM"
-        _loop_param = "loop=0"
-        _start_param = "start=0"
-        _loop_js = "false"
-
-    _LOGIN_MUSIC = f"""<!DOCTYPE html>
-<html><head><style>
-  * {{ box-sizing: border-box; margin: 0; padding: 0; }}
-  body {{
-    background: radial-gradient(circle, #0d1b3e 0%, #02050a 100%);
-    overflow: hidden;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 70px;
-    font-family: 'Georgia', serif;
-  }}
-  #btn {{
-    display: inline-flex; align-items: center; gap: 10px;
-    background: linear-gradient(135deg, #0a1a4a, #001030);
-    border: 2px solid #1e90ff; border-radius: 12px;
-    padding: 10px 24px; cursor: pointer;
-    box-shadow: 0 0 16px rgba(30,144,255,0.5);
-    color: #7eb8ff; font-size: 15px; font-weight: bold;
-    letter-spacing: 1px; white-space: nowrap;
-    transition: all 0.3s;
-  }}
-  #btn.on  {{ border-color: #00e676; box-shadow: 0 0 18px rgba(0,230,118,0.5); color: #00e676; }}
-  #btn.muted {{ border-color: #ff5252; box-shadow: 0 0 12px rgba(255,82,82,0.4); color: #ff8a80; }}
-  #yt {{ position:fixed; top:-9999px; left:-9999px; width:1px; height:1px; }}
-</style></head>
-<body>
-  <button id="btn" onclick="toggleMute()">⏳ A carregar música...</button>
-  <iframe id="yt"
-    src="https://www.youtube.com/embed/{_video_id}?autoplay=1&mute=1&{_loop_param}&{_start_param}&controls=0&enablejsapi=1"
-    allow="autoplay; encrypted-media"
-    frameborder="0"
-  ></iframe>
-  <script>
-    var isMuted = true;
-    var yt = document.getElementById('yt');
-    var unmuteAttempts = 0;
-
-    function tryUnmute() {{
-      yt.contentWindow.postMessage(JSON.stringify({{event:'command', func:'unMute', args:''}}), '*');
-      yt.contentWindow.postMessage(JSON.stringify({{event:'command', func:'setVolume', args:[70]}}), '*');
-    }}
-
-    function confirmUnmuted() {{
-      isMuted = false;
-      document.getElementById('btn').innerHTML = '🔊 MÚSICA';
-      document.getElementById('btn').className = 'on';
-    }}
-
-    function showClickNeeded() {{
-      document.getElementById('btn').innerHTML = '🔇 CLICA PARA SOM';
-      document.getElementById('btn').className = 'muted';
-    }}
-
-    // Tenta desmutar logo quando o player fica pronto
-    window.addEventListener('message', function(e) {{
-      if (!e.data) return;
-      try {{
-        var d = (typeof e.data === 'string') ? JSON.parse(e.data) : e.data;
-        if (d.event === 'onReady') {{
-          tryUnmute();
-          // Verifica após 600ms se conseguiu desmutar
-          setTimeout(function() {{
-            yt.contentWindow.postMessage(JSON.stringify({{event:'command', func:'getPlayerState', args:''}}), '*');
-            setTimeout(checkIfMuted, 400);
-          }}, 600);
-        }}
-        // Recebe o volume/mute state
-        if (d.info !== undefined) {{
-          if (d.info && d.info.muted === false) {{
-            confirmUnmuted();
-          }} else if (d.info && d.info.muted === true) {{
-            unmuteAttempts++;
-            if (unmuteAttempts < 3) {{
-              setTimeout(tryUnmute, 500);
-            }} else {{
-              showClickNeeded();
-            }}
-          }}
-        }}
-      }} catch(ex) {{}}
-    }});
-
-    function checkIfMuted() {{
-      yt.contentWindow.postMessage(JSON.stringify({{event:'command', func:'isMuted', args:''}}), '*');
-    }}
-
-    // Tenta desmutar também após 1s e 2s (fallback)
-    setTimeout(tryUnmute, 1000);
-    setTimeout(function() {{
-      if (isMuted) {{
-        tryUnmute();
-        setTimeout(function() {{
-          if (isMuted) showClickNeeded();
-        }}, 800);
-      }}
-    }}, 2000);
-
-    function toggleMute() {{
-      if (isMuted) {{
-        tryUnmute();
-        setTimeout(confirmUnmuted, 300);
-      }} else {{
-        yt.contentWindow.postMessage(JSON.stringify({{event:'command', func:'mute', args:''}}), '*');
-        document.getElementById('btn').innerHTML = '🔇 MUDO';
-        document.getElementById('btn').className = 'muted';
-        isMuted = true;
-      }}
-    }}
-  </script>
-</body></html>"""
-    components.html(_LOGIN_MUSIC, height=70)
 
     st.stop()
 
