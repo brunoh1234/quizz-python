@@ -2,6 +2,24 @@ import streamlit as st
 import json
 import os
 from datetime import datetime
+
+# 1. CONFIGURAÇÃO DA PÁGINA (Deve ser a primeira coisa do Streamlit)
+st.set_page_config(
+    page_title="Quiz Trabalho Híbrido",
+    page_icon="💡",
+    initial_sidebar_state="collapsed",
+)
+
+# 2. ESCONDER MENUS DE EDIÇÃO (Oculta botões do GitHub, Deploy e Menu)
+st.markdown("""
+    <style>
+    #MainMenu {visibility: hidden;}
+    header {visibility: hidden;}
+    footer {visibility: hidden;}
+    /* Remove a margem extra no topo */
+    .block-container {padding-top: 2rem;}
+    </style>
+    """, unsafe_allow_html=True)
  
 RESULTADOS_FICHEIRO = "resultados.json"
  
@@ -74,12 +92,6 @@ perguntas = [
 # ------------------------------
  
 st.markdown("""
-<div style="text-align:center;">
-<img src="https://images.unsplash.com/photo-1589820296156-2454bb8f1b0c" 
-         style="width:60%; border-radius:12px; margin-bottom:20px;">
-</div>
-"", unsafe_allow_html=True)
-
 <style>
  
 body {
@@ -104,6 +116,7 @@ body {
     font-weight: 700;
     color: #60a5fa;
     text-shadow: 0 0 6px rgba(96,165,250,0.4);
+    text-align: center;
 }
  
 /* Subtítulos */
@@ -111,6 +124,7 @@ body {
     font-size: 26px;
     font-weight: 600;
     color: #93c5fd;
+    text-align: center;
 }
  
 /* Botões */
@@ -201,24 +215,25 @@ if st.session_state.terminou:
     )
  
     if score == 20:
-        medalha = "🥇"
         msg = "Excelente! Domínio total do tema."
     elif score >= 15:
-        medalha = "🥈"
         msg = "Muito bom! Tens forte domínio do conteúdo."
     elif score >= 10:
-        medalha = "🥉"
         msg = "Bom esforço! Ainda há espaço para melhorar."
     else:
-        medalha = "🎗"
         msg = "Continua a praticar — estás no caminho certo."
+ 
+    # imagem de sala de reunião
+    st.markdown("""
+<div style="text-align:center;">
+<img src="https://images.unsplash.com/photo-1589820296156-2454bb8f1b0c"
+             style="width:60%; border-radius:12px; margin-bottom:20px;">
+</div>
+    """, unsafe_allow_html=True)
  
     st.markdown(f"""
 <div class="corp-box" style="text-align:center;">
 <h2 class="corp-title">Pontuação final: {score}/20</h2>
-<div style="font-size: 80px; margin-top: 10px;">
-            {medalha}
-</div>
 <p style="font-size: 22px; color: #e5e7eb;">{msg}</p>
 </div>
     """, unsafe_allow_html=True)
@@ -263,17 +278,19 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
  
-st.markdown('<div class="corp-box">', unsafe_allow_html=True)
+st.markdown('<div class="corp-box" style="text-align:center;">', unsafe_allow_html=True)
 st.markdown(f'<h2 class="corp-subtitle">Pergunta {idx+1} de {len(perguntas)}</h2>', unsafe_allow_html=True)
 st.write(pergunta)
 st.markdown('</div>', unsafe_allow_html=True)
  
+st.markdown('<div style="text-align:center;">', unsafe_allow_html=True)
 escolha = st.radio(
-    "Escolhe uma opção:",
+    "",
     list(range(1, len(opcoes)+1)),
     format_func=lambda x: f"{x}) {opcoes[x-1]}",
     key=f"q_{idx}"
 )
+st.markdown('</div>', unsafe_allow_html=True)
  
 if st.button("Seguinte"):
     st.session_state.respostas.append(escolha)
@@ -282,4 +299,4 @@ if st.button("Seguinte"):
     if st.session_state.pergunta >= len(perguntas):
         st.session_state.terminou = True
  
-    st.rerun()
+    st.experimental_rerun()
