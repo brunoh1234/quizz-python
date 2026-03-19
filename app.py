@@ -322,6 +322,12 @@ if "splash_shown" not in st.session_state:
 
 resultados = carregar_resultados()
 
+# Detectar navegação do splash via query param
+if st.query_params.get("splash_done") == "1":
+    st.session_state.splash_shown = True
+    st.query_params.clear()
+    st.rerun()
+
 # ------------------------------
 # ECRÃ DE APRESENTAÇÃO (SPLASH)
 # ------------------------------
@@ -781,42 +787,19 @@ if not st.session_state.splash_shown:
     enterBtn.innerHTML = '⏳ A entrar...';
     enterBtn.style.opacity = '0.7';
     enterBtn.disabled = true;
-    // Clicar no botão Streamlit real (invisível) no parent
     try {
-      var btns = window.parent.document.querySelectorAll('button');
-      for (var i = 0; i < btns.length; i++) {
-        if (btns[i].innerText.trim() === '__splash_enter__') {
-          btns[i].click();
-          break;
-        }
-      }
-    } catch(e) {}
+      var base = window.top.location.pathname;
+      window.top.location.href = base + '?splash_done=1';
+    } catch(e) {
+      try {
+        var base2 = window.parent.location.pathname;
+        window.parent.location.href = base2 + '?splash_done=1';
+      } catch(e2) {}
+    }
   }
 </script>
 </body>
 </html>""", height=700, scrolling=False)
-
-    # Botão real invisível que o JS clica
-    st.markdown("""
-    <style>
-    /* Esconde o botão splash — apenas visível por JS */
-    div[data-testid="stButton"] > button {
-        position: fixed !important;
-        top: -9999px !important;
-        left: -9999px !important;
-        width: 1px !important;
-        height: 1px !important;
-        opacity: 0 !important;
-        pointer-events: none !important;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
-    clicked = st.button("__splash_enter__", key="splash_enter_real")
-
-    if clicked:
-        st.session_state.splash_shown = True
-        st.rerun()
 
     st.stop()
 
