@@ -324,7 +324,7 @@ st.markdown(f"""
  
 # Criar respostas em caixas
 opcoes_formatadas = [
-    f"<div class='answer-box'>{x}) {opcoes[x-1]}</div>"
+    f"<'div class='answer-box'>{x}) {opcoes[x-1]}</div>"
     for x in range(1, len(opcoes)+1)
 ]
  
