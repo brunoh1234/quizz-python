@@ -74,7 +74,7 @@ perguntas = [
 ]
  
 # ------------------------------
-# CSS CORPORATE + CENTRADO + RESPOSTAS EM CAIXAS
+# CSS CORPORATE + CENTRADO + CAIXAS CLICÁVEIS
 # ------------------------------
  
 st.markdown("""
@@ -106,7 +106,6 @@ body {
     border-radius: 12px;
     border: 1px solid #374151;
     box-shadow: 0 4px 12px rgba(0,0,0,0.25);
-    animation: fadeIn 0.5s ease;
     width: 100%;
     text-align: center;
 }
@@ -116,7 +115,6 @@ body {
     font-size: 34px;
     font-weight: 700;
     color: #60a5fa;
-    text-shadow: 0 0 6px rgba(96,165,250,0.4);
     text-align: center;
 }
  
@@ -128,32 +126,26 @@ body {
     text-align: center;
 }
  
-/* Caixa de cada resposta */
-.answer-box {
+/* Caixas clicáveis */
+.answer-btn {
     background: #1f2937;
     border: 1px solid #374151;
-    padding: 14px 22px;
+    padding: 18px 22px;
     border-radius: 10px;
-    margin: 8px 0;
+    margin: 12px auto;
     width: 100%;
     max-width: 500px;
     text-align: center;
     font-size: 22px;
     color: #e5e7eb;
+    cursor: pointer;
     transition: 0.2s ease-in-out;
 }
  
-.answer-box:hover {
+.answer-btn:hover {
     background: #2563eb33;
     border-color: #60a5fa;
-    transform: scale(1.02);
-}
- 
-/* Centrar radio buttons */
-div[role="radiogroup"] {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    transform: scale(1.03);
 }
  
 /* Botões */
@@ -164,12 +156,10 @@ button[kind="primary"] {
     padding: 12px 20px !important;
     font-size: 20px !important;
     border: none !important;
-    transition: 0.2s ease-in-out;
 }
  
 button[kind="primary"]:hover {
     background-color: #1e40af !important;
-    transform: scale(1.03);
 }
  
 /* Barra de progresso */
@@ -186,12 +176,6 @@ button[kind="primary"]:hover {
     background: linear-gradient(90deg, #60a5fa, #2563eb);
     border-radius: 10px;
     transition: width 0.5s ease;
-}
- 
-/* Fade */
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
 }
  
 </style>
@@ -322,24 +306,19 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
  
-# Criar respostas em caixas
-opcoes_formatadas = [
-    f"<'div class='answer-box'>{x}) {opcoes[x-1]}</div>"
-    for x in range(1, len(opcoes)+1)
-]
+# ------------------------------
+# RESPOSTAS — CAIXAS CLICÁVEIS
+# ------------------------------
  
-escolha = st.radio(
-    "",
-    list(range(1, len(opcoes)+1)),
-    format_func=lambda x: opcoes_formatadas[x-1],
-    key=f"q_{idx}"
-)
+for i, opcao in enumerate(opcoes, start=1):
  
-if st.button("Seguinte"):
-    st.session_state.respostas.append(escolha)
-    st.session_state.pergunta += 1
+    if st.button(f"{i}) {opcao}", key=f"btn_{idx}_{i}"):
+        st.session_state.respostas.append(i)
+        st.session_state.pergunta += 1
  
-    if st.session_state.pergunta >= len(perguntas):
-        st.session_state.terminou = True
+        if st.session_state.pergunta >= len(perguntas):
+            st.session_state.terminou = True
  
-    st.rerun()
+        st.experimental_rerun()
+ 
+    st.markdown(f"<div class='answer-btn'>{i}) {opcao}</div>", unsafe_allow_html=True)
