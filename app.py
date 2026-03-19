@@ -428,31 +428,23 @@ if st.session_state.user_id is None:
     # - Após jogar: continua com o loop do quiz (dWVEE2QlckY)
     # ------------------------------
     if st.session_state.quiz_completed:
-        # Já jogou — continua com a música do quiz em loop
         _video_id = "dWVEE2QlckY"
-        _loop = 1
-        _start = 373
-        _playlist = ", playlist: 'dWVEE2QlckY'"
-        _volume = 65
-        _on_state_change = ""
+        _loop_param = "loop=1&playlist=dWVEE2QlckY"
+        _start_param = "start=373"
+        _end_event = ""
     else:
-        # Primeira vez — toca intro uma vez
         _video_id = "2oPVdx3QaAM"
-        _loop = 0
-        _start = 0
-        _playlist = ""
-        _volume = 70
-        _on_state_change = """
-          onStateChange: function(e) {
-            if (e.data === YT.PlayerState.ENDED) {
-              document.getElementById('btn').innerHTML = '🎵 FIM';
-            }
-          },"""
+        _loop_param = "loop=0"
+        _start_param = "start=0"
+        _end_event = """
+        if (data.info === 0) {
+          document.getElementById('btn').innerHTML = '🎵 FIM';
+        }"""
 
     _LOGIN_MUSIC = f"""<!DOCTYPE html>
 <html><head><style>
   * {{ box-sizing: border-box; margin: 0; padding: 0; }}
-  body {{ background: transparent; overflow: hidden; display: flex; justify-content: flex-end; align-items: center; height: 54px; padding-right: 8px; }}
+  body {{ background: transparent; overflow: hidden; display: flex; justify-content: flex-end; align-items: center; height: 54px; padding-right: 8px; font-family: sans-serif; }}
   #btn {{
     display: inline-flex; align-items: center; gap: 8px;
     background: linear-gradient(135deg, #0a1a4a, #001030);
@@ -460,70 +452,65 @@ if st.session_state.user_id is None:
     padding: 9px 18px; cursor: pointer;
     box-shadow: 0 0 14px rgba(30,144,255,0.55);
     color: #7eb8ff; font-size: 14px; font-weight: bold;
-    letter-spacing: 1px; font-family: sans-serif;
-    transition: box-shadow 0.2s; white-space: nowrap;
+    letter-spacing: 1px; transition: box-shadow 0.2s; white-space: nowrap;
   }}
   #btn:hover {{ box-shadow: 0 0 24px rgba(30,144,255,0.9); }}
-  #player {{ position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }}
+  #btn.pulse {{ animation: pulse 1.5s infinite; }}
+  @keyframes pulse {{ 0%,100% {{ box-shadow: 0 0 10px rgba(30,144,255,0.5); }} 50% {{ box-shadow: 0 0 28px rgba(30,144,255,1); }} }}
+  #yt {{ position:fixed; top:-9999px; left:-9999px; width:1px; height:1px; }}
 </style></head>
 <body>
-  <button id="btn" onclick="toggleMute()">⏳ A carregar...</button>
-  <div id="player"></div>
+  <button id="btn" class="pulse" onclick="toggleMute()">⏳ A carregar...</button>
+  <iframe id="yt"
+    src="https://www.youtube.com/embed/{_video_id}?autoplay=1&mute=1&{_loop_param}&{_start_param}&controls=0&enablejsapi=1&origin={{}}"
+    allow="autoplay; encrypted-media"
+    frameborder="0"
+  ></iframe>
   <script>
-    var ytPlayer = null;
-    var isMuted = false;
+    var isMuted = true;
+    var yt = document.getElementById('yt');
 
-    function init() {{
-      if (window.YT && window.YT.Player) {{
-        createPlayer();
-      }} else {{
-        var tag = document.createElement('script');
-        tag.src = 'https://www.youtube.com/iframe_api';
-        document.head.appendChild(tag);
-        window.onYouTubeIframeAPIReady = createPlayer;
-      }}
-    }}
-
-    function createPlayer() {{
-      ytPlayer = new YT.Player('player', {{
-        height: '1', width: '1',
-        videoId: '{_video_id}',
-        playerVars: {{ autoplay: 1, loop: {_loop}, start: {_start}{_playlist}, controls: 0, mute: 1 }},
-        events: {{
-          onReady: function(e) {{
-            e.target.playVideo();
-            // Tenta desmutar automaticamente após 800ms
-            setTimeout(function() {{
-              try {{
-                e.target.unMute();
-                e.target.setVolume({_volume});
-                isMuted = false;
-                document.getElementById('btn').innerHTML = '🔊 MÚSICA';
-              }} catch(ex) {{
-                isMuted = true;
-                document.getElementById('btn').innerHTML = '🔇 CLICA PARA SOM';
-              }}
-            }}, 800);
-          }},{_on_state_change}
-          onError: function() {{ document.getElementById('btn').innerHTML = '❌ Erro'; }}
+    // Ouve mensagens do YouTube iframe
+    window.addEventListener('message', function(e) {{
+      if (!e.data) return;
+      try {{
+        var d = (typeof e.data === 'string') ? JSON.parse(e.data) : e.data;
+        if (d.event === 'onReady' || d.info !== undefined) {{
+          // Player pronto — tenta desmutar
+          setTimeout(tryUnmute, 600);{_end_event}
         }}
-      }});
+      }} catch(ex) {{}}
+    }});
+
+    function tryUnmute() {{
+      // Tenta desmutar via postMessage (YouTube API)
+      yt.contentWindow.postMessage(JSON.stringify({{event:'command', func:'unMute', args:''}}), '*');
+      yt.contentWindow.postMessage(JSON.stringify({{event:'command', func:'setVolume', args:[70]}}), '*');
+      isMuted = false;
+      document.getElementById('btn').innerHTML = '🔊 MÚSICA';
+      document.getElementById('btn').classList.remove('pulse');
     }}
 
     function toggleMute() {{
-      if (!ytPlayer) return;
       if (isMuted) {{
-        ytPlayer.unMute(); ytPlayer.setVolume({_volume});
+        yt.contentWindow.postMessage(JSON.stringify({{event:'command', func:'unMute', args:''}}), '*');
+        yt.contentWindow.postMessage(JSON.stringify({{event:'command', func:'setVolume', args:[70]}}), '*');
         document.getElementById('btn').innerHTML = '🔊 MÚSICA';
+        document.getElementById('btn').classList.remove('pulse');
         isMuted = false;
       }} else {{
-        ytPlayer.mute();
+        yt.contentWindow.postMessage(JSON.stringify({{event:'command', func:'mute', args:''}}), '*');
         document.getElementById('btn').innerHTML = '🔇 MUDO';
         isMuted = true;
       }}
     }}
 
-    init();
+    // Também tenta desmutar ao primeiro clique/tecla no iframe
+    document.addEventListener('click', tryUnmute, {{once: true}});
+    document.addEventListener('keydown', tryUnmute, {{once: true}});
+
+    // Fallback: tenta após 2s (funciona se o browser já desbloqueou autoplay antes)
+    setTimeout(tryUnmute, 2000);
   </script>
 </body></html>"""
     components.html(_LOGIN_MUSIC, height=54)
@@ -536,7 +523,7 @@ if st.session_state.user_id is None:
 _QUIZ_MUSIC = """<!DOCTYPE html>
 <html><head><style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: transparent; overflow: hidden; display: flex; justify-content: flex-end; align-items: center; height: 54px; padding-right: 8px; }
+  body { background: transparent; overflow: hidden; display: flex; justify-content: flex-end; align-items: center; height: 54px; padding-right: 8px; font-family: sans-serif; }
   #btn {
     display: inline-flex; align-items: center; gap: 8px;
     background: linear-gradient(135deg, #0a1a4a, #001030);
@@ -544,70 +531,54 @@ _QUIZ_MUSIC = """<!DOCTYPE html>
     padding: 9px 18px; cursor: pointer;
     box-shadow: 0 0 14px rgba(30,144,255,0.55);
     color: #7eb8ff; font-size: 14px; font-weight: bold;
-    letter-spacing: 1px; font-family: sans-serif;
-    transition: box-shadow 0.2s; white-space: nowrap;
+    letter-spacing: 1px; transition: box-shadow 0.2s; white-space: nowrap;
   }
   #btn:hover { box-shadow: 0 0 24px rgba(30,144,255,0.9); }
-  #player { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+  #yt { position:fixed; top:-9999px; left:-9999px; width:1px; height:1px; }
 </style></head>
 <body>
   <button id="btn" onclick="toggleMute()">⏳ A carregar...</button>
-  <div id="player"></div>
+  <iframe id="yt"
+    src="https://www.youtube.com/embed/dWVEE2QlckY?autoplay=1&mute=1&loop=1&playlist=dWVEE2QlckY&start=373&controls=0&enablejsapi=1"
+    allow="autoplay; encrypted-media"
+    frameborder="0"
+  ></iframe>
   <script>
-    var ytPlayer = null;
-    var isMuted = false;
+    var isMuted = true;
+    var yt = document.getElementById('yt');
 
-    function init() {
-      if (window.YT && window.YT.Player) {
-        createPlayer();
-      } else {
-        var tag = document.createElement('script');
-        tag.src = 'https://www.youtube.com/iframe_api';
-        document.head.appendChild(tag);
-        window.onYouTubeIframeAPIReady = createPlayer;
-      }
-    }
-
-    function createPlayer() {
-      ytPlayer = new YT.Player('player', {
-        height: '1', width: '1',
-        videoId: 'dWVEE2QlckY',
-        playerVars: { autoplay: 1, loop: 1, playlist: 'dWVEE2QlckY', start: 373, controls: 0, mute: 1 },
-        events: {
-          onReady: function(e) {
-            e.target.playVideo();
-            // Tenta desmutar automaticamente após 800ms
-            setTimeout(function() {
-              try {
-                e.target.unMute();
-                e.target.setVolume(65);
-                isMuted = false;
-                document.getElementById('btn').innerHTML = '🔊 MÚSICA';
-              } catch(ex) {
-                isMuted = true;
-                document.getElementById('btn').innerHTML = '🔇 CLICA PARA SOM';
-              }
-            }, 800);
-          },
-          onError: function() { document.getElementById('btn').innerHTML = '❌ Erro'; }
+    window.addEventListener('message', function(e) {
+      if (!e.data) return;
+      try {
+        var d = (typeof e.data === 'string') ? JSON.parse(e.data) : e.data;
+        if (d.event === 'onReady' || d.info !== undefined) {
+          setTimeout(tryUnmute, 400);
         }
-      });
+      } catch(ex) {}
+    });
+
+    function tryUnmute() {
+      yt.contentWindow.postMessage(JSON.stringify({event:'command', func:'unMute', args:''}), '*');
+      yt.contentWindow.postMessage(JSON.stringify({event:'command', func:'setVolume', args:[65]}), '*');
+      isMuted = false;
+      document.getElementById('btn').innerHTML = '🔊 MÚSICA';
     }
 
     function toggleMute() {
-      if (!ytPlayer) return;
       if (isMuted) {
-        ytPlayer.unMute(); ytPlayer.setVolume(65);
+        yt.contentWindow.postMessage(JSON.stringify({event:'command', func:'unMute', args:''}), '*');
+        yt.contentWindow.postMessage(JSON.stringify({event:'command', func:'setVolume', args:[65]}), '*');
         document.getElementById('btn').innerHTML = '🔊 MÚSICA';
         isMuted = false;
       } else {
-        ytPlayer.mute();
+        yt.contentWindow.postMessage(JSON.stringify({event:'command', func:'mute', args:''}), '*');
         document.getElementById('btn').innerHTML = '🔇 MUDO';
         isMuted = true;
       }
     }
 
-    init();
+    // Tenta desmutar após 1.5s (funciona porque o utilizador já clicou para fazer login)
+    setTimeout(tryUnmute, 1500);
   </script>
 </body></html>"""
 components.html(_QUIZ_MUSIC, height=54)
