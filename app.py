@@ -235,6 +235,24 @@ st.markdown("""
     box-shadow: 0 0 10px rgba(30, 144, 255, 0.3);
 }
 
+/* Linha do histórico na página inicial */
+.historico-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(135deg, #0a1a4a 0%, #001030 100%);
+    border: 1px solid #1e3a6e;
+    border-radius: 10px;
+    padding: 12px 20px;
+    margin: 6px auto;
+    max-width: 700px;
+    box-shadow: 0 0 8px rgba(30, 144, 255, 0.2);
+}
+
+.historico-row.top1 { border-color: #ffd700; box-shadow: 0 0 12px rgba(255,215,0,0.4); }
+.historico-row.top2 { border-color: #c0c0c0; box-shadow: 0 0 10px rgba(192,192,192,0.3); }
+.historico-row.top3 { border-color: #cd7f32; box-shadow: 0 0 10px rgba(205,127,50,0.3); }
+
 /* Ecrã final */
 .final-box {
     background: linear-gradient(180deg, #0a1a3c 0%, #000000 100%);
@@ -308,6 +326,7 @@ with col_reset:
     if st.button("🔄 Reset Histórico"):
         resetar_historico()
         st.success("Histórico apagado com sucesso.")
+        st.rerun()
 
 # ------------------------------
 # LOGIN
@@ -334,6 +353,69 @@ if st.session_state.user_id is None:
             else:
                 st.session_state.user_id = user_id.strip()
                 st.rerun()
+
+    # ------------------------------
+    # HISTÓRICO DE PARTICIPANTES
+    # ------------------------------
+
+    # Recarregar para ter dados atualizados após reset
+    resultados = carregar_resultados()
+
+    if resultados:
+        st.markdown("""
+        <div style="text-align:center; margin-top:40px; margin-bottom:16px;">
+            <span style="font-size:22px; font-weight:900; color:#7eb8ff; letter-spacing:3px; text-transform:uppercase;">
+                🏅 Histórico de Participantes
+            </span>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # Ordenar do maior para o menor score
+        def score_seguro(item):
+            try:
+                return int(item[1].get("score", 0))
+            except (ValueError, TypeError):
+                return 0
+
+        ranking = sorted(resultados.items(), key=score_seguro, reverse=True)
+        medalhas = {1: "🥇", 2: "🥈", 3: "🥉"}
+        classes_top = {1: "top1", 2: "top2", 3: "top3"}
+
+        for pos, (uid, dados) in enumerate(ranking, start=1):
+            medalha = medalhas.get(pos, f"#{pos}")
+            classe_extra = classes_top.get(pos, "")
+            score_val = score_seguro((uid, dados))
+            data_val = dados.get("data", "—")
+            hora_val = dados.get("hora", "—")
+
+            # Barra de progresso
+            pct = int((score_val / 20) * 100)
+            if pct >= 70:
+                cor_barra = "#00e676"
+            elif pct >= 40:
+                cor_barra = "#ffd700"
+            else:
+                cor_barra = "#ff5252"
+
+            st.markdown(f"""
+<div class="historico-row {classe_extra}">
+    <span style="font-size:22px; min-width:40px;">{medalha}</span>
+    <span style="color:#e0eaff; font-size:17px; font-weight:bold; flex:1; margin-left:12px;">{uid}</span>
+    <span style="color:#aac8ff; font-size:13px; margin-right:20px;">{data_val} {hora_val}</span>
+    <div style="display:flex; align-items:center; gap:10px; min-width:160px;">
+        <div style="background:#0a1a3c; border-radius:6px; height:10px; width:100px; overflow:hidden; border:1px solid #1e3a6e;">
+            <div style="width:{pct}%; height:100%; background:{cor_barra}; border-radius:6px;"></div>
+        </div>
+        <span style="color:#ffffff; font-weight:900; font-size:17px; white-space:nowrap;">{score_val}/20</span>
+    </div>
+</div>
+            """, unsafe_allow_html=True)
+    else:
+        st.markdown("""
+        <div style="text-align:center; margin-top:40px; color:#3a5a8a; font-size:16px; letter-spacing:1px;">
+            Ainda não há participantes. Sê o primeiro! 🚀
+        </div>
+        """, unsafe_allow_html=True)
 
     st.stop()
 
@@ -384,18 +466,26 @@ if st.session_state.terminou:
         }
         guardar_resultados(resultados)
 
-    # Ranking
+    # Ranking na página final
     st.markdown('<h3 style="color:#7eb8ff; text-align:center; margin-top:30px; letter-spacing:2px;">🏅 RANKING</h3>', unsafe_allow_html=True)
-    ranking = sorted(resultados.items(), key=lambda x: x[1]["score"], reverse=True)
+
+    def score_seguro_final(item):
+        try:
+            return int(item[1].get("score", 0))
+        except (ValueError, TypeError):
+            return 0
+
+    ranking = sorted(resultados.items(), key=score_seguro_final, reverse=True)
     medalhas = ["🥇", "🥈", "🥉"]
     for pos, (uid, dados) in enumerate(ranking, start=1):
         medalha = medalhas[pos-1] if pos <= 3 else f"{pos}."
         destaque = "border: 2px solid #ffd700; box-shadow: 0 0 15px rgba(255,215,0,0.5);" if uid == st.session_state.user_id else ""
+        score_val = score_seguro_final((uid, dados))
         st.markdown(f"""
 <div class="ranking-box" style="{destaque}">
     <span style="font-size:22px;">{medalha}</span>
     <b style="color:#7eb8ff; font-size:18px; margin-left:10px;">{uid}</b>
-    <span style="color:#e0eaff; float:right; font-size:18px;">{dados['score']}/20 pontos</span>
+    <span style="color:#e0eaff; float:right; font-size:18px;">{score_val}/20 pontos</span>
 </div>
         """, unsafe_allow_html=True)
 
