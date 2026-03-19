@@ -37,6 +37,10 @@ def guardar_resultados(resultados):
     with open(RESULTADOS_FICHEIRO, "w") as f:
         json.dump(resultados, f, indent=4)
  
+def resetar_historico():
+    with open(RESULTADOS_FICHEIRO, "w") as f:
+        json.dump({}, f)
+ 
 def ja_jogou(user_id, resultados):
     return user_id in resultados
  
@@ -88,7 +92,7 @@ perguntas = [
 ]
  
 # ------------------------------
-# CSS CORPORATE
+# CSS CORPORATE + CENTRADO
 # ------------------------------
  
 st.markdown("""
@@ -100,6 +104,19 @@ body {
     font-size: 20px;
 }
  
+/* Centrar toda a página */
+.main > div {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+ 
+.block-container {
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
+}
+ 
 /* Caixa corporativa */
 .corp-box {
     padding: 25px;
@@ -108,6 +125,8 @@ body {
     border: 1px solid #374151;
     box-shadow: 0 4px 12px rgba(0,0,0,0.25);
     animation: fadeIn 0.5s ease;
+    width: 100%;
+    text-align: center;
 }
  
 /* Títulos */
@@ -159,6 +178,13 @@ button[kind="primary"]:hover {
     transition: width 0.5s ease;
 }
  
+/* Centrar radio buttons */
+div[role="radiogroup"] {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+ 
 /* Fade */
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(8px); }
@@ -184,6 +210,14 @@ if "terminou" not in st.session_state:
 resultados = carregar_resultados()
  
 st.markdown('<h1 class="corp-title">Quiz — Trabalho Híbrido</h1>', unsafe_allow_html=True)
+ 
+# ------------------------------
+# BOTÃO DE RESET DO HISTÓRICO
+# ------------------------------
+ 
+if st.button("🔄 Reset ao Histórico de Classificações"):
+    resetar_historico()
+    st.success("Histórico apagado com sucesso.")
  
 # ------------------------------
 # LOGIN
@@ -232,7 +266,7 @@ if st.session_state.terminou:
     """, unsafe_allow_html=True)
  
     st.markdown(f"""
-<div class="corp-box" style="text-align:center;">
+<div class="corp-box">
 <h2 class="corp-title">Pontuação final: {score}/20</h2>
 <p style="font-size: 22px; color: #e5e7eb;">{msg}</p>
 </div>
@@ -278,19 +312,19 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
  
-st.markdown('<div class="corp-box" style="text-align:center;">', unsafe_allow_html=True)
-st.markdown(f'<h2 class="corp-subtitle">Pergunta {idx+1} de {len(perguntas)}</h2>', unsafe_allow_html=True)
-st.write(pergunta)
-st.markdown('</div>', unsafe_allow_html=True)
+st.markdown(f"""
+<div class="corp-box">
+<h2 class="corp-subtitle">Pergunta {idx+1} de {len(perguntas)}</h2>
+<p style="font-size:22px; color:#e5e7eb;">{pergunta}</p>
+</div>
+""", unsafe_allow_html=True)
  
-st.markdown('<div style="text-align:center;">', unsafe_allow_html=True)
 escolha = st.radio(
     "",
     list(range(1, len(opcoes)+1)),
     format_func=lambda x: f"{x}) {opcoes[x-1]}",
     key=f"q_{idx}"
 )
-st.markdown('</div>', unsafe_allow_html=True)
  
 if st.button("Seguinte"):
     st.session_state.respostas.append(escolha)
