@@ -467,23 +467,13 @@ if st.session_state.user_id is None:
   #player {{ position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }}
 </style></head>
 <body>
-  <button id="btn" onclick="handleBtn()">▶ LIGAR MÚSICA</button>
+  <button id="btn" onclick="toggleMute()">⏳ A carregar...</button>
   <div id="player"></div>
   <script>
     var ytPlayer = null;
-    var isPlaying = false;
     var isMuted = false;
 
-    function handleBtn() {{
-      if (!isPlaying) {{
-        startMusic();
-      }} else {{
-        toggleMute();
-      }}
-    }}
-
-    function startMusic() {{
-      document.getElementById('btn').innerHTML = '⏳ A carregar...';
+    function init() {{
       if (window.YT && window.YT.Player) {{
         createPlayer();
       }} else {{
@@ -498,13 +488,22 @@ if st.session_state.user_id is None:
       ytPlayer = new YT.Player('player', {{
         height: '1', width: '1',
         videoId: '{_video_id}',
-        playerVars: {{ autoplay: 1, loop: {_loop}, start: {_start}{_playlist}, controls: 0 }},
+        playerVars: {{ autoplay: 1, loop: {_loop}, start: {_start}{_playlist}, controls: 0, mute: 1 }},
         events: {{
           onReady: function(e) {{
-            e.target.setVolume({_volume});
             e.target.playVideo();
-            isPlaying = true;
-            document.getElementById('btn').innerHTML = '🔊 MÚSICA';
+            // Tenta desmutar automaticamente após 800ms
+            setTimeout(function() {{
+              try {{
+                e.target.unMute();
+                e.target.setVolume({_volume});
+                isMuted = false;
+                document.getElementById('btn').innerHTML = '🔊 MÚSICA';
+              }} catch(ex) {{
+                isMuted = true;
+                document.getElementById('btn').innerHTML = '🔇 CLICA PARA SOM';
+              }}
+            }}, 800);
           }},{_on_state_change}
           onError: function() {{ document.getElementById('btn').innerHTML = '❌ Erro'; }}
         }}
@@ -523,6 +522,8 @@ if st.session_state.user_id is None:
         isMuted = true;
       }}
     }}
+
+    init();
   </script>
 </body></html>"""
     components.html(_LOGIN_MUSIC, height=54)
@@ -550,23 +551,13 @@ _QUIZ_MUSIC = """<!DOCTYPE html>
   #player { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 </style></head>
 <body>
-  <button id="btn" onclick="handleBtn()">▶ LIGAR MÚSICA</button>
+  <button id="btn" onclick="toggleMute()">⏳ A carregar...</button>
   <div id="player"></div>
   <script>
     var ytPlayer = null;
-    var isPlaying = false;
     var isMuted = false;
 
-    function handleBtn() {
-      if (!isPlaying) {
-        startMusic();
-      } else {
-        toggleMute();
-      }
-    }
-
-    function startMusic() {
-      document.getElementById('btn').innerHTML = '⏳ A carregar...';
+    function init() {
       if (window.YT && window.YT.Player) {
         createPlayer();
       } else {
@@ -581,13 +572,22 @@ _QUIZ_MUSIC = """<!DOCTYPE html>
       ytPlayer = new YT.Player('player', {
         height: '1', width: '1',
         videoId: 'dWVEE2QlckY',
-        playerVars: { autoplay: 1, loop: 1, playlist: 'dWVEE2QlckY', start: 373, controls: 0 },
+        playerVars: { autoplay: 1, loop: 1, playlist: 'dWVEE2QlckY', start: 373, controls: 0, mute: 1 },
         events: {
           onReady: function(e) {
-            e.target.setVolume(65);
             e.target.playVideo();
-            isPlaying = true;
-            document.getElementById('btn').innerHTML = '🔊 MÚSICA';
+            // Tenta desmutar automaticamente após 800ms
+            setTimeout(function() {
+              try {
+                e.target.unMute();
+                e.target.setVolume(65);
+                isMuted = false;
+                document.getElementById('btn').innerHTML = '🔊 MÚSICA';
+              } catch(ex) {
+                isMuted = true;
+                document.getElementById('btn').innerHTML = '🔇 CLICA PARA SOM';
+              }
+            }, 800);
           },
           onError: function() { document.getElementById('btn').innerHTML = '❌ Erro'; }
         }
@@ -606,6 +606,8 @@ _QUIZ_MUSIC = """<!DOCTYPE html>
         isMuted = true;
       }
     }
+
+    init();
   </script>
 </body></html>"""
 components.html(_QUIZ_MUSIC, height=54)
