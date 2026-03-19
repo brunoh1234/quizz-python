@@ -2,189 +2,157 @@ import streamlit as st
 import json
 import os
 from datetime import datetime
- 
+
+# ------------------------------
+# Configuração da Página e Ocultação de Menus
+# ------------------------------
+st.set_page_config(page_title="Quiz Milionário — Trabalho Híbrido", layout="centered")
+
+st.markdown("""
+    <style>
+    #MainMenu {visibility: hidden;}
+    header {visibility: hidden;}
+    footer {visibility: hidden;}
+    .block-container {padding-top: 2rem;}
+    </style>
+    """, unsafe_allow_html=True)
+
 RESULTADOS_FICHEIRO = "resultados.json"
- 
+
 # ------------------------------
 # Funções de armazenamento
 # ------------------------------
- 
+
 def carregar_resultados():
     if not os.path.exists(RESULTADOS_FICHEIRO):
         return {}
-    with open(RESULTADOS_FICHEIRO, "r") as f:
-        return json.load(f)
- 
+    try:
+        with open(RESULTADOS_FICHEIRO, "r") as f:
+            return json.load(f)
+    except:
+        return {}
+
 def guardar_resultados(resultados):
     with open(RESULTADOS_FICHEIRO, "w") as f:
         json.dump(resultados, f, indent=4)
- 
+
 def resetar_historico():
-    with open(RESULTADOS_FICHEIRO, "w") as f:
-        json.dump({}, f)
- 
+    if os.path.exists(RESULTADOS_FICHEIRO):
+        os.remove(RESULTADOS_FICHEIRO)
+
 def ja_jogou(user_id, resultados):
     return user_id in resultados
- 
+
 # ------------------------------
-# Perguntas
+# Perguntas (Mantidas as originais)
 # ------------------------------
- 
+
 perguntas = [
-    ("Quanto tempo os profissionais passam por ano em reuniões?",
-     ["120h", "200h", "392h", "500h"], 2),
-    ("Que percentagem das reuniões é considerada improdutiva?",
-     ["20%", "40%", "67%", "90%"], 2),
-    ("Quantos profissionais têm a caixa de entrada sempre aberta?",
-     ["20%", "50%", "80%", "95%"], 2),
-    ("O excesso de conectividade provoca:",
-     ["Mais criatividade", "Melhor comunicação", "Perda de foco e bem‑estar", "Menos reuniões"], 2),
-    ("O Eixo Duplo da Produtividade combina:",
-     ["Horas extra + multitasking", "Foco individual + colaboração eficiente", "Velocidade + pressão", "Automação + reuniões"], 1),
-    ("Qual NÃO é um dos 5 pilares da gestão de tempo?",
-     ["Expandir perceção", "Demarcar limites", "Erradicar esgotamento", "Trabalhar mais horas"], 3),
-    ("O método Pomodoro usa ciclos de:",
-     ["10/10", "25/5", "40/10", "60/15"], 1),
-    ("Eat the Frog significa:",
-     ["Fazer a tarefa mais fácil", "Fazer a mais difícil de manhã", "Fazer várias tarefas", "Evitar pausas"], 1),
-    ("Pareto 80/20 sugere:",
-     ["80 tarefas em 20 min", "Eliminar 80% em 20% do tempo", "Trabalhar 80% do dia", "Fazer 20% primeiro"], 1),
-    ("O cérebro faz multitasking?",
-     ["Sim", "Não, alterna rapidamente", "Apenas com treino", "Só com música"], 1),
-    ("Quantos fazem multitasking em reuniões?",
-     ["30%", "50%", "92%", "100%"], 2),
-    ("Reuniões mal planeadas:",
-     ["São curtas", "Destroem o foco individual", "Têm poucos participantes", "Ajudam a concentração"], 2),
-    ("Primeira fase de uma reunião produtiva:",
-     ["Durante", "Depois", "Antes", "Avaliação"], 3),
-    ("Antes da reunião deve-se:",
-     ["Improvisar agenda", "Convidar todos", "Clarificar objetivo", "Começar sem contexto"], 3),
-    ("O 'Olhar Digital' implica:",
-     ["Olhar para o teclado", "Câmara desligada", "Olhar para a lente", "Evitar olhar"], 3),
-    ("O 'Silêncio Tático' significa:",
-     ["Falar sempre", "Mute até falar", "Desligar câmara", "Não participar"], 2),
-    ("Entrada Antecipada é:",
-     ["20 min antes", "5 min antes", "No minuto exato", "Depois do moderador"], 2),
-    ("Para reduzir Zoom Fatigue:",
-     ["Reuniões longas", "Chamadas seguidas", "Encurtar reuniões e dar pausas", "Câmara sempre ligada"], 3),
-    ("Órbita 1 (Videoconferência) é:",
-     ["O cérebro", "O palco", "O arquivo", "O gestor"], 2),
-    ("Fecho de Sistema inclui:",
-     ["Responder emails", "Planear o dia seguinte", "Agendar reuniões", "Fazer multitasking"], 2)
+    ("Quanto tempo os profissionais passam por ano em reuniões?", ["120h", "200h", "392h", "500h"], 3), # Resposta correta 392h
+    ("Que percentagem das reuniões é considerada improdutiva?", ["20%", "40%", "67%", "90%"], 3),
+    ("Quantos profissionais têm a caixa de entrada sempre aberta?", ["20%", "50%", "80%", "95%"], 3),
+    ("O excesso de conectividade provoca:", ["Mais criatividade", "Melhor comunicação", "Perda de foco e bem‑estar", "Menos reuniões"], 3),
+    ("O Eixo Duplo da Produtividade combina:", ["Horas extra + multitasking", "Foco individual + colaboração eficiente", "Velocidade + pressão", "Automação + reuniões"], 2),
+    ("Qual NÃO é um dos 5 pilares da gestão de tempo?", ["Expandir perceção", "Demarcar limites", "Erradicar esgotamento", "Trabalhar mais horas"], 4),
+    ("O método Pomodoro usa ciclos de:", ["10/10", "25/5", "40/10", "60/15"], 2),
+    ("Eat the Frog significa:", ["Fazer a tarefa mais fácil", "Fazer a mais difícil de manhã", "Fazer várias tarefas", "Evitar pausas"], 2),
+    ("Pareto 80/20 sugere:", ["80 tarefas em 20 min", "Eliminar 80% em 20% do tempo", "Trabalhar 80% do dia", "Fazer 20% primeiro"], 2),
+    ("O cérebro faz multitasking?", ["Sim", "Não, alterna rapidamente", "Apenas com treino", "Só com música"], 2),
+    ("Quantos fazem multitasking em reuniões?", ["30%", "50%", "92%", "100%"], 3),
+    ("Reuniões mal planeadas:", ["São curtas", "Destruem o foco individual", "Têm poucos participantes", "Ajudam a concentração"], 2),
+    ("Primeira fase de uma reunião produtiva:", ["Durante", "Depois", "Antes", "Avaliação"], 3),
+    ("Antes da reunião deve-se:", ["Improvisar agenda", "Convidar todos", "Clarificar objetivo", "Começar sem contexto"], 3),
+    ("O 'Olhar Digital' implica:", ["Olhar para o teclado", "Câmara desligada", "Olhar para a lente", "Evitar olhar"], 3),
+    ("O 'Silêncio Tático' significa:", ["Falar sempre", "Mute até falar", "Desligar câmara", "Não participar"], 2),
+    ("Entrada Antecipada é:", ["20 min antes", "5 min antes", "No minuto exato", "Depois do moderador"], 2),
+    ("Para reduzir Zoom Fatigue:", ["Reuniões longas", "Chamadas seguidas", "Encurtar reuniões e dar pausas", "Câmara sempre ligada"], 3),
+    ("Órbita 1 (Videoconferência) é:", ["O cérebro", "O palco", "O arquivo", "O gestor"], 2),
+    ("Fecho de Sistema inclui:", ["Responder emails", "Planear o dia seguinte", "Agendar reuniões", "Fazer multitasking"], 2)
 ]
- 
+
 # ------------------------------
-# CSS CORPORATE + CENTRADO + CAIXAS CLICÁVEIS
+# CSS ESTILO "QUEM QUER SER MILIONÁRIO"
 # ------------------------------
- 
+
 st.markdown("""
 <style>
- 
-body {
-    background-color: #1f2937;
-    color: #e5e7eb;
-    font-size: 20px;
-}
- 
-/* Centrar toda a página */
-.main > div {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
- 
-.block-container {
-    max-width: 900px;
-    margin-left: auto;
-    margin-right: auto;
-}
- 
-/* Caixa corporativa */
-.corp-box {
-    padding: 25px;
-    background: #111827;
-    border-radius: 12px;
-    border: 1px solid #374151;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
-    width: 100%;
-    text-align: center;
-}
- 
-/* Títulos */
-.corp-title {
-    font-size: 34px;
-    font-weight: 700;
-    color: #60a5fa;
-    text-align: center;
-}
- 
-/* Subtítulos */
-.corp-subtitle {
-    font-size: 26px;
-    font-weight: 600;
-    color: #93c5fd;
-    text-align: center;
-}
- 
-/* Caixas clicáveis */
-.answer-btn {
-    background: #1f2937;
-    border: 1px solid #374151;
-    padding: 18px 22px;
-    border-radius: 10px;
-    margin: 12px auto;
-    width: 100%;
-    max-width: 350px;
-    text-align: center;
-    font-size: 22px;
-    color: #e5e7eb;
-    cursor: pointer;
-    transition: 0.2s ease-in-out;
-}
- 
-.answer-btn:hover {
-    background: #2563eb33;
-    border-color: #60a5fa;
-    transform: scale(1.03);
-}
- 
-/* Botões */
-button[kind="primary"] {
-    background-color: #2563eb !important;
-    color: white !important;
-    border-radius: 8px !important;
-    padding: 12px 20px !important;
-    font-size: 20px !important;
-    border: none !important;
-}
- 
-button[kind="primary"]:hover {
-    background-color: #1e40af !important;
-}
- 
-/* Barra de progresso */
-.energy-bar {
-    height: 22px;
-    width: 100%;
-    background: #374151;
-    border-radius: 10px;
-    margin-bottom: 15px;
-}
- 
-.energy-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #60a5fa, #2563eb);
-    border-radius: 10px;
-    transition: width 0.5s ease;
-}
- 
+    /* Fundo e Fonte Geral */
+    .stApp {
+        background: radial-gradient(circle, #0d1b3e 0%, #02050a 100%);
+        color: #ffffff;
+    }
+
+    /* Título */
+    .m-title {
+        font-family: 'Trebuchet MS', sans-serif;
+        font-size: 42px;
+        font-weight: bold;
+        text-align: center;
+        color: #ffffff;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        margin-bottom: 30px;
+        text-shadow: 0 0 15px #1e90ff;
+    }
+
+    /* Caixa da Pergunta (Hexagonal Style) */
+    .question-box {
+        background: linear-gradient(180deg, #0a1a3c 0%, #000000 100%);
+        border: 2px solid #5d8aa8;
+        border-radius: 50px / 15px;
+        padding: 30px;
+        text-align: center;
+        margin-bottom: 40px;
+        box-shadow: 0 0 20px rgba(30, 144, 255, 0.3);
+    }
+
+    .question-text {
+        font-size: 24px;
+        font-weight: 500;
+        color: #ffffff;
+    }
+
+    /* Botões de Resposta (Estilo Milionário) */
+    div.stButton > button {
+        background: linear-gradient(90deg, #0a1a3c 0%, #1a3a7a 50%, #0a1a3c 100%) !important;
+        color: #e5e7eb !important;
+        border: 2px solid #1e90ff !important;
+        border-radius: 30px !important;
+        height: 60px !important;
+        width: 100% !important;
+        font-size: 20px !important;
+        font-weight: bold !important;
+        transition: all 0.3s ease !important;
+        text-align: left !important;
+        padding-left: 25px !important;
+        margin-bottom: 10px !important;
+    }
+
+    div.stButton > button:hover {
+        background: linear-gradient(90deg, #ff8c00 0%, #ff4500 100%) !important; /* Cor laranja ao passar o rato */
+        border-color: #ffffff !important;
+        color: white !important;
+        transform: scale(1.02);
+        box-shadow: 0 0 15px #ff8c00;
+    }
+
+    /* Texto das letras (A, B, C, D) */
+    .option-letter {
+        color: #ff8c00;
+        margin-right: 10px;
+    }
+
+    /* Barra de Progresso Custom */
+    .stProgress > div > div > div > div {
+        background-color: #1e90ff;
+    }
 </style>
 """, unsafe_allow_html=True)
- 
+
 # ------------------------------
 # Estado inicial
 # ------------------------------
- 
+
 if "user_id" not in st.session_state:
     st.session_state.user_id = None
 if "pergunta" not in st.session_state:
@@ -193,176 +161,109 @@ if "respostas" not in st.session_state:
     st.session_state.respostas = []
 if "terminou" not in st.session_state:
     st.session_state.terminou = False
- 
+
 resultados = carregar_resultados()
- 
-st.markdown('<h1 class="corp-title">Quiz — Trabalho Híbrido</h1>', unsafe_allow_html=True)
- 
-# ------------------------------
-# BOTÃO DE RESET DO HISTÓRICO
-# ------------------------------
- 
-if st.button("🔄 Reset ao Histórico de Classificações"):
-    resetar_historico()
-    st.success("Histórico apagado com sucesso.")
- 
+
 # ------------------------------
 # LOGIN
 # ------------------------------
- 
+
 if st.session_state.user_id is None:
-    user_id = st.text_input("Insere o teu ID de utilizador")
- 
-    if st.button("Começar"):
-        if not user_id.strip():
-            st.warning("Por favor insere um ID.")
-        elif ja_jogou(user_id.strip(), resultados):
-            dados = resultados[user_id.strip()]
-            st.error("Este utilizador já jogou.")
-            st.info(f"Pontuação: {dados['score']} | {dados['data']} {dados['hora']}")
+    st.markdown('<h1 class="m-title">Quem Quer Ser Produtivo?</h1>', unsafe_allow_html=True)
+    
+    # Botão de Reset (Admin/Debug)
+    with st.expander("⚙ Opções de Teste"):
+        if st.button("Limpar Histórico de Classificações"):
+            resetar_historico()
+            st.success("Histórico limpo!")
+            st.rerun()
+
+    user_id_input = st.text_input("Identifica-te para começar:", placeholder="Ex: Jorge")
+
+    if st.button("ENTRAR NO PALCO"):
+        if not user_id_input.strip():
+            st.warning("Insere o teu nome.")
+        elif ja_jogou(user_id_input.strip(), resultados):
+            dados = resultados[user_id_input.strip()]
+            st.error(f"O utilizador '{user_id_input}' já participou.")
+            st.info(f"Resultado anterior: {dados['score']}/20")
         else:
-            st.session_state.user_id = user_id.strip()
- 
+            st.session_state.user_id = user_id_input.strip()
+            st.rerun()
     st.stop()
- 
+
 # ------------------------------
 # ECRÃ FINAL
 # ------------------------------
- 
+
 if st.session_state.terminou:
-    score = sum(
-        1 for idx, r in enumerate(st.session_state.respostas)
-        if r == perguntas[idx][2]
-    )
- 
-    if score == 20:
-        msg = "Excelente! Domínio total do tema."
-    elif score >= 15:
-        msg = "Muito bom! Tens forte domínio do conteúdo."
-    elif score >= 10:
-        msg = "Bom esforço! Ainda há espaço para melhorar."
-    else:
-        msg = "Continua a praticar — estás no caminho certo."
- 
-    # imagem de sala de reunião
-    st.markdown("""
-<div style="text-align:center;">
-<img src="https://images.unsplash.com/photo-1589820296156-2454bb8f1b0c"
-             style="width:60%; border-radius:12px; margin-bottom:20px;">
-</div>
-    """, unsafe_allow_html=True)
- 
+    score = sum(1 for idx, r in enumerate(st.session_state.respostas) if r == perguntas[idx][2])
+
+    st.markdown('<h1 class="m-title">RESULTADO FINAL</h1>', unsafe_allow_html=True)
+    
     st.markdown(f"""
-<div class="corp-box">
-<h2 class="corp-title">Pontuação final: {score}/20</h2>
-<p style="font-size: 22px; color: #e5e7eb;">{msg}</p>
-</div>
+    <div class="question-box">
+        <h2 style="color:#ff8c00; font-size:40px;">{score} / 20</h2>
+        <p style="font-size: 20px;">{st.session_state.user_id}, o teu desempenho foi avaliado!</p>
+    </div>
     """, unsafe_allow_html=True)
- 
+
+    # Salvar resultados
+    resultados = carregar_resultados()
     resultados[st.session_state.user_id] = {
         "score": score,
-        "data": datetime.now().strftime("%d/%m/%Y"),
-        "hora": datetime.now().strftime("%H:%M:%S")
+        "data": datetime.now().strftime("%d/%m/%Y %H:%M")
     }
     guardar_resultados(resultados)
- 
-    st.markdown('<h2 class="corp-title">Ranking dos Colegas</h2>', unsafe_allow_html=True)
- 
+
+    st.markdown('<h2 style="text-align:center; color:#1e90ff;">QUADRO DE HONRA</h2>', unsafe_allow_html=True)
+    
     ranking = sorted(resultados.items(), key=lambda x: x[1]["score"], reverse=True)
-    for pos, (uid, dados) in enumerate(ranking, start=1):
+    for pos, (uid, dados) in enumerate(ranking[:5], start=1):
         st.markdown(f"""
-<div class="corp-box" style="margin-bottom:10px;">
-<b style="color:#93c5fd;">{pos}. {uid}</b> — {dados['score']} pontos
-</div>
+        <div style="background: rgba(255,255,255,0.05); padding:10px; border-radius:10px; margin-bottom:5px; border-left: 4px solid #1e90ff;">
+            <b>{pos}º {uid}</b> — {dados['score']} Pontos
+        </div>
         """, unsafe_allow_html=True)
- 
-    if st.button("Jogar novamente"):
+
+    if st.button("REPETIR DESAFIO"):
         st.session_state.user_id = None
         st.session_state.pergunta = 0
         st.session_state.respostas = []
         st.session_state.terminou = False
- 
+        st.rerun()
     st.stop()
- 
+
 # ------------------------------
-# PERGUNTAS
+# JOGO (PERGUNTAS)
 # ------------------------------
- 
+
 idx = st.session_state.pergunta
-pergunta, opcoes, correta = perguntas[idx]
- 
-progresso = int((idx / len(perguntas)) * 100)
- 
+pergunta_texto, opcoes, correta = perguntas[idx]
+
+# Layout do Topo
+st.markdown(f'<p style="text-align:center; color:#1e90ff; font-weight:bold;">NÍVEL {idx+1} / 20</p>', unsafe_allow_html=True)
+st.progress((idx) / len(perguntas))
+
+# Caixa da Pergunta
 st.markdown(f"""
-<div class="energy-bar">
-<div class="energy-fill" style="width: {progresso}%"></div>
+<div class="question-box">
+    <div class="question-text">{pergunta_texto}</div>
 </div>
 """, unsafe_allow_html=True)
- 
-st.markdown(f"""
-<div class="corp-box">
-<h2 class="corp-subtitle">Pergunta {idx+1} de {len(perguntas)}</h2>
-<p style="font-size:22px; color:#e5e7eb;">{pergunta}</p>
-</div>
-""", unsafe_allow_html=True)
- 
-# ------------------------------
-# RESPOSTAS — ESTILO QUEM QUER SER MILIONÁRIO (HTML CLICÁVEL)
-# ------------------------------
- 
+
+# Grelha de Respostas (A/B e C/D)
 col1, col2 = st.columns(2)
- 
+
 for i, opcao in enumerate(opcoes, start=1):
- 
-    letra = chr(64 + i)  # A, B, C, D
- 
-    # HTML do botão estilo Milionário
-    botao_html = f"""
-<style>
-    .mil-btn-{idx}-{i} {{
-        background: linear-gradient(135deg, #0a1a3c, #0f2a66);
-        border: 3px solid #1e90ff;
-        padding: 18px 22px;
-        border-radius: 40px;
-        margin: 14px auto;
-        width: 100%;
-        max-width: 380px;
-        text-align: center;
-        font-size: 22px;
-        font-weight: 600;
-        color: #e5e7eb;
-        cursor: pointer;
-        transition: 0.2s ease-in-out;
-        box-shadow: 0 0 12px rgba(30,144,255,0.4);
-    }}
-    .mil-btn-{idx}-{i}:hover {{
-        background: linear-gradient(135deg, #12306b, #1e4fa3);
-        transform: scale(1.05);
-        box-shadow: 0 0 18px rgba(30,144,255,0.7);
-    }}
-</style>
- 
-    <div class="mil-btn-{idx}-{i}" onclick="fetch('/_stcore/submit?btn={i}')">
-        {letra}) {opcao}
-</div>
-    """
- 
-    # Escolher coluna
+    letra = chr(64 + i) # A, B, C, D
     target_col = col1 if i <= 2 else col2
- 
+    
     with target_col:
-        st.markdown(botao_html, unsafe_allow_html=True)
- 
-# Capturar clique
-clicked = st.experimental_get_query_params().get("btn", None)
- 
-if clicked:
-    escolha = int(clicked[0])
-    st.session_state.respostas.append(escolha)
-    st.session_state.pergunta += 1
- 
-    if st.session_state.pergunta >= len(perguntas):
-        st.session_state.terminou = True
- 
-    st.experimental_set_query_params()  # limpar URL
-    st.rerun()
+        # Usamos o botão do Streamlit mas o CSS acima transforma-o visualmente
+        if st.button(f"{letra}: {opcao}", key=f"btn_{idx}_{i}"):
+            st.session_state.respostas.append(i)
+            st.session_state.pergunta += 1
+            if st.session_state.pergunta >= len(perguntas):
+                st.session_state.terminou = True
+            st.rerun()
