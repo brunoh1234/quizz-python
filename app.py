@@ -629,10 +629,10 @@ if not st.session_state.splash_shown:
 
   // ── Texto a escrever ──
   const fullText = [
-    "Bem-vindos ao Quiz sobre",
+    "Bem-vindos ao Quizz sobre",
     "Boas Práticas em Reuniões Online Eficazes!",
     "",
-    "Esperamos que apreciem o nosso quiz,",
+    "Esperamos que apreciem o nosso quizz,",
     "onde poderão aprender, relaxar e descontrair.",
     "",
     "Um muito obrigado em nome do grupo:"
