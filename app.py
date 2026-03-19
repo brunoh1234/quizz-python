@@ -319,6 +319,6 @@ for i, opcao in enumerate(opcoes, start=1):
         if st.session_state.pergunta >= len(perguntas):
             st.session_state.terminou = True
  
-        st.experimental_rerun()
+        st.rerun()
  
     st.markdown(f"<div class='answer-btn'>{i}) {opcao}</div>", unsafe_allow_html=True)
