@@ -350,6 +350,14 @@ if not st.session_state.splash_shown:
         st.session_state.splash_shown = True
         st.rerun()
 
+    # ── Gerar estrelas CSS ──
+    import random as _rnd
+    _rnd.seed(42)
+    stars_css = ', '.join(
+        f'{_rnd.randint(1,99)}vw {_rnd.randint(1,99)}vh 1px 1px #fff'
+        for _ in range(120)
+    )
+
     # ── Splash em iframe ──
     components.html("""<!DOCTYPE html>
 <html><head><meta charset="utf-8">
