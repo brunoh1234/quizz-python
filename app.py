@@ -74,6 +74,12 @@ perguntas = [
 # ------------------------------
  
 st.markdown("""
+<div style="text-align:center;">
+<img src="https://images.unsplash.com/photo-1589820296156-2454bb8f1b0c" 
+         style="width:60%; border-radius:12px; margin-bottom:20px;">
+</div>
+"", unsafe_allow_html=True)
+
 <style>
  
 body {
