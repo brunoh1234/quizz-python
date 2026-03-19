@@ -441,30 +441,29 @@ st.markdown(f"""
 # Grelha de respostas 2x2
 resposta_dada = st.session_state.resposta_dada
 
-# Mostrar respostas
 col1, col2 = st.columns(2)
 colunas = [col1, col2, col1, col2]
 
 for i, (opcao, letra) in enumerate(zip(opcoes, letras)):
-    classe = "answer-option"
-    if resposta_dada is not None:
-        if i == correta:
-            classe += " correct"
-        elif i == resposta_dada and i != correta:
-            classe += " wrong"
-
     with colunas[i]:
-        st.markdown(f"""
+        if resposta_dada is None:
+            # Antes de responder: só o botão clicável
+            if st.button(f"{letra}: {opcao}", key=f"btn_{idx}_{i}", use_container_width=True):
+                st.session_state.resposta_dada = i
+                st.rerun()
+        else:
+            # Depois de responder: só o div estilizado (correto/errado)
+            classe = "answer-option"
+            if i == correta:
+                classe += " correct"
+            elif i == resposta_dada and i != correta:
+                classe += " wrong"
+            st.markdown(f"""
 <div class="{classe}">
     <span class="answer-letter">{letra}:</span>
     <span class="answer-text">{opcao}</span>
 </div>
-        """, unsafe_allow_html=True)
-
-        if resposta_dada is None:
-            if st.button(f"{letra}: {opcao}", key=f"btn_{idx}_{i}", use_container_width=True):
-                st.session_state.resposta_dada = i
-                st.rerun()
+            """, unsafe_allow_html=True)
 
 # Botão "Próxima pergunta" após responder
 if resposta_dada is not None:
