@@ -307,7 +307,7 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
  
 # ------------------------------
-# RESPOSTAS — ESTILO QUEM QUER SER MILIONÁRIO (A/B ESQ — C/D DIR)
+# RESPOSTAS — ESTILO QUEM QUER SER MILIONÁRIO (HTML CLICÁVEL)
 # ------------------------------
  
 col1, col2 = st.columns(2)
@@ -316,10 +316,10 @@ for i, opcao in enumerate(opcoes, start=1):
  
     letra = chr(64 + i)  # A, B, C, D
  
-    # CSS exclusivo para estilo Milionário
-    st.markdown(f"""
+    # HTML do botão estilo Milionário
+    botao_html = f"""
 <style>
-    #btn_{idx}_{i} {{
+    .mil-btn-{idx}-{i} {{
         background: linear-gradient(135deg, #0a1a3c, #0f2a66);
         border: 3px solid #1e90ff;
         padding: 18px 22px;
@@ -335,23 +335,34 @@ for i, opcao in enumerate(opcoes, start=1):
         transition: 0.2s ease-in-out;
         box-shadow: 0 0 12px rgba(30,144,255,0.4);
     }}
-    #btn_{idx}_{i}:hover {{
+    .mil-btn-{idx}-{i}:hover {{
         background: linear-gradient(135deg, #12306b, #1e4fa3);
         transform: scale(1.05);
         box-shadow: 0 0 18px rgba(30,144,255,0.7);
     }}
 </style>
-    """, unsafe_allow_html=True)
+ 
+    <div class="mil-btn-{idx}-{i}" onclick="fetch('/_stcore/submit?btn={i}')">
+        {letra}) {opcao}
+</div>
+    """
  
     # Escolher coluna
     target_col = col1 if i <= 2 else col2
  
     with target_col:
-        if st.button(f"{letra}) {opcao}", key=f"btn_{idx}_{i}"):
-            st.session_state.respostas.append(i)
-            st.session_state.pergunta += 1
+        st.markdown(botao_html, unsafe_allow_html=True)
  
-            if st.session_state.pergunta >= len(perguntas):
-                st.session_state.terminou = True
+# Capturar clique
+clicked = st.experimental_get_query_params().get("btn", None)
  
-            st.rerun()
+if clicked:
+    escolha = int(clicked[0])
+    st.session_state.respostas.append(escolha)
+    st.session_state.pergunta += 1
+ 
+    if st.session_state.pergunta >= len(perguntas):
+        st.session_state.terminou = True
+ 
+    st.experimental_set_query_params()  # limpar URL
+    st.rerun()
