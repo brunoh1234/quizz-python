@@ -79,6 +79,99 @@ perguntas = [
 
 st.set_page_config(page_title="Quem Quer Ser Produtivo?", layout="wide")
 
+# Música de fundo persistente via YouTube IFrame API
+# O objeto window.ytPlayer persiste entre reruns do Streamlit (SPA)
+st.markdown("""
+<div id="yt-music-wrapper" style="
+    position: fixed;
+    bottom: 16px;
+    right: 20px;
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, #0a1a4a 0%, #001030 100%);
+    border: 2px solid #1e90ff;
+    border-radius: 10px;
+    padding: 6px 14px;
+    box-shadow: 0 0 15px rgba(30, 144, 255, 0.5);
+    cursor: pointer;
+    user-select: none;
+">
+    <span id="music-icon" style="font-size:18px;">🎵</span>
+    <span id="music-label" style="color:#7eb8ff; font-size:13px; font-weight:bold; letter-spacing:1px;">MÚSICA</span>
+    <div id="yt-player-container" style="width:1px;height:1px;overflow:hidden;position:absolute;opacity:0;pointer-events:none;">
+        <div id="yt-player"></div>
+    </div>
+</div>
+
+<script>
+(function() {
+    // Só inicializa uma vez — persiste no window entre reruns do Streamlit
+    if (window._ytMusicInit) return;
+    window._ytMusicInit = true;
+    window._ytMusicMuted = false;
+
+    function loadYTApi() {
+        if (window.YT && window.YT.Player) {
+            createPlayer();
+        } else {
+            var tag = document.createElement('script');
+            tag.src = "https://www.youtube.com/iframe_api";
+            document.head.appendChild(tag);
+            window.onYouTubeIframeAPIReady = createPlayer;
+        }
+    }
+
+    function createPlayer() {
+        window.ytPlayer = new YT.Player('yt-player', {
+            height: '1',
+            width: '1',
+            videoId: 'dWVEE2QlckY',
+            playerVars: {
+                autoplay: 1,
+                loop: 1,
+                playlist: 'dWVEE2QlckY',
+                controls: 0,
+                mute: 0,
+                start: 373
+            },
+            events: {
+                onReady: function(e) {
+                    e.target.setVolume(60);
+                    e.target.playVideo();
+                }
+            }
+        });
+    }
+
+    // Botão de mute/unmute
+    function setupToggle() {
+        var wrapper = document.getElementById('yt-music-wrapper');
+        if (!wrapper) { setTimeout(setupToggle, 500); return; }
+        wrapper.onclick = function() {
+            if (!window.ytPlayer) return;
+            if (window._ytMusicMuted) {
+                window.ytPlayer.unMute();
+                window.ytPlayer.setVolume(60);
+                document.getElementById('music-icon').textContent = '🎵';
+                document.getElementById('music-label').textContent = 'MÚSICA';
+                window._ytMusicMuted = false;
+            } else {
+                window.ytPlayer.mute();
+                document.getElementById('music-icon').textContent = '🔇';
+                document.getElementById('music-label').textContent = 'MUDO';
+                window._ytMusicMuted = true;
+            }
+        };
+    }
+
+    loadYTApi();
+    setupToggle();
+})();
+</script>
+""", unsafe_allow_html=True)
+
 # ------------------------------
 # CSS — DESIGN QUEM QUER SER MILIONÁRIO
 # ------------------------------
