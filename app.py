@@ -635,7 +635,7 @@ if not st.session_state.splash_shown:
     "Esperamos que apreciem o nosso quizz,",
     "onde poderão aprender, relaxar e descontrair.",
     "",
-    "Um muito obrigado em nome do grupo:"
+    "Um muito obrigado a todos em nome do grupo:"
   ].join("\\n");
 
   const el = document.getElementById('typewriter');
