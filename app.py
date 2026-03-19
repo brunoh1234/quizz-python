@@ -70,6 +70,80 @@ perguntas = [
 ]
  
 # ------------------------------
+# CSS GAMING NEON
+# ------------------------------
+ 
+st.markdown("""
+<style>
+ 
+body {
+    background-color: #0a0f1f;
+    color: #e0e0ff;
+}
+ 
+/* Caixa neon */
+.neon-box {
+    padding: 25px;
+    background: rgba(10, 15, 30, 0.85);
+    border-radius: 12px;
+    border: 2px solid #6a00ff;
+    box-shadow: 0 0 20px #6a00ff, 0 0 40px #6a00ff inset;
+    animation: fadeIn 0.6s ease;
+}
+ 
+/* Botões neon */
+button[kind="primary"] {
+    background: linear-gradient(90deg, #ff00cc, #3333ff) !important;
+    color: white !important;
+    border-radius: 10px !important;
+    padding: 12px 20px !important;
+    font-size: 18px !important;
+    border: none !important;
+    box-shadow: 0 0 12px #ff00cc;
+    transition: 0.2s ease-in-out;
+}
+ 
+button[kind="primary"]:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 20px #ff00cc, 0 0 30px #3333ff;
+}
+ 
+/* Barra de energia */
+.energy-bar {
+    height: 20px;
+    width: 100%;
+    background: #1a1a2e;
+    border-radius: 10px;
+    margin-bottom: 15px;
+    box-shadow: 0 0 10px #6a00ff inset;
+}
+ 
+.energy-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #00eaff, #6a00ff);
+    border-radius: 10px;
+    box-shadow: 0 0 15px #00eaff;
+    transition: width 0.5s ease;
+}
+ 
+/* Títulos neon */
+.neon-title {
+    font-size: 32px;
+    font-weight: bold;
+    color: #00eaff;
+    text-shadow: 0 0 10px #00eaff, 0 0 20px #6a00ff;
+}
+ 
+/* Fade */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+ 
+</style>
+""", unsafe_allow_html=True)
+ 
+# ------------------------------
 # Estado inicial
 # ------------------------------
  
@@ -84,7 +158,7 @@ if "terminou" not in st.session_state:
  
 resultados = carregar_resultados()
  
-st.title("Quiz — Trabalho Híbrido")
+st.markdown('<h1 class="neon-title">Quiz — Trabalho Híbrido</h1>', unsafe_allow_html=True)
  
 # ------------------------------
 # LOGIN
@@ -116,17 +190,27 @@ if st.session_state.terminou:
     )
  
     if score == 20:
-        medalha = "🥇 Ouro"
+        medalha = "🥇"
+        msg = "Excelente! Domínio total do tema."
     elif score >= 15:
-        medalha = "🥈 Prata"
+        medalha = "🥈"
+        msg = "Muito bom! Tens forte domínio do conteúdo."
     elif score >= 10:
-        medalha = "🥉 Bronze"
+        medalha = "🥉"
+        msg = "Bom esforço! Ainda há espaço para melhorar."
     else:
-        medalha = "🎗 Participação"
+        medalha = "🎗"
+        msg = "Continua a praticar — estás no caminho certo."
  
-    st.subheader(f"Utilizador: {st.session_state.user_id}")
-    st.write(f"Pontuação final: **{score}/20**")
-    st.write(f"Medalha: {medalha}")
+    st.markdown(f"""
+<div class="neon-box" style="text-align:center;">
+<h2 class="neon-title">Pontuação final: {score}/20</h2>
+<div style="font-size: 90px; margin-top: 10px; text-shadow: 0 0 25px #ff00cc;">
+            {medalha}
+</div>
+<p style="font-size: 22px; color: #e0e0ff;">{msg}</p>
+</div>
+    """, unsafe_allow_html=True)
  
     resultados[st.session_state.user_id] = {
         "score": score,
@@ -135,12 +219,17 @@ if st.session_state.terminou:
     }
     guardar_resultados(resultados)
  
-    st.markdown("---")
-    st.subheader("Ranking dos colegas")
+    st.markdown('<h2 class="neon-title">Ranking dos Colegas</h2>', unsafe_allow_html=True)
  
     ranking = sorted(resultados.items(), key=lambda x: x[1]["score"], reverse=True)
     for pos, (uid, dados) in enumerate(ranking, start=1):
-        st.write(f"{pos}. **{uid}** — {dados['score']} pontos")
+        st.markdown(f"""
+<div style="padding:10px; margin-bottom:8px; border-radius:8px;
+        background:rgba(20,20,40,0.8); border:1px solid #6a00ff;
+        box-shadow:0 0 10px #6a00ff inset;">
+<b style="color:#00eaff;">{pos}. {uid}</b> — {dados['score']} pontos
+</div>
+        """, unsafe_allow_html=True)
  
     if st.button("Jogar novamente"):
         st.session_state.user_id = None
@@ -157,9 +246,18 @@ if st.session_state.terminou:
 idx = st.session_state.pergunta
 pergunta, opcoes, correta = perguntas[idx]
  
-st.progress(idx / len(perguntas))
-st.subheader(f"Pergunta {idx+1} de {len(perguntas)}")
+progresso = int((idx / len(perguntas)) * 100)
+ 
+st.markdown(f"""
+<div class="energy-bar">
+<div class="energy-fill" style="width: {progresso}%"></div>
+</div>
+""", unsafe_allow_html=True)
+ 
+st.markdown('<div class="neon-box">', unsafe_allow_html=True)
+st.markdown(f'<h2 class="neon-title">Pergunta {idx+1} de {len(perguntas)}</h2>', unsafe_allow_html=True)
 st.write(pergunta)
+st.markdown('</div>', unsafe_allow_html=True)
  
 escolha = st.radio(
     "Escolhe uma opção:",
@@ -174,5 +272,5 @@ if st.button("Seguinte"):
  
     if st.session_state.pergunta >= len(perguntas):
         st.session_state.terminou = True
- 
+     
     st.rerun()
