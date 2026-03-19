@@ -475,7 +475,7 @@ if st.session_state.user_id is None:
     }}
 
     function startCountdown() {{
-      var secs = 10;
+      var secs = 3;
       var btn = document.getElementById('btn');
       btn.innerHTML = '⏳ Próxima música em ' + secs + 's...';
       btn.className = 'next';
