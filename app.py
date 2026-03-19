@@ -319,6 +319,12 @@ if "quiz_completed" not in st.session_state:
 if "splash_shown" not in st.session_state:
     st.session_state.splash_shown = False
 
+# Detectar clique no botão do splash via query param
+if st.query_params.get("splash_done") == "1":
+    st.session_state.splash_shown = True
+    st.query_params.clear()
+    st.rerun()
+
 resultados = carregar_resultados()
 
 # ------------------------------
@@ -672,63 +678,13 @@ if not st.session_state.splash_shown:
     enterBtn.innerHTML = '⏳ A entrar...';
     enterBtn.style.opacity = '0.7';
     enterBtn.disabled = true;
-
-    // Encontra e clica no botão oculto do Streamlit
-    const doc = window.parent.document;
-    const btns = doc.querySelectorAll('button[kind="secondary"], button');
-    for (const b of btns) {
-      if (b.innerText && b.innerText.includes('__splash_enter__')) {
-        b.click();
-        return;
-      }
-    }
-    // Fallback: usar postMessage
-    window.parent.postMessage({ type: 'splash_done' }, '*');
+    // Navegar com query param — Streamlit detecta e avança
+    var url = window.parent.location.pathname + '?splash_done=1';
+    window.parent.location.href = url;
   }
-
-  // Ouvir resposta do Streamlit
-  window.addEventListener('message', function(e) {
-    if (e.data && e.data.type === 'splash_done') {
-      enterQuiz();
-    }
-  });
 </script>
 </body>
 </html>""", height=620, scrolling=False)
-
-    # Botão oculto que o iframe clica
-    if st.button("__splash_enter__", key="splash_btn"):
-        st.session_state.splash_shown = True
-        st.rerun()
-
-    # JS para esconder o botão de controlo da view
-    components.html("""
-    <script>
-    function hideControlBtn() {
-        var buttons = window.parent.document.querySelectorAll('button');
-        buttons.forEach(function(btn) {
-            if (btn.innerText && btn.innerText.trim() === '__splash_enter__') {
-                btn.style.visibility = 'hidden';
-                btn.style.height = '0px';
-                btn.style.padding = '0px';
-                btn.style.margin = '0px';
-                btn.style.minHeight = '0px';
-                btn.style.overflow = 'hidden';
-                var parent = btn.closest('[data-testid="stButton"]');
-                if (parent) {
-                    parent.style.height = '0px';
-                    parent.style.overflow = 'hidden';
-                    parent.style.margin = '0px';
-                    parent.style.padding = '0px';
-                }
-            }
-        });
-    }
-    setTimeout(hideControlBtn, 100);
-    setTimeout(hideControlBtn, 500);
-    setTimeout(hideControlBtn, 1000);
-    </script>
-    """, height=0)
 
     st.stop()
 
