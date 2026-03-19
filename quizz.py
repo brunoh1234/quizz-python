@@ -327,191 +327,146 @@ resultados = carregar_resultados()
 
 if not st.session_state.splash_shown:
 
-    # ── Fundo / reset layout ──
-    st.markdown("""
-    <style>
-    header[data-testid="stHeader"], [data-testid="stToolbar"], footer,
-    [data-testid="stStatusWidget"], .stAppDeployButton { display: none !important; }
-    [data-testid="stAppViewContainer"] > .main {
-        background: radial-gradient(circle at 50% 40%, #0d1b3e 0%, #02050a 100%) !important;
-    }
-    .main .block-container { padding: 0 !important; max-width: 100% !important; }
-    /* Botão Streamlit escondido — ativado via JS do iframe */
-    [data-testid="stButton"] {
-        position: fixed !important; top: -9999px !important; left: -9999px !important;
-        width: 1px !important; height: 1px !important; overflow: hidden !important;
-        opacity: 0 !important; pointer-events: none !important;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
-    # ── Botão Streamlit real (invisível) — ativado via JS ──
-    if st.button("ENTRAR NO QUIZ", key="splash_enter"):
-        st.session_state.splash_shown = True
-        st.rerun()
-
-    # ── Gerar estrelas CSS ──
     import random as _rnd
     _rnd.seed(42)
     stars_css = ', '.join(
-        f'{_rnd.randint(1,99)}vw {_rnd.randint(1,99)}vh 1px 1px #fff'
-        for _ in range(120)
+        f'{_rnd.randint(1,99)}vw {_rnd.randint(1,99)}vh 1px 1px rgba(255,255,255,{_rnd.uniform(0.4,1.0):.1f})'
+        for _ in range(150)
     )
 
-    # ── Splash em iframe ──
-    components.html("""<!DOCTYPE html>
-<html><head><meta charset="utf-8">
-<style>
-*{margin:0;padding:0;box-sizing:border-box;}
-html,body{width:100%;height:100%;overflow:hidden;font-family:Georgia,serif;background:transparent;}
-/* ── Estrelas ── */
-.stars{position:fixed;inset:0;pointer-events:none;}
-.stars::before{
-  content:'';position:fixed;inset:0;width:1px;height:1px;background:transparent;border-radius:50%;
-  box-shadow:""" + stars_css + """;
-  animation:twinkle 3s infinite alternate;
-}
-@keyframes twinkle{from{opacity:0.3}to{opacity:1}}
-/* ── Layout ── */
-.wrap{
-  position:fixed;inset:0;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;gap:14px;
-}
-/* ── Título ── */
-.title{
-  font-size:28px;font-weight:900;letter-spacing:3px;color:#fff;
-  text-shadow:0 0 20px #1e90ff,0 0 40px #1e90ff88;text-align:center;
-  animation:fadeD 0.8s ease both;
-}
-@keyframes fadeD{from{opacity:0;transform:translateY(-20px)}to{opacity:1;transform:translateY(0)}}
-/* ── Balão ── */
-.bubble{
-  background:linear-gradient(135deg,#0a1a4a,#001030);
-  border:2px solid #1e90ff;border-radius:20px;
-  padding:22px 30px;max-width:560px;width:90vw;
-  text-align:center;box-shadow:0 0 30px #1e90ff55;
-  animation:fadeS 0.8s ease 0.3s both;
-}
-.bubble::after{
-  content:'';position:absolute;bottom:-16px;left:50%;transform:translateX(-50%);
-  border:8px solid transparent;border-top-color:#1e90ff;
-}
-@keyframes fadeS{from{opacity:0;transform:scale(0.95)}to{opacity:1;transform:scale(1)}}
-.sl{font-size:14px;line-height:1.8;color:#d0e8ff;opacity:0;}
-.sl.a1{animation:lineIn 0.4s ease 0.8s both;}
-.sl.a2{animation:lineIn 0.4s ease 1.4s both;font-weight:bold;color:#fff;font-size:16px;}
-.sl.a3{animation:lineIn 0.4s ease 2.1s both;}
-.sl.a4{animation:lineIn 0.4s ease 2.8s both;}
-.sl.a5{animation:lineIn 0.4s ease 3.4s both;color:#ffd700;font-style:italic;font-size:13px;}
-@keyframes lineIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-/* ── Boneco ── */
-.char{position:relative;width:120px;height:180px;animation:float 3s ease-in-out infinite;flex-shrink:0;}
-@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
-.ch{position:absolute;}
-.head{width:60px;height:60px;top:0;left:30px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#ffe0b2,#ffb74d);box-shadow:0 0 15px #1e90ff88;animation:bob 2s ease-in-out infinite;}
-@keyframes bob{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}}
-.eye{width:8px;height:8px;background:#222;border-radius:50%;}
-.el{top:22px;left:14px;} .er{top:22px;left:34px;}
-.mouth{width:22px;height:10px;border:3px solid #333;border-top:none;border-radius:0 0 20px 20px;top:36px;left:18px;}
-.body{width:44px;height:70px;background:linear-gradient(180deg,#1e90ff,#0d4fa0);border-radius:8px;top:58px;left:38px;}
-.arm{width:14px;height:55px;background:linear-gradient(180deg,#1e90ff,#0d4fa0);border-radius:7px;}
-.al{top:60px;left:18px;transform-origin:top center;animation:wave 0.6s ease-in-out infinite alternate;}
-.ar{top:60px;left:88px;transform:rotate(25deg);}
-@keyframes wave{from{transform:rotate(-60deg)}to{transform:rotate(20deg)}}
-.leg{width:16px;height:65px;background:linear-gradient(180deg,#0d4fa0,#082a5c);border-radius:8px;top:126px;}
-.ll{left:38px;animation:legS 1.2s ease-in-out infinite alternate;}
-.lr{left:66px;animation:legS 1.2s ease-in-out infinite alternate-reverse;}
-@keyframes legS{from{transform:rotate(-8deg)}to{transform:rotate(8deg)}}
-/* ── Botão ENTRAR ── */
-.enter-btn{
-  padding:16px 52px;font-size:18px;font-weight:bold;font-family:Georgia,serif;
-  letter-spacing:2px;color:#fff;cursor:pointer;border:2px solid #1e90ff;
-  border-radius:14px;background:linear-gradient(135deg,#0a2a8a,#0d47a1);
-  box-shadow:0 0 20px rgba(30,144,255,0.6);
-  opacity:0;animation:lineIn 0.5s ease 4.0s both;
-  transition:background 0.2s,box-shadow 0.2s;
-}
-.enter-btn:hover{background:linear-gradient(135deg,#1e90ff,#00bfff);box-shadow:0 0 35px rgba(30,144,255,0.9);}
+    st.markdown(f"""
+    <style>
+    header[data-testid="stHeader"], [data-testid="stToolbar"], footer,
+    [data-testid="stStatusWidget"], .stAppDeployButton {{ display: none !important; }}
+    [data-testid="stAppViewContainer"] > .main {{
+        background: radial-gradient(circle at 50% 40%, #0d1b3e 0%, #02050a 100%) !important;
+    }}
+    .main .block-container {{ padding: 0 !important; max-width: 100% !important; }}
 
-#yt-container{display:none;}
-</style>
-</head>
-<body>
-<div class="stars"></div>
-<div class="wrap">
-  <div class="title">🎯 QUEM QUER SER PRODUTIVO?</div>
-  <div class="bubble" style="position:relative;">
-    <div class="sl a1">Bem-vindos ao Quiz sobre</div>
-    <div class="sl a2">Boas Práticas em Reuniões Online Eficazes!</div>
-    <div class="sl a3">Esperamos que apreciem o nosso quiz, onde poderão aprender, relaxar e descontrair.</div>
-    <div class="sl a4">Um muito obrigado em nome do grupo:</div>
-    <div class="sl a5">✨ Biljana Paiva &nbsp;·&nbsp; Bruno Henriques &nbsp;·&nbsp; Jorge Brito</div>
-  </div>
-  <div class="char">
-    <div class="ch head">
-      <div class="ch eye el"></div>
-      <div class="ch eye er"></div>
-      <div class="ch mouth"></div>
+    /* ── Overlay splash ── */
+    .spl-overlay {{
+        position: fixed; inset: 0; z-index: 8000;
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center; gap: 14px;
+        pointer-events: none;
+    }}
+
+    /* ── Estrelas ── */
+    .spl-stars {{ position: fixed; inset: 0; pointer-events: none; z-index: 7999; }}
+    .spl-stars::before {{
+        content: ''; position: fixed; inset: 0;
+        width: 1px; height: 1px; background: transparent; border-radius: 50%;
+        box-shadow: {stars_css};
+        animation: spl-twinkle 3s infinite alternate;
+    }}
+    @keyframes spl-twinkle {{ from{{opacity:0.3}} to{{opacity:1}} }}
+
+    /* ── Título ── */
+    .spl-title {{
+        font-size: 28px; font-weight: 900; letter-spacing: 3px; color: #fff;
+        text-shadow: 0 0 20px #1e90ff, 0 0 40px #1e90ff88; text-align: center;
+        animation: spl-fadeD 0.8s ease both;
+    }}
+    @keyframes spl-fadeD {{ from{{opacity:0;transform:translateY(-20px)}} to{{opacity:1;transform:translateY(0)}} }}
+
+    /* ── Balão ── */
+    .spl-bubble {{
+        background: linear-gradient(135deg, #0a1a4a, #001030);
+        border: 2px solid #1e90ff; border-radius: 20px;
+        padding: 22px 30px; max-width: 560px; width: 90vw;
+        text-align: center; box-shadow: 0 0 30px #1e90ff55;
+        animation: spl-fadeS 0.8s ease 0.3s both; position: relative;
+    }}
+    @keyframes spl-fadeS {{ from{{opacity:0;transform:scale(0.95)}} to{{opacity:1;transform:scale(1)}} }}
+    .spl-sl {{ font-size: 14px; line-height: 1.8; color: #d0e8ff; opacity: 0; }}
+    .spl-sl.a1 {{ animation: spl-lineIn 0.4s ease 0.8s both; }}
+    .spl-sl.a2 {{ animation: spl-lineIn 0.4s ease 1.4s both; font-weight: bold; color: #fff; font-size: 16px; }}
+    .spl-sl.a3 {{ animation: spl-lineIn 0.4s ease 2.1s both; }}
+    .spl-sl.a4 {{ animation: spl-lineIn 0.4s ease 2.8s both; }}
+    .spl-sl.a5 {{ animation: spl-lineIn 0.4s ease 3.4s both; color: #ffd700; font-style: italic; font-size: 13px; }}
+    @keyframes spl-lineIn {{ from{{opacity:0;transform:translateY(8px)}} to{{opacity:1;transform:translateY(0)}} }}
+
+    /* ── Boneco ── */
+    .spl-char {{ position: relative; width: 120px; height: 180px; animation: spl-float 3s ease-in-out infinite; flex-shrink: 0; }}
+    @keyframes spl-float {{ 0%,100%{{transform:translateY(0)}} 50%{{transform:translateY(-12px)}} }}
+    .spl-ch {{ position: absolute; }}
+    .spl-head {{ width:60px;height:60px;top:0;left:30px;border-radius:50%;
+        background:radial-gradient(circle at 40% 35%,#ffe0b2,#ffb74d);
+        box-shadow:0 0 15px #1e90ff88;animation:spl-bob 2s ease-in-out infinite; }}
+    @keyframes spl-bob {{ 0%,100%{{transform:rotate(-3deg)}} 50%{{transform:rotate(3deg)}} }}
+    .spl-eye {{ width:8px;height:8px;background:#222;border-radius:50%; }}
+    .spl-el {{ top:22px;left:14px; }} .spl-er {{ top:22px;left:34px; }}
+    .spl-mouth {{ width:22px;height:10px;border:3px solid #333;border-top:none;border-radius:0 0 20px 20px;top:36px;left:18px; }}
+    .spl-body {{ width:44px;height:70px;background:linear-gradient(180deg,#1e90ff,#0d4fa0);border-radius:8px;top:58px;left:38px; }}
+    .spl-arm {{ width:14px;height:55px;background:linear-gradient(180deg,#1e90ff,#0d4fa0);border-radius:7px; }}
+    .spl-al {{ top:60px;left:18px;transform-origin:top center;animation:spl-wave 0.6s ease-in-out infinite alternate; }}
+    .spl-ar {{ top:60px;left:88px;transform:rotate(25deg); }}
+    @keyframes spl-wave {{ from{{transform:rotate(-60deg)}} to{{transform:rotate(20deg)}} }}
+    .spl-leg {{ width:16px;height:65px;background:linear-gradient(180deg,#0d4fa0,#082a5c);border-radius:8px;top:126px; }}
+    .spl-ll {{ left:38px;animation:spl-legS 1.2s ease-in-out infinite alternate; }}
+    .spl-lr {{ left:66px;animation:spl-legS 1.2s ease-in-out infinite alternate-reverse; }}
+    @keyframes spl-legS {{ from{{transform:rotate(-8deg)}} to{{transform:rotate(8deg)}} }}
+
+    /* ── Botão ENTRAR (Streamlit nativo) ── */
+    [data-testid="stButton"] {{
+        position: fixed !important;
+        bottom: 80px !important;
+        left: 0 !important;
+        right: 0 !important;
+        z-index: 9999 !important;
+        display: flex !important;
+        justify-content: center !important;
+        animation: spl-lineIn 0.5s ease 4.0s both;
+    }}
+    [data-testid="stButton"] button {{
+        padding: 16px 52px !important;
+        font-size: 18px !important;
+        font-weight: bold !important;
+        letter-spacing: 2px !important;
+        color: #fff !important;
+        border: 2px solid #1e90ff !important;
+        border-radius: 14px !important;
+        background: linear-gradient(135deg, #0a2a8a, #0d47a1) !important;
+        box-shadow: 0 0 20px rgba(30,144,255,0.6), 0 0 40px rgba(30,144,255,0.3) !important;
+        cursor: pointer !important;
+        transition: all 0.2s !important;
+        font-family: Georgia, serif !important;
+    }}
+    [data-testid="stButton"] button:hover {{
+        background: linear-gradient(135deg, #1e90ff, #00bfff) !important;
+        box-shadow: 0 0 35px rgba(30,144,255,0.9) !important;
+        transform: scale(1.04) !important;
+    }}
+    </style>
+
+    <div class="spl-stars"></div>
+    <div class="spl-overlay">
+        <div class="spl-title">🎯 QUEM QUER SER PRODUTIVO?</div>
+        <div class="spl-bubble">
+            <div class="spl-sl a1">Bem-vindos ao Quiz sobre</div>
+            <div class="spl-sl a2">Boas Práticas em Reuniões Online Eficazes!</div>
+            <div class="spl-sl a3">Esperamos que apreciem o nosso quiz, onde poderão aprender, relaxar e descontrair.</div>
+            <div class="spl-sl a4">Um muito obrigado em nome do grupo:</div>
+            <div class="spl-sl a5">✨ Biljana Paiva &nbsp;·&nbsp; Bruno Henriques &nbsp;·&nbsp; Jorge Brito</div>
+        </div>
+        <div class="spl-char">
+            <div class="spl-ch spl-head">
+                <div class="spl-ch spl-eye spl-el"></div>
+                <div class="spl-ch spl-eye spl-er"></div>
+                <div class="spl-ch spl-mouth"></div>
+            </div>
+            <div class="spl-ch spl-body"></div>
+            <div class="spl-ch spl-arm spl-al"></div>
+            <div class="spl-ch spl-arm spl-ar"></div>
+            <div class="spl-ch spl-leg spl-ll"></div>
+            <div class="spl-ch spl-leg spl-lr"></div>
+        </div>
     </div>
-    <div class="ch body"></div>
-    <div class="ch arm al"></div>
-    <div class="ch arm ar"></div>
-    <div class="ch leg ll"></div>
-    <div class="ch leg lr"></div>
-  </div>
-  <button class="enter-btn" onclick="enterQuiz()">🚀 ENTRAR NO QUIZ</button>
-  <div id="yt-container"></div>
-</div>
+    """, unsafe_allow_html=True)
 
-<script>
-var player = null;
-var musicOn = false;
-var isReturning = """ + ("true" if "quiz_completed" in dir() else "false") + """;
-
-function toggleMusic() {
-  if (!musicOn) {
-    startMusic();
-  }
-}
-
-function startMusic() {
-  var ytc = document.getElementById('yt-container');
-  ytc.style.display = 'block';
-  var videoId = 'ren6rd9FfV8'; // quiz music (default)
-  // Use intro if first visit — we'll always use quiz music since splash is first visit
-  videoId = '2oPVdx3QaAM';
-  
-  ytc.innerHTML = '<iframe id="ytPlayer" width="1" height="1" style="position:absolute;top:-100px" '
-    + 'src="https://www.youtube.com/embed/' + videoId + '?autoplay=1&enablejsapi=1&loop=0" '
-    + 'allow="autoplay" frameborder="0"></iframe>';
-  
-  var btn = document.getElementById('musicBtn');
-  btn.textContent = '🔊 Música a tocar!';
-  btn.classList.add('on');
-  musicOn = true;
-}
-
-function enterQuiz() {
-  // 1. Start music if not started
-  if (!musicOn) startMusic();
-  
-  // 2. Click the hidden Streamlit button in parent
-  try {
-    var btns = window.parent.document.querySelectorAll('button');
-    for (var i = 0; i < btns.length; i++) {
-      if (btns[i].textContent.trim().indexOf('ENTRAR') !== -1) {
-        btns[i].click();
-        return;
-      }
-    }
-    // Fallback: click any button
-    if (btns.length > 0) btns[0].click();
-  } catch(e) {
-    console.error('enterQuiz error:', e);
-  }
-}
-</script>
-</body></html>""", height=700, scrolling=False)
+    if st.button("🚀 ENTRAR NO QUIZ", key="splash_enter"):
+        st.session_state.splash_shown = True
+        st.rerun()
 
     st.stop()
 
