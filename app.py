@@ -299,4 +299,4 @@ if st.button("Seguinte"):
     if st.session_state.pergunta >= len(perguntas):
         st.session_state.terminou = True
  
-    st.experimental_rerun()
+    st.rerun()
