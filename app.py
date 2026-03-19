@@ -314,6 +314,8 @@ if "terminou" not in st.session_state:
     st.session_state.terminou = False
 if "resposta_dada" not in st.session_state:
     st.session_state.resposta_dada = None
+if "quiz_completed" not in st.session_state:
+    st.session_state.quiz_completed = False
 
 resultados = carregar_resultados()
 
@@ -421,13 +423,37 @@ if st.session_state.user_id is None:
         """, unsafe_allow_html=True)
 
     # ------------------------------
-    # MÚSICA DA PÁGINA DE LOGIN (toca uma vez)
+    # MÚSICA DA PÁGINA DE LOGIN
+    # - 1ª vez: toca intro (2oPVdx3QaAM) uma só vez
+    # - Após jogar: continua com o loop do quiz (dWVEE2QlckY)
     # ------------------------------
-    _LOGIN_MUSIC = """<!DOCTYPE html>
+    if st.session_state.quiz_completed:
+        # Já jogou — continua com a música do quiz em loop
+        _video_id = "dWVEE2QlckY"
+        _loop = 1
+        _start = 373
+        _playlist = ", playlist: 'dWVEE2QlckY'"
+        _volume = 65
+        _on_state_change = ""
+    else:
+        # Primeira vez — toca intro uma vez
+        _video_id = "2oPVdx3QaAM"
+        _loop = 0
+        _start = 0
+        _playlist = ""
+        _volume = 70
+        _on_state_change = """
+          onStateChange: function(e) {
+            if (e.data === YT.PlayerState.ENDED) {
+              document.getElementById('btn').innerHTML = '🎵 FIM';
+            }
+          },"""
+
+    _LOGIN_MUSIC = f"""<!DOCTYPE html>
 <html><head><style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: transparent; overflow: hidden; display: flex; justify-content: flex-end; align-items: center; height: 54px; padding-right: 8px; }
-  #btn {
+  * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+  body {{ background: transparent; overflow: hidden; display: flex; justify-content: flex-end; align-items: center; height: 54px; padding-right: 8px; }}
+  #btn {{
     display: inline-flex; align-items: center; gap: 8px;
     background: linear-gradient(135deg, #0a1a4a, #001030);
     border: 2px solid #1e90ff; border-radius: 10px;
@@ -436,9 +462,9 @@ if st.session_state.user_id is None:
     color: #7eb8ff; font-size: 14px; font-weight: bold;
     letter-spacing: 1px; font-family: sans-serif;
     transition: box-shadow 0.2s; white-space: nowrap;
-  }
-  #btn:hover { box-shadow: 0 0 24px rgba(30,144,255,0.9); }
-  #player { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+  }}
+  #btn:hover {{ box-shadow: 0 0 24px rgba(30,144,255,0.9); }}
+  #player {{ position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }}
 </style></head>
 <body>
   <button id="btn" onclick="toggleMute()">🔊 MÚSICA</button>
@@ -446,48 +472,43 @@ if st.session_state.user_id is None:
   <script>
     var ytPlayer = null;
     var isMuted = false;
-    function loadAPI() {
-      if (window.YT && window.YT.Player) { createPlayer(); }
-      else {
+    function loadAPI() {{
+      if (window.YT && window.YT.Player) {{ createPlayer(); }}
+      else {{
         var tag = document.createElement('script');
         tag.src = 'https://www.youtube.com/iframe_api';
         document.head.appendChild(tag);
         window.onYouTubeIframeAPIReady = createPlayer;
-      }
-    }
-    function createPlayer() {
-      ytPlayer = new YT.Player('player', {
+      }}
+    }}
+    function createPlayer() {{
+      ytPlayer = new YT.Player('player', {{
         height: '1', width: '1',
-        videoId: '2oPVdx3QaAM',
-        playerVars: { autoplay: 1, loop: 0, controls: 0, mute: 1 },
-        events: {
-          onReady: function(e) {
+        videoId: '{_video_id}',
+        playerVars: {{ autoplay: 1, loop: {_loop}, start: {_start}{_playlist}, controls: 0, mute: 1 }},
+        events: {{
+          onReady: function(e) {{
             e.target.playVideo();
-            setTimeout(function() {
-              try { e.target.unMute(); e.target.setVolume(70); } catch(ex) {}
-            }, 300);
-          },
-          onStateChange: function(e) {
-            if (e.data === YT.PlayerState.ENDED) {
-              document.getElementById('btn').innerHTML = '🎵 FIM';
-            }
-          },
-          onError: function() { document.getElementById('btn').innerHTML = '❌ Erro'; }
-        }
-      });
-    }
-    function toggleMute() {
+            setTimeout(function() {{
+              try {{ e.target.unMute(); e.target.setVolume({_volume}); }} catch(ex) {{}}
+            }}, 300);
+          }},{_on_state_change}
+          onError: function() {{ document.getElementById('btn').innerHTML = '❌ Erro'; }}
+        }}
+      }});
+    }}
+    function toggleMute() {{
       if (!ytPlayer) return;
-      if (isMuted) {
-        ytPlayer.unMute(); ytPlayer.setVolume(70);
+      if (isMuted) {{
+        ytPlayer.unMute(); ytPlayer.setVolume({_volume});
         document.getElementById('btn').innerHTML = '🔊 MÚSICA';
         isMuted = false;
-      } else {
+      }} else {{
         ytPlayer.mute();
         document.getElementById('btn').innerHTML = '🔇 MUDO';
         isMuted = true;
-      }
-    }
+      }}
+    }}
     loadAPI();
   </script>
 </body></html>"""
@@ -609,6 +630,7 @@ if st.session_state.terminou:
             "hora": datetime.now().strftime("%H:%M:%S")
         }
         guardar_resultados(resultados)
+    st.session_state.quiz_completed = True
 
     # Ranking na página final
     st.markdown('<h3 style="color:#7eb8ff; text-align:center; margin-top:30px; letter-spacing:2px;">🏅 RANKING</h3>', unsafe_allow_html=True)
