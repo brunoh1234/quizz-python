@@ -23,7 +23,7 @@ def ja_jogou(user_id, resultados):
     return user_id in resultados
  
 # ------------------------------
-# Perguntas do quiz
+# Perguntas
 # ------------------------------
  
 perguntas = [
@@ -75,8 +75,8 @@ perguntas = [
  
 if "user_id" not in st.session_state:
     st.session_state.user_id = None
-if "pergunta_idx" not in st.session_state:
-    st.session_state.pergunta_idx = 0
+if "pergunta" not in st.session_state:
+    st.session_state.pergunta = 0
 if "respostas" not in st.session_state:
     st.session_state.respostas = []
 if "terminou" not in st.session_state:
@@ -87,7 +87,7 @@ resultados = carregar_resultados()
 st.title("Quiz — Trabalho Híbrido")
  
 # ------------------------------
-# ECRÃ DE LOGIN
+# LOGIN
 # ------------------------------
  
 if st.session_state.user_id is None:
@@ -95,16 +95,13 @@ if st.session_state.user_id is None:
  
     if st.button("Começar"):
         if not user_id.strip():
-            st.warning("Por favor, insere um ID.")
+            st.warning("Por favor insere um ID.")
         elif ja_jogou(user_id.strip(), resultados):
             dados = resultados[user_id.strip()]
             st.error("Este utilizador já jogou.")
-            st.info(f"Pontuação: {dados['score']} | Data: {dados['data']} {dados['hora']}")
+            st.info(f"Pontuação: {dados['score']} | {dados['data']} {dados['hora']}")
         else:
             st.session_state.user_id = user_id.strip()
-            st.session_state.pergunta_idx = 0
-            st.session_state.respostas = []
-            st.session_state.terminou = False
  
     st.stop()
  
@@ -120,23 +117,17 @@ if st.session_state.terminou:
  
     if score == 20:
         medalha = "🥇 Ouro"
-        msg = "Excelente! Domínio total do tema."
     elif score >= 15:
         medalha = "🥈 Prata"
-        msg = "Muito bom! Tens forte domínio do conteúdo."
     elif score >= 10:
         medalha = "🥉 Bronze"
-        msg = "Bom esforço! Ainda há espaço para melhorar."
     else:
         medalha = "🎗 Participação"
-        msg = "Continua a praticar — estás no caminho certo."
  
     st.subheader(f"Utilizador: {st.session_state.user_id}")
     st.write(f"Pontuação final: **{score}/20**")
     st.write(f"Medalha: {medalha}")
-    st.info(msg)
  
-    # guardar resultados
     resultados[st.session_state.user_id] = {
         "score": score,
         "data": datetime.now().strftime("%d/%m/%Y"),
@@ -149,11 +140,11 @@ if st.session_state.terminou:
  
     ranking = sorted(resultados.items(), key=lambda x: x[1]["score"], reverse=True)
     for pos, (uid, dados) in enumerate(ranking, start=1):
-        st.write(f"{pos}. **{uid}** — {dados['score']} pontos ({dados['data']} {dados['hora']})")
+        st.write(f"{pos}. **{uid}** — {dados['score']} pontos")
  
     if st.button("Jogar novamente"):
         st.session_state.user_id = None
-        st.session_state.pergunta_idx = 0
+        st.session_state.pergunta = 0
         st.session_state.respostas = []
         st.session_state.terminou = False
  
@@ -163,22 +154,25 @@ if st.session_state.terminou:
 # PERGUNTAS
 # ------------------------------
  
-idx = st.session_state.pergunta_idx
+idx = st.session_state.pergunta
 pergunta, opcoes, correta = perguntas[idx]
  
-st.progress((idx) / len(perguntas))
+st.progress(idx / len(perguntas))
 st.subheader(f"Pergunta {idx+1} de {len(perguntas)}")
 st.write(pergunta)
  
-escolha = st.radio("Escolhe uma opção:", range(1, len(opcoes)+1),
-                   format_func=lambda x: f"{x}) {opcoes[x-1]}",
-                   key=f"pergunta_{idx}")
+escolha = st.radio(
+    "Escolhe uma opção:",
+    list(range(1, len(opcoes)+1)),
+    format_func=lambda x: f"{x}) {opcoes[x-1]}",
+    key=f"q_{idx}"
+)
  
 if st.button("Seguinte"):
     st.session_state.respostas.append(escolha)
-    st.session_state.pergunta_idx += 1
+    st.session_state.pergunta += 1
  
-    if st.session_state.pergunta_idx >= len(perguntas):
+    if st.session_state.pergunta >= len(perguntas):
         st.session_state.terminou = True
  
     st.experimental_rerun()
