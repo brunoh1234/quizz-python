@@ -321,487 +321,203 @@ if "splash_shown" not in st.session_state:
 
 
 resultados = carregar_resultados()
-
-# Detectar navegação do splash via query param
-if st.query_params.get("splash_done") == "1":
-    st.session_state.splash_shown = True
-    st.query_params.clear()
-    st.rerun()
-
 # ------------------------------
 # ECRÃ DE APRESENTAÇÃO (SPLASH)
 # ------------------------------
 
 if not st.session_state.splash_shown:
+
+    st.markdown(f"""
+    <style>
+    header[data-testid="stHeader"], [data-testid="stToolbar"], footer,
+    [data-testid="stStatusWidget"], .stAppDeployButton {{ display: none !important; }}
+    [data-testid="stAppViewContainer"] > .main {{
+        background: radial-gradient(circle at 50% 40%, #0d1b3e 0%, #02050a 100%) !important;
+    }}
+    .main .block-container {{ padding: 0 !important; max-width: 100% !important; }}
+
+    .spl {{
+        position: fixed; inset: 0; z-index: 9000;
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+        font-family: Georgia, serif; color: white; overflow: hidden;
+        pointer-events: none;
+    }}
+    .spl::before {{
+        content: ''; position: fixed; inset: 0;
+        width: 1px; height: 1px; background: transparent;
+        box-shadow: 82vw 15vh 1px #7eb8ff, 4vw 95vh 1px #fff, 36vw 32vh 1px #fff, 29vw 18vh 1px #fff, 95vw 14vh 1px #fff, 87vw 95vh 1px #7eb8ff, 70vw 12vh 1px #fff, 76vw 55vh 1px #fff, 5vw 4vh 1px #fff, 12vw 28vh 1px #fff, 30vw 65vh 1px #7eb8ff, 78vw 4vh 1px #fff, 72vw 26vh 1px #fff, 92vw 84vh 1px #fff, 90vw 70vh 1px #fff, 54vw 29vh 1px #7eb8ff, 58vw 76vh 1px #fff, 36vw 1vh 1px #fff, 98vw 21vh 1px #fff, 90vw 55vh 1px #fff, 44vw 36vh 1px #7eb8ff, 20vw 28vh 1px #fff, 98vw 44vh 1px #fff, 14vw 12vh 1px #fff, 49vw 13vh 1px #fff, 46vw 45vh 1px #7eb8ff, 78vw 34vh 1px #fff, 6vw 94vh 1px #fff, 59vw 69vh 1px #fff, 16vw 49vh 1px #fff, 11vw 71vh 1px #7eb8ff, 38vw 81vh 1px #fff, 80vw 47vh 1px #fff, 74vw 25vh 1px #fff, 91vw 9vh 1px #fff, 6vw 85vh 1px #7eb8ff, 30vw 99vh 1px #fff, 38vw 11vh 1px #fff, 30vw 13vh 1px #fff, 49vw 36vh 1px #fff, 59vw 82vh 1px #7eb8ff, 47vw 21vh 1px #fff, 48vw 46vh 1px #fff, 27vw 86vh 1px #fff, 35vw 90vh 1px #fff, 88vw 83vh 1px #7eb8ff, 10vw 78vh 1px #fff, 82vw 22vh 1px #fff, 69vw 94vh 1px #fff, 32vw 21vh 1px #fff, 60vw 49vh 1px #7eb8ff, 35vw 82vh 1px #fff, 89vw 72vh 1px #fff, 29vw 88vh 1px #fff, 42vw 99vh 1px #fff, 8vw 30vh 1px #7eb8ff, 5vw 41vh 1px #fff, 52vw 35vh 1px #fff, 9vw 28vh 1px #fff, 73vw 92vh 1px #fff, 41vw 28vh 1px #7eb8ff, 84vw 64vh 1px #fff, 51vw 83vh 1px #fff, 59vw 19vh 1px #fff, 34vw 18vh 1px #fff, 32vw 96vh 1px #7eb8ff, 72vw 69vh 1px #fff, 34vw 96vh 1px #fff, 75vw 55vh 1px #fff, 75vw 52vh 1px #fff, 47vw 29vh 1px #7eb8ff, 18vw 66vh 1px #fff, 64vw 12vh 1px #fff, 97vw 7vh 1px #fff, 15vw 20vh 1px #fff, 81vw 21vh 1px #7eb8ff, 88vw 55vh 1px #fff, 77vw 9vh 1px #fff, 50vw 49vh 1px #fff, 77vw 60vh 1px #fff, 68vw 33vh 1px #7eb8ff, 71vw 2vh 1px #fff, 88vw 93vh 1px #fff, 15vw 88vh 1px #fff, 69vw 97vh 1px #fff, 35vw 99vh 1px #7eb8ff, 83vw 44vh 1px #fff, 15vw 38vh 1px #fff, 56vw 21vh 1px #fff, 59vw 1vh 1px #fff, 93vw 93vh 1px #7eb8ff, 34vw 65vh 1px #fff, 98vw 23vh 1px #fff, 65vw 14vh 1px #fff, 81vw 39vh 1px #fff, 82vw 65vh 1px #7eb8ff, 78vw 26vh 1px #fff, 20vw 48vh 1px #fff, 98vw 21vh 1px #fff, 70vw 68vh 1px #fff; border-radius: 50%;
+        animation: twinkleS 3s infinite alternate;
+    }}
+    @keyframes twinkleS {{ from {{ opacity: 0.3; }} to {{ opacity: 1; }} }}
+
+    .spl-title {{
+        font-size: 26px; font-weight: 900; letter-spacing: 3px;
+        text-shadow: 0 0 20px #1e90ff, 0 0 40px #1e90ff88;
+        text-align: center; animation: fdDown 0.8s ease both;
+    }}
+    @keyframes fdDown {{ from {{ opacity:0; transform:translateY(-20px); }} to {{ opacity:1; transform:translateY(0); }} }}
+
+    .spl-bubble {{
+        background: linear-gradient(135deg, #0a1a4a, #001030);
+        border: 2px solid #1e90ff; border-radius: 20px;
+        padding: 22px 30px; max-width: 560px; width: 90vw;
+        text-align: center; box-shadow: 0 0 30px #1e90ff55;
+        position: relative; animation: fdScale 0.8s ease 0.3s both;
+    }}
+    .spl-bubble::after {{
+        content: ''; position: absolute;
+        bottom: -16px; left: 50%; transform: translateX(-50%);
+        border: 8px solid transparent; border-top-color: #1e90ff;
+    }}
+    @keyframes fdScale {{ from {{ opacity:0; transform:scale(0.95); }} to {{ opacity:1; transform:scale(1); }} }}
+
+    .sl {{ font-size: 14px; line-height: 1.8; color: #d0e8ff; opacity: 0; }}
+    .sl.a1 {{ animation: lineIn 0.4s ease 0.8s both; }}
+    .sl.a2 {{ animation: lineIn 0.4s ease 1.4s both; font-weight: bold; color: #fff; font-size: 16px; }}
+    .sl.a3 {{ animation: lineIn 0.4s ease 2.1s both; }}
+    .sl.a4 {{ animation: lineIn 0.4s ease 2.8s both; }}
+    .sl.a5 {{ animation: lineIn 0.4s ease 3.4s both; color: #ffd700; font-style: italic; font-size: 13px; }}
+    @keyframes lineIn {{ from {{ opacity:0; transform:translateY(8px); }} to {{ opacity:1; transform:translateY(0); }} }}
+
+    .spl-char {{ position: relative; width: 120px; height: 200px; animation: charFloat 3s ease-in-out infinite; flex-shrink: 0; }}
+    @keyframes charFloat {{ 0%,100% {{ transform:translateY(0); }} 50% {{ transform:translateY(-12px); }} }}
+    .ch-head {{
+        position: absolute; width:60px; height:60px; top:0; left:30px; border-radius:50%;
+        background: radial-gradient(circle at 40% 35%, #ffe0b2, #ffb74d);
+        box-shadow: 0 0 15px #1e90ff88; animation: headBob 2s ease-in-out infinite;
+    }}
+    @keyframes headBob {{ 0%,100% {{ transform:rotate(-3deg); }} 50% {{ transform:rotate(3deg); }} }}
+    .ch-eye {{ position:absolute; width:8px; height:8px; background:#222; border-radius:50%; }}
+    .ch-el {{ top:22px; left:14px; }} .ch-er {{ top:22px; left:34px; }}
+    .ch-mouth {{ position:absolute; width:22px; height:10px; border:3px solid #333; border-top:none; border-radius:0 0 20px 20px; top:36px; left:18px; }}
+    .ch-body {{ position:absolute; width:44px; height:70px; background:linear-gradient(180deg,#1e90ff,#0d4fa0); border-radius:8px; top:58px; left:38px; }}
+    .ch-arm {{ position:absolute; width:14px; height:55px; background:linear-gradient(180deg,#1e90ff,#0d4fa0); border-radius:7px; }}
+    .ch-al {{ top:60px; left:18px; transform-origin:top center; animation: waveArm 0.6s ease-in-out infinite alternate; }}
+    .ch-ar {{ top:60px; left:88px; transform:rotate(25deg); }}
+    @keyframes waveArm {{ from {{ transform:rotate(-60deg); }} to {{ transform:rotate(20deg); }} }}
+    .ch-leg {{ position:absolute; width:16px; height:65px; background:linear-gradient(180deg,#0d4fa0,#082a5c); border-radius:8px; top:126px; }}
+    .ch-ll {{ left:38px; animation: legS 1.2s ease-in-out infinite alternate; }}
+    .ch-lr {{ left:66px; animation: legS 1.2s ease-in-out infinite alternate-reverse; }}
+    @keyframes legS {{ from {{ transform:rotate(-8deg); }} to {{ transform:rotate(8deg); }} }}
+
+    div[data-testid="stButton"] > button {{
+        position: fixed !important; bottom: 210px !important;
+        left: 50% !important; transform: translateX(-50%) !important;
+        z-index: 10001 !important; padding: 14px 50px !important;
+        font-size: 17px !important; font-weight: bold !important; letter-spacing: 2px !important;
+        background: linear-gradient(135deg, #1e3a8a, #1e90ff) !important;
+        color: white !important; border: 2px solid #1e90ff !important;
+        border-radius: 12px !important; box-shadow: 0 0 20px #1e90ff88 !important;
+        opacity: 0 !important; animation: lineIn 0.5s ease 4.0s both !important;
+        white-space: nowrap !important; cursor: pointer !important;
+    }}
+    div[data-testid="stButton"] > button:hover {{
+        background: linear-gradient(135deg, #1e90ff, #00bfff) !important;
+        box-shadow: 0 0 35px #1e90ffcc !important;
+    }}
+
+    [data-testid="stCustomComponentV1"] {{
+        position: fixed !important; bottom: 145px !important;
+        left: 50% !important; transform: translateX(-50%) !important;
+        z-index: 10001 !important; width: 320px !important; height: 52px !important;
+        opacity: 0 !important; animation: lineIn 0.5s ease 4.3s both !important;
+    }}
+    [data-testid="stCustomComponentV1"] iframe {{
+        width: 100% !important; height: 100% !important;
+        border: none !important; background: transparent !important;
+    }}
+    </style>
+
+    <div class="spl">
+      <div class="spl-title">🎯 QUEM QUER SER PRODUTIVO?</div>
+      <div class="spl-bubble">
+        <div class="sl a1">Bem-vindos ao Quiz sobre</div>
+        <div class="sl a2">Boas Práticas em Reuniões Online Eficazes!</div>
+        <div class="sl a3">Esperamos que apreciem o nosso quiz, onde poderão aprender, relaxar e descontrair.</div>
+        <div class="sl a4">Um muito obrigado em nome do grupo:</div>
+        <div class="sl a5">✨ Biljana Paiva &nbsp;·&nbsp; Bruno Henriques &nbsp;·&nbsp; Jorge Brito</div>
+      </div>
+      <div class="spl-char">
+        <div class="ch-head">
+          <div class="ch-eye ch-el"></div>
+          <div class="ch-eye ch-er"></div>
+          <div class="ch-mouth"></div>
+        </div>
+        <div class="ch-body"></div>
+        <div class="ch-arm ch-al"></div>
+        <div class="ch-arm ch-ar"></div>
+        <div class="ch-leg ch-ll"></div>
+        <div class="ch-leg ch-lr"></div>
+      </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    if st.button("🚀 ENTRAR NO QUIZ", key="splash_enter"):
+        st.session_state.splash_shown = True
+        st.rerun()
+
     components.html("""<!DOCTYPE html>
-<html lang="pt">
-<head>
-<meta charset="UTF-8">
-<style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  body {
-    background: radial-gradient(circle at 50% 40%, #0d1b3e 0%, #02050a 100%);
-    min-height: 100vh;
-    font-family: 'Georgia', serif;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    color: white;
-  }
-
-  /* ── Estrelas de fundo ── */
-  .stars { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
-  .star {
-    position: absolute;
-    width: 2px; height: 2px;
-    background: white;
-    border-radius: 50%;
-    animation: twinkle 3s infinite alternate;
-  }
-
-  @keyframes twinkle {
-    from { opacity: 0.2; transform: scale(1); }
-    to   { opacity: 1;   transform: scale(1.6); }
-  }
-
-  /* ── Conteúdo central ── */
-  .stage {
-    position: relative;
-    z-index: 10;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-  }
-
-  /* ── Título ── */
-  .title {
-    font-size: 28px;
-    font-weight: 900;
-    letter-spacing: 3px;
-    color: #fff;
-    text-shadow: 0 0 20px #1e90ff, 0 0 40px #1e90ff88;
-    animation: fadeDown 0.8s ease forwards;
-    text-align: center;
-  }
-  @keyframes fadeDown {
-    from { opacity:0; transform:translateY(-20px); }
-    to   { opacity:1; transform:translateY(0); }
-  }
-
-  /* ── Boneco animado ── */
-  .character {
-    position: relative;
-    width: 120px;
-    height: 220px;
-    animation: float 3s ease-in-out infinite;
-  }
-  @keyframes float {
-    0%,100% { transform: translateY(0); }
-    50%      { transform: translateY(-12px); }
-  }
-
-  /* Cabeça */
-  .head {
-    width: 60px; height: 60px;
-    background: radial-gradient(circle at 40% 35%, #ffe0b2, #ffb74d);
-    border-radius: 50%;
-    position: absolute;
-    top: 0; left: 30px;
-    box-shadow: 0 0 15px #1e90ff88;
-    animation: headBob 2s ease-in-out infinite;
-  }
-  @keyframes headBob {
-    0%,100% { transform: rotate(-3deg); }
-    50%      { transform: rotate(3deg); }
-  }
-  /* Olhos */
-  .eye { position: absolute; width: 8px; height: 8px; background: #222; border-radius: 50%; }
-  .eye.left  { top: 22px; left: 14px; }
-  .eye.right { top: 22px; left: 34px; }
-  /* Boca sorridente */
-  .mouth {
-    position: absolute;
-    width: 22px; height: 10px;
-    border: 3px solid #333;
-    border-top: none;
-    border-radius: 0 0 20px 20px;
-    top: 36px; left: 18px;
-  }
-
-  /* Corpo */
-  .body {
-    width: 44px; height: 70px;
-    background: linear-gradient(180deg, #1e90ff, #0d4fa0);
-    border-radius: 8px;
-    position: absolute;
-    top: 58px; left: 38px;
-    box-shadow: 0 0 10px #1e90ff66;
-  }
-
-  /* Braço esquerdo (acenando) */
-  .arm-left {
-    width: 14px; height: 55px;
-    background: linear-gradient(180deg, #1e90ff, #0d4fa0);
-    border-radius: 7px;
-    position: absolute;
-    top: 60px; left: 18px;
-    transform-origin: top center;
-    animation: wave 0.6s ease-in-out infinite alternate;
-  }
-  @keyframes wave {
-    from { transform: rotate(-60deg); }
-    to   { transform: rotate(20deg); }
-  }
-
-  /* Braço direito */
-  .arm-right {
-    width: 14px; height: 55px;
-    background: linear-gradient(180deg, #1e90ff, #0d4fa0);
-    border-radius: 7px;
-    position: absolute;
-    top: 60px; left: 88px;
-    transform-origin: top center;
-    transform: rotate(25deg);
-  }
-
-  /* Pernas */
-  .leg-left {
-    width: 16px; height: 65px;
-    background: linear-gradient(180deg, #0d4fa0, #082a5c);
-    border-radius: 8px;
-    position: absolute;
-    top: 126px; left: 38px;
-    animation: legSwing 1.2s ease-in-out infinite alternate;
-  }
-  .leg-right {
-    width: 16px; height: 65px;
-    background: linear-gradient(180deg, #0d4fa0, #082a5c);
-    border-radius: 8px;
-    position: absolute;
-    top: 126px; left: 66px;
-    animation: legSwing 1.2s ease-in-out infinite alternate-reverse;
-  }
-  @keyframes legSwing {
-    from { transform: rotate(-8deg); }
-    to   { transform: rotate(8deg); }
-  }
-
-  /* ── Balão de fala ── */
-  .bubble {
-    background: linear-gradient(135deg, #0a1a4a 0%, #001030 100%);
-    border: 2px solid #1e90ff;
-    border-radius: 20px;
-    padding: 24px 30px;
-    max-width: 600px;
-    text-align: center;
-    position: relative;
-    box-shadow: 0 0 30px #1e90ff55;
-    animation: fadeIn 1s ease 0.5s both;
-    min-height: 160px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-  }
-  @keyframes fadeIn {
-    from { opacity:0; transform:scale(0.9); }
-    to   { opacity:1; transform:scale(1); }
-  }
-  /* Seta do balão */
-  .bubble::before {
-    content: '';
-    position: absolute;
-    top: -18px; left: 50%;
-    transform: translateX(-50%);
-    border: 9px solid transparent;
-    border-bottom-color: #1e90ff;
-  }
-  .bubble::after {
-    content: '';
-    position: absolute;
-    top: -13px; left: 50%;
-    transform: translateX(-50%);
-    border: 8px solid transparent;
-    border-bottom-color: #001030;
-  }
-
-  #typewriter {
-    font-size: 15px;
-    line-height: 1.7;
-    color: #d0e8ff;
-    min-height: 90px;
-  }
-
-  .group-names {
-    margin-top: 12px;
-    font-size: 13px;
-    color: #7eb8ff;
-    font-style: italic;
-    letter-spacing: 0.5px;
-  }
-
-  /* Cursor a piscar */
-  .cursor {
-    display: inline-block;
-    width: 2px; height: 16px;
-    background: #1e90ff;
-    margin-left: 2px;
-    vertical-align: middle;
-    animation: blink 0.7s step-end infinite;
-  }
-  @keyframes blink { 50% { opacity: 0; } }
-
-  /* ── Botão Entrar ── */
-  .enter-btn {
-    margin-top: 16px;
-    padding: 14px 50px;
-    font-size: 18px;
-    font-weight: bold;
-    letter-spacing: 2px;
-    background: linear-gradient(135deg, #1e3a8a, #1e90ff);
-    color: white;
-    border: 2px solid #1e90ff;
-    border-radius: 12px;
-    cursor: pointer;
-    box-shadow: 0 0 20px #1e90ff88;
-    transition: all 0.2s;
-    opacity: 0;
-    animation: fadeIn 0.5s ease 0.3s both;
-    display: none;
-  }
-  .enter-btn:hover {
-    background: linear-gradient(135deg, #1e90ff, #00bfff);
-    box-shadow: 0 0 35px #1e90ffcc;
-    transform: scale(1.05);
-  }
-  .enter-btn.visible { display: inline-block; }
-
-  /* ── Botão de música ── */
-  .music-btn {
-    display: none;
-    margin-top: 10px;
-    padding: 10px 28px;
-    background: linear-gradient(135deg, #0a1a4a, #001030);
-    border: 2px solid #1e90ff;
-    border-radius: 12px;
-    color: #7eb8ff;
-    font-size: 13px;
-    font-weight: bold;
-    letter-spacing: 1px;
-    cursor: pointer;
-    transition: all 0.3s;
-    animation: pulse 2s infinite;
-  }
-  .music-btn.visible { display: inline-block; }
-  .music-btn.on    { border-color: #00e676; color: #00e676; animation: none; box-shadow: 0 0 18px rgba(0,230,118,0.5); }
-  .music-btn.next  { border-color: #ffd700; color: #ffd700; animation: pulse2 1s infinite; }
-  .music-btn.muted { border-color: #ff5252; color: #ff8a80; animation: none; }
-  @keyframes pulse2 {
-    0%,100% { box-shadow: 0 0 10px rgba(255,215,0,0.4); }
-    50%      { box-shadow: 0 0 25px rgba(255,215,0,0.9); }
-  }
-</style>
-</head>
+<html><head><style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:transparent; display:flex; align-items:center; justify-content:center; height:52px; overflow:hidden; }
+.mb {
+    padding:10px 24px; background:linear-gradient(135deg,#0a1a4a,#001030);
+    border:2px solid #1e90ff; border-radius:10px; color:#7eb8ff;
+    font-size:13px; font-weight:bold; font-family:Georgia,serif;
+    cursor:pointer; transition:all 0.3s; animation:pulse 2s infinite; white-space:nowrap;
+}
+@keyframes pulse { 0%,100% { box-shadow:0 0 10px rgba(30,144,255,0.3); } 50% { box-shadow:0 0 20px rgba(30,144,255,0.8); } }
+.mb.on    { border-color:#00e676; color:#00e676; animation:none; box-shadow:0 0 18px rgba(0,230,118,0.5); }
+.mb.nxt   { border-color:#ffd700; color:#ffd700; animation:pulse2 1s infinite; }
+@keyframes pulse2 { 0%,100% { box-shadow:0 0 10px rgba(255,215,0,0.4); } 50% { box-shadow:0 0 25px rgba(255,215,0,0.9); } }
+.mb.muted { border-color:#ff5252; color:#ff8a80; animation:none; }
+#yd { position:fixed; top:-9999px; left:-9999px; width:1px; height:1px; }
+</style></head>
 <body>
-
-<!-- Estrelas -->
-<div class="stars" id="stars"></div>
-
-<div class="stage">
-
-  <div class="title">🎯 QUEM QUER SER PRODUTIVO?</div>
-
-  <!-- Balão de fala (acima do boneco) -->
-  <div class="bubble">
-    <div id="typewriter"><span class="cursor"></span></div>
-    <div class="group-names" id="groupNames" style="display:none">
-      ✨ Biljana Paiva &nbsp;·&nbsp; Bruno Henriques &nbsp;·&nbsp; Jorge Brito
-    </div>
-  </div>
-
-  <!-- Boneco -->
-  <div class="character">
-    <div class="head">
-      <div class="eye left"></div>
-      <div class="eye right"></div>
-      <div class="mouth"></div>
-    </div>
-    <div class="body"></div>
-    <div class="arm-left"></div>
-    <div class="arm-right"></div>
-    <div class="leg-left"></div>
-    <div class="leg-right"></div>
-  </div>
-
-  <!-- Botão entrar -->
-  <button class="enter-btn" id="enterBtn" onclick="enterQuiz()">
-    🚀 ENTRAR NO QUIZ
-  </button>
-
-  <!-- Botão música -->
-  <button class="music-btn" id="musicBtn" onclick="startMusic()">
-    🎵 Carregue aqui para ser mais interactivo
-  </button>
-
-  <div id="yt-div" style="position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;"></div>
-
-</div>
-
+<button class="mb" id="mb" onclick="go()">🎵 Carregue aqui para ser mais interactivo</button>
+<div id="yd"></div>
 <script>
-  // ── Player de música ──
-  var player;
-  var musicStarted = false;
-  var isMuted = false;
-  var INTRO_VID = "2oPVdx3QaAM";
-  var QUIZ_VID  = "ren6rd9FfV8";
-  var onQuizMusic = false;
-  var countdownInterval = null;
-
-  function loadYTApi() {
-    var tag = document.createElement('script');
-    tag.src = 'https://www.youtube.com/iframe_api';
-    document.head.appendChild(tag);
-  }
-
-  window.onYouTubeIframeAPIReady = function() {
-    if (!musicStarted) return;
-    createYTPlayer();
-  };
-
-  function createYTPlayer() {
-    player = new YT.Player('yt-div', {
-      width: '1', height: '1',
-      videoId: INTRO_VID,
-      playerVars: { autoplay: 1, controls: 0, disablekb: 1, fs: 0, rel: 0 },
-      events: {
-        'onReady': function(e) {
-          e.target.setVolume(70);
-          var btn = document.getElementById('musicBtn');
-          btn.innerHTML = '🔊 Música a tocar!';
-          btn.className = 'music-btn on';
-        },
-        'onStateChange': function(e) {
-          if (e.data === 0 && !onQuizMusic) startCountdown();
-        }
+var pl,started=false,muted=false,onQuiz=false;
+var INTRO="2oPVdx3QaAM",QUIZ="ren6rd9FfV8";
+function loadYT(){ var s=document.createElement('script'); s.src='https://www.youtube.com/iframe_api'; document.head.appendChild(s); }
+window.onYouTubeIframeAPIReady=function(){ if(!started) return; mkPlayer(); };
+function mkPlayer(){
+  pl=new YT.Player('yd',{ width:'1',height:'1',videoId:INTRO,
+    playerVars:{autoplay:1,controls:0,disablekb:1,fs:0,rel:0},
+    events:{
+      onReady:function(e){ e.target.setVolume(70); setBtn('🔊 Música a tocar!','on'); },
+      onStateChange:function(e){
+        if(e.data===0 && !onQuiz) countdown();
+        else if(e.data===0 && onQuiz) pl.seekTo(0);
       }
-    });
-  }
-
-  function startCountdown() {
-    var secs = 3;
-    var btn = document.getElementById('musicBtn');
-    btn.innerHTML = '⏳ Próxima música em ' + secs + 's...';
-    btn.className = 'music-btn next';
-    countdownInterval = setInterval(function() {
-      secs--;
-      if (secs > 0) {
-        document.getElementById('musicBtn').innerHTML = '⏳ Próxima música em ' + secs + 's...';
-      } else {
-        clearInterval(countdownInterval);
-        onQuizMusic = true;
-        player.loadVideoById({ videoId: QUIZ_VID, startSeconds: 0 });
-      }
-    }, 1000);
-  }
-
-  function startMusic() {
-    if (musicStarted) {
-      if (isMuted) {
-        player.unMute(); player.setVolume(70); isMuted = false;
-        document.getElementById('musicBtn').innerHTML = '🔊 Música a tocar!';
-        document.getElementById('musicBtn').className = 'music-btn on';
-      } else {
-        player.mute(); isMuted = true;
-        document.getElementById('musicBtn').innerHTML = '🔇 Música em mudo';
-        document.getElementById('musicBtn').className = 'music-btn muted';
-      }
-      return;
     }
-    musicStarted = true;
-    document.getElementById('musicBtn').innerHTML = '⏳ A carregar...';
-    if (window.YT && window.YT.Player) { createYTPlayer(); }
-    else { loadYTApi(); }
+  });
+}
+function countdown(){
+  var s=3; setBtn('⏳ Próxima música em '+s+'s...','nxt');
+  var iv=setInterval(function(){ s--;
+    if(s>0) setBtn('⏳ Próxima música em '+s+'s...','nxt');
+    else { clearInterval(iv); onQuiz=true; pl.loadVideoById({videoId:QUIZ,startSeconds:0}); }
+  },1000);
+}
+function go(){
+  if(started){
+    if(muted){ pl.unMute(); pl.setVolume(70); muted=false; setBtn('🔊 Música a tocar!','on'); }
+    else { pl.mute(); muted=true; setBtn('🔇 Música em mudo','muted'); }
+    return;
   }
-
-  // ── Gerar estrelas ──
-  const starsEl = document.getElementById('stars');
-  for (let i = 0; i < 120; i++) {
-    const s = document.createElement('div');
-    s.className = 'star';
-    s.style.cssText = `
-      left: ${Math.random()*100}%;
-      top:  ${Math.random()*100}%;
-      animation-delay: ${Math.random()*3}s;
-      animation-duration: ${2+Math.random()*3}s;
-    `;
-    starsEl.appendChild(s);
-  }
-
-  // ── Texto a escrever ──
-  const fullText = [
-    "Bem-vindos ao Quiz sobre",
-    "Boas Práticas em Reuniões Online Eficazes!",
-    "",
-    "Esperamos que apreciem o nosso quiz,",
-    "onde poderão aprender, relaxar e descontrair.",
-    "",
-    "Um muito obrigado em nome do grupo:"
-  ].join("\\n");
-
-  const el = document.getElementById('typewriter');
-  const groupNames = document.getElementById('groupNames');
-  const enterBtn = document.getElementById('enterBtn');
-
-  let i = 0;
-  let html = '';
-
-  function type() {
-    if (i < fullText.length) {
-      const ch = fullText[i];
-      if (ch === '\\n') {
-        html += '<br>';
-      } else {
-        html += ch;
-      }
-      el.innerHTML = html + '<span class="cursor"></span>';
-      i++;
-      const delay = (ch === '.' || ch === '!') ? 300 : (ch === ',') ? 120 : 35;
-      setTimeout(type, delay);
-    } else {
-      // Terminou — mostra nomes e botões
-      el.innerHTML = html;
-      groupNames.style.display = 'block';
-      enterBtn.classList.add('visible');
-      document.getElementById('musicBtn').classList.add('visible');
-    }
-  }
-
-  setTimeout(type, 800);
-
-  // ── Entrar no quiz ──
-  function enterQuiz() {
-    enterBtn.innerHTML = '⏳ A entrar...';
-    enterBtn.style.opacity = '0.7';
-    enterBtn.disabled = true;
-    try {
-      var base = window.top.location.pathname;
-      window.top.location.href = base + '?splash_done=1';
-    } catch(e) {
-      try {
-        var base2 = window.parent.location.pathname;
-        window.parent.location.href = base2 + '?splash_done=1';
-      } catch(e2) {}
-    }
-  }
+  started=true; setBtn('⏳ A carregar...','');
+  if(window.YT && window.YT.Player) mkPlayer(); else loadYT();
+}
+function setBtn(t,c){ var b=document.getElementById('mb'); b.innerHTML=t; b.className='mb'+(c?' '+c:''); }
 </script>
-</body>
-</html>""", height=700, scrolling=False)
+</body></html>""", height=52)
 
     st.stop()
+
+
+
+
 
 # Título principal
 st.markdown('<div class="main-title">🎯 QUEM QUER SER PRODUTIVO?</div>', unsafe_allow_html=True)
