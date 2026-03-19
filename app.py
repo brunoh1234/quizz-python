@@ -4,82 +4,77 @@ import os
 from datetime import datetime
 
 # ------------------------------
-# 1. CONFIGURAÇÃO E CSS "MILIONÁRIO"
+# 1. CONFIGURAÇÃO E CSS HEXAGONAL (ESTILO MILIONÁRIO)
 # ------------------------------
 st.set_page_config(page_title="Quem Quer Ser Produtivo?", layout="centered")
 
 st.markdown("""
     <style>
-    /* Fundo e Esconder Elementos */
     .stApp {
         background: radial-gradient(circle, #0d1b3e 0%, #02050a 100%);
         color: white;
     }
     #MainMenu, header, footer {visibility: hidden;}
 
-    /* Título Principal */
+    /* Título */
     .m-title {
         font-family: 'Trebuchet MS', sans-serif;
-        font-size: 45px;
+        font-size: 40px;
         font-weight: bold;
         text-align: center;
-        color: #ffffff;
-        text-transform: uppercase;
-        letter-spacing: 4px;
-        text-shadow: 0 0 20px #1e90ff;
-        margin-bottom: 0px;
-    }
-    .m-subtitle {
-        text-align: center;
-        color: #ff8c00;
-        font-size: 18px;
-        letter-spacing: 8px;
-        margin-bottom: 30px;
+        color: white;
+        text-shadow: 0 0 15px #1e90ff;
+        margin-bottom: 5px;
     }
 
-    /* Caixa da Pergunta (Retângulo Central) */
+    /* Contentor da Pergunta (Hexágono Longo) */
     .question-box {
         background: linear-gradient(180deg, #0a1a3c 0%, #000000 100%);
         border: 2px solid #1e90ff;
-        border-radius: 50px / 25px;
-        padding: 30px;
+        padding: 20px 40px;
         text-align: center;
-        margin-bottom: 40px;
-        box-shadow: 0 0 15px rgba(30, 144, 255, 0.5);
+        margin: 20px auto;
+        width: 90%;
+        /* Efeito de pontas cortadas (Hexágono) */
+        clip-path: polygon(5% 0%, 95% 0%, 100% 50%, 95% 100%, 5% 100%, 0% 50%);
+        box-shadow: 0 0 15px rgba(30, 144, 255, 0.6);
     }
 
-    /* BOTÕES DE RESPOSTA (ESTILO RETÂNGULO MILIONÁRIO) */
+    /* Botões Customizados em CSS */
     div.stButton > button {
         background: linear-gradient(90deg, #0a1a3c 0%, #1a3a7a 50%, #0a1a3c 100%) !important;
-        color: #ffffff !important;
-        border: 2px solid #1e90ff !important;
-        border-radius: 40px !important;
-        height: 60px !important;
+        color: white !important;
+        border: 1px solid #1e90ff !important;
+        height: 55px !important;
         width: 100% !important;
         font-size: 18px !important;
         font-weight: bold !important;
+        /* O segredo para o formato da imagem: */
+        clip-path: polygon(10% 0%, 90% 0%, 100% 50%, 90% 100%, 10% 100%, 0% 50%);
         transition: 0.3s all !important;
-        box-shadow: 0 0 10px rgba(30, 144, 255, 0.3) !important;
+        margin-bottom: 10px !important;
     }
 
     div.stButton > button:hover {
         background: linear-gradient(90deg, #ff8c00 0%, #ff4500 100%) !important;
-        border-color: #ffffff !important;
-        transform: scale(1.03);
-        box-shadow: 0 0 20px #ff8c00 !important;
-    }
-    
-    /* Input de Nome */
-    .stTextInput input {
-        background-color: #0a1a3c !important;
+        border: 1px solid white !important;
         color: white !important;
-        border: 1px solid #1e90ff !important;
+        transform: scale(1.05);
+    }
+
+    /* Linhas laterais decorativas (opcional, simula a conexão) */
+    .connector-line {
+        height: 2px;
+        background: #1e90ff;
+        width: 50px;
+        position: absolute;
+        top: 50%;
     }
     </style>
     """, unsafe_allow_html=True)
 
 # ------------------------------
-# 2. LÓGICA DE DADOS
+# 2. LÓGICA DE DADOS E PERGUNTAS
 # ------------------------------
 RESULTADOS_FICHEIRO = "resultados.json"
 
@@ -92,9 +87,6 @@ def carregar_resultados():
 def guardar_resultados(resultados):
     with open(RESULTADOS_FICHEIRO, "w") as f: json.dump(resultados, f, indent=4)
 
-# ------------------------------
-# 3. PERGUNTAS
-# ------------------------------
 perguntas = [
     ("Quanto tempo os profissionais passam por ano em reuniões?", ["120h", "200h", "392h", "500h"], 3),
     ("Que percentagem das reuniões é considerada improdutiva?", ["20%", "40%", "67%", "90%"], 3),
@@ -119,7 +111,7 @@ perguntas = [
 ]
 
 # ------------------------------
-# 4. EXECUÇÃO DO JOGO
+# 3. ESTADO DO JOGO
 # ------------------------------
 if "user_id" not in st.session_state: st.session_state.user_id = None
 if "pergunta" not in st.session_state: st.session_state.pergunta = 0
@@ -128,48 +120,38 @@ if "terminou" not in st.session_state: st.session_state.terminou = False
 
 resultados = carregar_resultados()
 
-# --- ECRÃ INICIAL ---
+# --- LOGIN ---
 if st.session_state.user_id is None:
-    st.markdown('<p class="m-title">QUEM QUER SER</p>', unsafe_allow_html=True)
-    st.markdown('<p class="m-subtitle">PRODUTIVO?</p>', unsafe_allow_html=True)
-    
-    user_name = st.text_input("Introduza o seu nome para jogar:", key="name_input")
-    
-    if st.button("ENTRAR NO PALCO"):
-        if user_name.strip():
-            st.session_state.user_id = user_name.strip()
+    st.markdown('<p class="m-title">QUEM QUER SER PRODUTIVO?</p>', unsafe_allow_html=True)
+    name = st.text_input("Nome do Concorrente:")
+    if st.button("JOGAR"):
+        if name:
+            st.session_state.user_id = name
             st.rerun()
-        else:
-            st.warning("Por favor, insira o seu nome.")
-
-    st.markdown("<br><br>", unsafe_allow_html=True)
-    with st.expander("🛠 ADMIN: Limpeza de Dados"):
-        if st.button("LIMPAR TODO O HISTÓRICO"):
-            if os.path.exists(RESULTADOS_FICHEIRO): os.remove(RESULTADOS_FICHEIRO)
-            st.success("Histórico apagado.")
+    
+    st.markdown("---")
+    if st.button("Limpar Histórico de Classificações"):
+        if os.path.exists(RESULTADOS_FICHEIRO): os.remove(RESULTADOS_FICHEIRO)
+        st.rerun()
     st.stop()
 
-# --- ECRÃ DE JOGO ---
+# --- JOGO ---
 if not st.session_state.terminou:
     idx = st.session_state.pergunta
-    txt_pergunta, opcoes, correta = perguntas[idx]
+    q, opts, correct = perguntas[idx]
 
     st.markdown(f'<p style="text-align:center; color:#1e90ff;">NÍVEL {idx+1} / 20</p>', unsafe_allow_html=True)
     
-    # Pergunta
-    st.markdown(f"""
-        <div class="question-box">
-            <h2 style="color:white; font-size:24px;">{txt_pergunta}</h2>
-        </div>
-    """, unsafe_allow_html=True)
+    # PERGUNTA HEXAGONAL
+    st.markdown(f"""<div class="question-box"><h3 style="margin:0;">{q}</h3></div>""", unsafe_allow_html=True)
 
-    # Respostas em grelha 2x2
+    # BOTÕES HEXAGONAIS EM GRELHA
     col1, col2 = st.columns(2)
     letras = ["A", "B", "C", "D"]
     
-    for i, opt in enumerate(opcoes):
-        target_col = col1 if i < 2 else col2
-        if target_col.button(f"{letras[i]}: {opt}", key=f"q_{idx}_{i}"):
+    for i, opt in enumerate(opts):
+        col = col1 if i % 2 == 0 else col2
+        if col.button(f"{letras[i]}: {opt}", key=f"btn_{idx}_{i}"):
             st.session_state.respostas.append(i + 1)
             if st.session_state.pergunta < 19:
                 st.session_state.pergunta += 1
@@ -177,24 +159,16 @@ if not st.session_state.terminou:
                 st.session_state.terminou = True
             st.rerun()
 
-# --- ECRÃ FINAL ---
+# --- FINAL ---
 else:
     score = sum(1 for i, r in enumerate(st.session_state.respostas) if r == perguntas[i][2])
+    st.markdown(f'<p class="m-title">PONTUAÇÃO: {score}/20</p>', unsafe_allow_html=True)
     
-    st.markdown('<p class="m-title">PONTUAÇÃO FINAL</p>', unsafe_allow_html=True)
-    st.markdown(f'<h1 style="text-align:center; color:#ff8c00;">{score} / 20</h1>', unsafe_allow_html=True)
-
-    # Guardar resultados
-    resultados[st.session_state.user_id] = {"score": score, "time": datetime.now().strftime("%d/%m/%Y %H:%M")}
+    # Guardar
+    resultados[st.session_state.user_id] = {"score": score}
     guardar_resultados(resultados)
-
-    st.write("---")
-    st.markdown("### 🏆 Top 5 Liderança")
-    ranking = sorted(resultados.items(), key=lambda x: x[1]['score'], reverse=True)
-    for p, (name, data) in enumerate(ranking[:5], 1):
-        st.write(f"{p}º **{name}** — {data['score']} pts")
-
-    if st.button("VOLTAR AO INÍCIO"):
+    
+    if st.button("NOVO JOGO"):
         st.session_state.user_id = None
         st.session_state.pergunta = 0
         st.session_state.respostas = []
