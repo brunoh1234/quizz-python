@@ -511,6 +511,27 @@ pergunta, opcoes, correta = perguntas[idx]
 letras = ["A", "B", "C", "D"]
 progresso = int((idx / len(perguntas)) * 100)
 
+# Nome do jogador no canto superior direito
+st.markdown(f"""
+<div style="
+    position: fixed;
+    top: 16px;
+    right: 20px;
+    background: linear-gradient(135deg, #0a1a4a 0%, #001030 100%);
+    border: 2px solid #1e90ff;
+    border-radius: 10px;
+    padding: 8px 18px;
+    box-shadow: 0 0 15px rgba(30, 144, 255, 0.5);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+">
+    <span style="font-size: 18px;">👤</span>
+    <span style="color: #7eb8ff; font-size: 15px; font-weight: bold; letter-spacing: 1px;">{st.session_state.user_id}</span>
+</div>
+""", unsafe_allow_html=True)
+
 # Barra de progresso
 st.markdown(f"""
 <div style="text-align:center; color:#7eb8ff; font-size:14px; margin-top:5px; letter-spacing:2px;">
