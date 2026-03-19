@@ -30,7 +30,7 @@ def ja_jogou(user_id, resultados):
 # Perguntas
 # ------------------------------
  
-perguntas = [
+	perguntas = [
     ("Quanto tempo os profissionais passam por ano em reuniões?",
      ["120h", "200h", "392h", "500h"], 2),
     ("Que percentagem das reuniões é considerada improdutiva?",
@@ -54,7 +54,7 @@ perguntas = [
     ("Quantos fazem multitasking em reuniões?",
      ["30%", "50%", "92%", "100%"], 2),
     ("Reuniões mal planeadas:",
-     ["São curtas", "Destroem o foco individual", "Têm poucos participantes", "Ajudam a concentração"], 2),
+     ["São curtas", "Destruem o foco individual", "Têm poucos participantes", "Ajudam a concentração"], 2),
     ("Primeira fase de uma reunião produtiva:",
      ["Durante", "Depois", "Antes", "Avaliação"], 3),
     ("Antes da reunião deve-se:",
