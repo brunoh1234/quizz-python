@@ -316,8 +316,401 @@ if "resposta_dada" not in st.session_state:
     st.session_state.resposta_dada = None
 if "quiz_completed" not in st.session_state:
     st.session_state.quiz_completed = False
+if "splash_shown" not in st.session_state:
+    st.session_state.splash_shown = False
 
 resultados = carregar_resultados()
+
+# ------------------------------
+# ECRÃ DE APRESENTAÇÃO (SPLASH)
+# ------------------------------
+
+if not st.session_state.splash_shown:
+    components.html("""<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: radial-gradient(circle at 50% 40%, #0d1b3e 0%, #02050a 100%);
+    min-height: 100vh;
+    font-family: 'Georgia', serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    color: white;
+  }
+
+  /* ── Estrelas de fundo ── */
+  .stars { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+  .star {
+    position: absolute;
+    width: 2px; height: 2px;
+    background: white;
+    border-radius: 50%;
+    animation: twinkle 3s infinite alternate;
+  }
+
+  @keyframes twinkle {
+    from { opacity: 0.2; transform: scale(1); }
+    to   { opacity: 1;   transform: scale(1.6); }
+  }
+
+  /* ── Conteúdo central ── */
+  .stage {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+
+  /* ── Título ── */
+  .title {
+    font-size: 28px;
+    font-weight: 900;
+    letter-spacing: 3px;
+    color: #fff;
+    text-shadow: 0 0 20px #1e90ff, 0 0 40px #1e90ff88;
+    animation: fadeDown 0.8s ease forwards;
+    text-align: center;
+  }
+  @keyframes fadeDown {
+    from { opacity:0; transform:translateY(-20px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+
+  /* ── Boneco animado ── */
+  .character {
+    position: relative;
+    width: 120px;
+    height: 220px;
+    animation: float 3s ease-in-out infinite;
+  }
+  @keyframes float {
+    0%,100% { transform: translateY(0); }
+    50%      { transform: translateY(-12px); }
+  }
+
+  /* Cabeça */
+  .head {
+    width: 60px; height: 60px;
+    background: radial-gradient(circle at 40% 35%, #ffe0b2, #ffb74d);
+    border-radius: 50%;
+    position: absolute;
+    top: 0; left: 30px;
+    box-shadow: 0 0 15px #1e90ff88;
+    animation: headBob 2s ease-in-out infinite;
+  }
+  @keyframes headBob {
+    0%,100% { transform: rotate(-3deg); }
+    50%      { transform: rotate(3deg); }
+  }
+  /* Olhos */
+  .eye { position: absolute; width: 8px; height: 8px; background: #222; border-radius: 50%; }
+  .eye.left  { top: 22px; left: 14px; }
+  .eye.right { top: 22px; left: 34px; }
+  /* Boca sorridente */
+  .mouth {
+    position: absolute;
+    width: 22px; height: 10px;
+    border: 3px solid #333;
+    border-top: none;
+    border-radius: 0 0 20px 20px;
+    top: 36px; left: 18px;
+  }
+
+  /* Corpo */
+  .body {
+    width: 44px; height: 70px;
+    background: linear-gradient(180deg, #1e90ff, #0d4fa0);
+    border-radius: 8px;
+    position: absolute;
+    top: 58px; left: 38px;
+    box-shadow: 0 0 10px #1e90ff66;
+  }
+
+  /* Braço esquerdo (acenando) */
+  .arm-left {
+    width: 14px; height: 55px;
+    background: linear-gradient(180deg, #1e90ff, #0d4fa0);
+    border-radius: 7px;
+    position: absolute;
+    top: 60px; left: 18px;
+    transform-origin: top center;
+    animation: wave 0.6s ease-in-out infinite alternate;
+  }
+  @keyframes wave {
+    from { transform: rotate(-60deg); }
+    to   { transform: rotate(20deg); }
+  }
+
+  /* Braço direito */
+  .arm-right {
+    width: 14px; height: 55px;
+    background: linear-gradient(180deg, #1e90ff, #0d4fa0);
+    border-radius: 7px;
+    position: absolute;
+    top: 60px; left: 88px;
+    transform-origin: top center;
+    transform: rotate(25deg);
+  }
+
+  /* Pernas */
+  .leg-left {
+    width: 16px; height: 65px;
+    background: linear-gradient(180deg, #0d4fa0, #082a5c);
+    border-radius: 8px;
+    position: absolute;
+    top: 126px; left: 38px;
+    animation: legSwing 1.2s ease-in-out infinite alternate;
+  }
+  .leg-right {
+    width: 16px; height: 65px;
+    background: linear-gradient(180deg, #0d4fa0, #082a5c);
+    border-radius: 8px;
+    position: absolute;
+    top: 126px; left: 66px;
+    animation: legSwing 1.2s ease-in-out infinite alternate-reverse;
+  }
+  @keyframes legSwing {
+    from { transform: rotate(-8deg); }
+    to   { transform: rotate(8deg); }
+  }
+
+  /* ── Balão de fala ── */
+  .bubble {
+    background: linear-gradient(135deg, #0a1a4a 0%, #001030 100%);
+    border: 2px solid #1e90ff;
+    border-radius: 20px;
+    padding: 24px 30px;
+    max-width: 600px;
+    text-align: center;
+    position: relative;
+    box-shadow: 0 0 30px #1e90ff55;
+    animation: fadeIn 1s ease 0.5s both;
+    min-height: 160px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  @keyframes fadeIn {
+    from { opacity:0; transform:scale(0.9); }
+    to   { opacity:1; transform:scale(1); }
+  }
+  /* Seta do balão */
+  .bubble::before {
+    content: '';
+    position: absolute;
+    top: -18px; left: 50%;
+    transform: translateX(-50%);
+    border: 9px solid transparent;
+    border-bottom-color: #1e90ff;
+  }
+  .bubble::after {
+    content: '';
+    position: absolute;
+    top: -13px; left: 50%;
+    transform: translateX(-50%);
+    border: 8px solid transparent;
+    border-bottom-color: #001030;
+  }
+
+  #typewriter {
+    font-size: 15px;
+    line-height: 1.7;
+    color: #d0e8ff;
+    min-height: 90px;
+  }
+
+  .group-names {
+    margin-top: 12px;
+    font-size: 13px;
+    color: #7eb8ff;
+    font-style: italic;
+    letter-spacing: 0.5px;
+  }
+
+  /* Cursor a piscar */
+  .cursor {
+    display: inline-block;
+    width: 2px; height: 16px;
+    background: #1e90ff;
+    margin-left: 2px;
+    vertical-align: middle;
+    animation: blink 0.7s step-end infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* ── Botão Entrar ── */
+  .enter-btn {
+    margin-top: 16px;
+    padding: 14px 50px;
+    font-size: 18px;
+    font-weight: bold;
+    letter-spacing: 2px;
+    background: linear-gradient(135deg, #1e3a8a, #1e90ff);
+    color: white;
+    border: 2px solid #1e90ff;
+    border-radius: 12px;
+    cursor: pointer;
+    box-shadow: 0 0 20px #1e90ff88;
+    transition: all 0.2s;
+    opacity: 0;
+    animation: fadeIn 0.5s ease 0.3s both;
+    display: none;
+  }
+  .enter-btn:hover {
+    background: linear-gradient(135deg, #1e90ff, #00bfff);
+    box-shadow: 0 0 35px #1e90ffcc;
+    transform: scale(1.05);
+  }
+  .enter-btn.visible { display: inline-block; }
+</style>
+</head>
+<body>
+
+<!-- Estrelas -->
+<div class="stars" id="stars"></div>
+
+<div class="stage">
+
+  <div class="title">🎯 QUEM QUER SER PRODUTIVO?</div>
+
+  <!-- Balão de fala (acima do boneco) -->
+  <div class="bubble">
+    <div id="typewriter"><span class="cursor"></span></div>
+    <div class="group-names" id="groupNames" style="display:none">
+      ✨ Biljana Paiva &nbsp;·&nbsp; Bruno Henriques &nbsp;·&nbsp; Jorge Brito
+    </div>
+  </div>
+
+  <!-- Boneco -->
+  <div class="character">
+    <div class="head">
+      <div class="eye left"></div>
+      <div class="eye right"></div>
+      <div class="mouth"></div>
+    </div>
+    <div class="body"></div>
+    <div class="arm-left"></div>
+    <div class="arm-right"></div>
+    <div class="leg-left"></div>
+    <div class="leg-right"></div>
+  </div>
+
+  <!-- Botão -->
+  <button class="enter-btn" id="enterBtn" onclick="enterQuiz()">
+    🚀 ENTRAR NO QUIZ
+  </button>
+
+</div>
+
+<script>
+  // ── Gerar estrelas ──
+  const starsEl = document.getElementById('stars');
+  for (let i = 0; i < 120; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    s.style.cssText = `
+      left: ${Math.random()*100}%;
+      top:  ${Math.random()*100}%;
+      animation-delay: ${Math.random()*3}s;
+      animation-duration: ${2+Math.random()*3}s;
+    `;
+    starsEl.appendChild(s);
+  }
+
+  // ── Texto a escrever ──
+  const fullText = [
+    "Bem-vindos ao Quiz sobre",
+    "Boas Práticas em Reuniões Online Eficazes!",
+    "",
+    "Esperamos que apreciem o nosso quiz,",
+    "onde poderão aprender, relaxar e descontrair.",
+    "",
+    "Um muito obrigado em nome do grupo:"
+  ].join("\\n");
+
+  const el = document.getElementById('typewriter');
+  const groupNames = document.getElementById('groupNames');
+  const enterBtn = document.getElementById('enterBtn');
+
+  let i = 0;
+  let html = '';
+
+  function type() {
+    if (i < fullText.length) {
+      const ch = fullText[i];
+      if (ch === '\\n') {
+        html += '<br>';
+      } else {
+        html += ch;
+      }
+      el.innerHTML = html + '<span class="cursor"></span>';
+      i++;
+      const delay = (ch === '.' || ch === '!') ? 300 : (ch === ',') ? 120 : 35;
+      setTimeout(type, delay);
+    } else {
+      // Terminou — mostra nomes e botão
+      el.innerHTML = html;
+      groupNames.style.display = 'block';
+      enterBtn.classList.add('visible');
+    }
+  }
+
+  setTimeout(type, 800);
+
+  // ── Entrar no quiz ──
+  function enterQuiz() {
+    enterBtn.innerHTML = '⏳ A entrar...';
+    enterBtn.style.opacity = '0.7';
+    enterBtn.disabled = true;
+
+    // Encontra e clica no botão oculto do Streamlit
+    const doc = window.parent.document;
+    const btns = doc.querySelectorAll('button[kind="secondary"], button');
+    for (const b of btns) {
+      if (b.innerText && b.innerText.includes('__splash_enter__')) {
+        b.click();
+        return;
+      }
+    }
+    // Fallback: usar postMessage
+    window.parent.postMessage({ type: 'splash_done' }, '*');
+  }
+
+  // Ouvir resposta do Streamlit
+  window.addEventListener('message', function(e) {
+    if (e.data && e.data.type === 'splash_done') {
+      enterQuiz();
+    }
+  });
+</script>
+</body>
+</html>""", height=620, scrolling=False)
+
+    # Botão oculto que o iframe clica
+    col_s1, col_s2, col_s3 = st.columns([1, 2, 1])
+    with col_s2:
+        st.markdown("<div style='display:none'>", unsafe_allow_html=True)
+        if st.button("__splash_enter__", key="splash_btn"):
+            st.session_state.splash_shown = True
+            st.rerun()
+        st.markdown("</div>", unsafe_allow_html=True)
+
+        # Botão visível alternativo (caso o iframe não consiga clicar o oculto)
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("🚀 ENTRAR NO QUIZ", key="splash_btn_visible", use_container_width=True):
+            st.session_state.splash_shown = True
+            st.rerun()
+    st.stop()
 
 # Título principal
 st.markdown('<div class="main-title">🎯 QUEM QUER SER PRODUTIVO?</div>', unsafe_allow_html=True)
