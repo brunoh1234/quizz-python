@@ -307,7 +307,7 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
  
 # ------------------------------
-# RESPOSTAS — CAIXAS CLICÁVEIS EM DUAS COLUNAS (SEM DUPLICAÇÃO)
+# RESPOSTAS — ESTILO QUEM QUER SER MILIONÁRIO (A/B ESQ — C/D DIR)
 # ------------------------------
  
 col1, col2 = st.columns(2)
@@ -316,33 +316,32 @@ for i, opcao in enumerate(opcoes, start=1):
  
     letra = chr(64 + i)  # A, B, C, D
  
-    # Criar o botão como caixa estilizada
-    botao_html = f"""
+    # CSS exclusivo para estilo Milionário
+    st.markdown(f"""
 <style>
     #btn_{idx}_{i} {{
-        background: #1f2937;
-        border: 1px solid #374151;
+        background: linear-gradient(135deg, #0a1a3c, #0f2a66);
+        border: 3px solid #1e90ff;
         padding: 18px 22px;
-        border-radius: 10px;
-        margin: 12px auto;
+        border-radius: 40px;
+        margin: 14px auto;
         width: 100%;
-        max-width: 350px;
+        max-width: 380px;
         text-align: center;
         font-size: 22px;
+        font-weight: 600;
         color: #e5e7eb;
         cursor: pointer;
         transition: 0.2s ease-in-out;
+        box-shadow: 0 0 12px rgba(30,144,255,0.4);
     }}
     #btn_{idx}_{i}:hover {{
-        background: #2563eb33;
-        border-color: #60a5fa;
-        transform: scale(1.03);
+        background: linear-gradient(135deg, #12306b, #1e4fa3);
+        transform: scale(1.05);
+        box-shadow: 0 0 18px rgba(30,144,255,0.7);
     }}
 </style>
-    """
- 
-    # Inserir CSS
-    st.markdown(botao_html, unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
  
     # Escolher coluna
     target_col = col1 if i <= 2 else col2
