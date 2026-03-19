@@ -359,15 +359,8 @@ if st.session_state.user_id is None:
                 st.session_state.user_id = user_id.strip()
                 st.rerun()
 
-        # Botão de música — carrega o iframe só no clique (100% fiável)
-        if st.session_state.quiz_completed:
-            _login_vid = "dWVEE2QlckY"
-            _login_loop = "loop=1&playlist=dWVEE2QlckY"
-            _login_start = "start=373"
-        else:
-            _login_vid = "2oPVdx3QaAM"
-            _login_loop = "loop=0"
-            _login_start = "start=0"
+        # Botão de música — intro toca uma vez, depois muda para quiz em loop após 10s
+        _already_played = "true" if st.session_state.quiz_completed else "false"
 
         _LOGIN_MUSIC = f"""<!DOCTYPE html>
 <html><head><style>
@@ -399,8 +392,14 @@ if st.session_state.user_id is None:
     50%  {{ box-shadow: 0 0 25px rgba(30,144,255,0.9); }}
     100% {{ box-shadow: 0 0 10px rgba(30,144,255,0.4); }}
   }}
-  #btn.on  {{ border-color: #00e676; box-shadow: 0 0 18px rgba(0,230,118,0.5); color: #00e676; animation: none; }}
+  #btn.on    {{ border-color: #00e676; box-shadow: 0 0 18px rgba(0,230,118,0.5); color: #00e676; animation: none; }}
+  #btn.next  {{ border-color: #ffd700; box-shadow: 0 0 18px rgba(255,215,0,0.5); color: #ffd700; animation: pulse2 1s infinite; }}
   #btn.muted {{ border-color: #ff5252; box-shadow: 0 0 12px rgba(255,82,82,0.4); color: #ff8a80; animation: none; }}
+  @keyframes pulse2 {{
+    0%   {{ box-shadow: 0 0 10px rgba(255,215,0,0.4); }}
+    50%  {{ box-shadow: 0 0 25px rgba(255,215,0,0.9); }}
+    100% {{ box-shadow: 0 0 10px rgba(255,215,0,0.4); }}
+  }}
   #yt-container {{ display: none; }}
 </style></head>
 <body>
@@ -409,40 +408,98 @@ if st.session_state.user_id is None:
   <script>
     var isMuted = false;
     var started = false;
+    var onQuizMusic = {_already_played};  // true se já jogou
+    var introVid = "2oPVdx3QaAM";
+    var quizVid  = "dWVEE2QlckY";
+    var countdown = null;
 
-    function startMusic() {{
-      if (started) {{
-        toggleMute();
-        return;
-      }}
-      started = true;
-      document.getElementById('btn').innerHTML = '⏳ A carregar...';
+    function loadPlayer(vid, loop, start) {{
+      // Remove iframe anterior se existir
+      var old = document.getElementById('yt');
+      if (old) old.remove();
 
       var iframe = document.createElement('iframe');
       iframe.id = 'yt';
-      iframe.src = 'https://www.youtube.com/embed/{_login_vid}?autoplay=1&mute=0&{_login_loop}&{_login_start}&controls=0&enablejsapi=1';
+      iframe.src = 'https://www.youtube.com/embed/' + vid
+        + '?autoplay=1&mute=0&' + loop + '&start=' + start
+        + '&controls=0&enablejsapi=1';
       iframe.allow = 'autoplay; encrypted-media';
       iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;';
       iframe.frameBorder = '0';
       document.getElementById('yt-container').appendChild(iframe);
+    }}
 
+    function switchToQuizMusic() {{
+      onQuizMusic = true;
+      document.getElementById('btn').innerHTML = '⏳ A carregar música do quiz...';
+      document.getElementById('btn').className = '';
+      loadPlayer(quizVid, 'loop=1&playlist=' + quizVid, '373');
+      setTimeout(function() {{
+        document.getElementById('btn').innerHTML = '🔊 Música a tocar!';
+        document.getElementById('btn').className = 'on';
+      }}, 3000);
+    }}
+
+    function startMusic() {{
+      if (started) {{ toggleMute(); return; }}
+      started = true;
+      document.getElementById('btn').innerHTML = '⏳ A carregar...';
+
+      if (onQuizMusic) {{
+        // Já jogou — vai direto para a música do quiz em loop
+        loadPlayer(quizVid, 'loop=1&playlist=' + quizVid, '373');
+      }} else {{
+        // 1ª visita — toca a intro uma vez
+        loadPlayer(introVid, 'loop=0', '0');
+      }}
+
+      // Ouve eventos do YouTube
       window.addEventListener('message', function(e) {{
         if (!e.data) return;
         try {{
           var d = (typeof e.data === 'string') ? JSON.parse(e.data) : e.data;
-          if (d.event === 'onReady' || (d.info && d.info.playerState === 1)) {{
+
+          // Player pronto a tocar
+          if (d.event === 'onReady') {{
             document.getElementById('btn').innerHTML = '🔊 Música a tocar!';
             document.getElementById('btn').className = 'on';
+          }}
+
+          // Mudança de estado
+          if (d.event === 'onStateChange') {{
+            // Estado 1 = a tocar
+            if (d.info === 1) {{
+              document.getElementById('btn').innerHTML = '🔊 Música a tocar!';
+              document.getElementById('btn').className = 'on';
+            }}
+            // Estado 0 = terminou (intro acabou)
+            if (d.info === 0 && !onQuizMusic) {{
+              // Intro acabou → conta 10 segundos e muda para quiz
+              var secs = 10;
+              document.getElementById('btn').innerHTML = '⏳ Próxima música em ' + secs + 's...';
+              document.getElementById('btn').className = 'next';
+              countdown = setInterval(function() {{
+                secs--;
+                if (secs > 0) {{
+                  document.getElementById('btn').innerHTML = '⏳ Próxima música em ' + secs + 's...';
+                }} else {{
+                  clearInterval(countdown);
+                  switchToQuizMusic();
+                }}
+              }}, 1000);
+            }}
           }}
         }} catch(ex) {{}}
       }});
 
+      // Fallback — se não receber eventos após 4s, assume que está a tocar
       setTimeout(function() {{
-        if (document.getElementById('btn').innerHTML === '⏳ A carregar...') {{
-          document.getElementById('btn').innerHTML = '🔊 Música a tocar!';
-          document.getElementById('btn').className = 'on';
+        var btn = document.getElementById('btn');
+        if (btn && btn.innerHTML === '⏳ A carregar...') {{
+          btn.innerHTML = '🔊 Música a tocar!';
+          btn.className = 'on';
         }}
-      }}, 3000);
+      }}, 4000);
     }}
 
     function toggleMute() {{
