@@ -467,36 +467,50 @@ if st.session_state.user_id is None:
   #player {{ position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }}
 </style></head>
 <body>
-  <button id="btn" onclick="toggleMute()">🔊 MÚSICA</button>
+  <button id="btn" onclick="handleBtn()">▶ LIGAR MÚSICA</button>
   <div id="player"></div>
   <script>
     var ytPlayer = null;
+    var isPlaying = false;
     var isMuted = false;
-    function loadAPI() {{
-      if (window.YT && window.YT.Player) {{ createPlayer(); }}
-      else {{
+
+    function handleBtn() {{
+      if (!isPlaying) {{
+        startMusic();
+      }} else {{
+        toggleMute();
+      }}
+    }}
+
+    function startMusic() {{
+      document.getElementById('btn').innerHTML = '⏳ A carregar...';
+      if (window.YT && window.YT.Player) {{
+        createPlayer();
+      }} else {{
         var tag = document.createElement('script');
         tag.src = 'https://www.youtube.com/iframe_api';
         document.head.appendChild(tag);
         window.onYouTubeIframeAPIReady = createPlayer;
       }}
     }}
+
     function createPlayer() {{
       ytPlayer = new YT.Player('player', {{
         height: '1', width: '1',
         videoId: '{_video_id}',
-        playerVars: {{ autoplay: 1, loop: {_loop}, start: {_start}{_playlist}, controls: 0, mute: 1 }},
+        playerVars: {{ autoplay: 1, loop: {_loop}, start: {_start}{_playlist}, controls: 0 }},
         events: {{
           onReady: function(e) {{
+            e.target.setVolume({_volume});
             e.target.playVideo();
-            setTimeout(function() {{
-              try {{ e.target.unMute(); e.target.setVolume({_volume}); }} catch(ex) {{}}
-            }}, 300);
+            isPlaying = true;
+            document.getElementById('btn').innerHTML = '🔊 MÚSICA';
           }},{_on_state_change}
           onError: function() {{ document.getElementById('btn').innerHTML = '❌ Erro'; }}
         }}
       }});
     }}
+
     function toggleMute() {{
       if (!ytPlayer) return;
       if (isMuted) {{
@@ -509,7 +523,6 @@ if st.session_state.user_id is None:
         isMuted = true;
       }}
     }}
-    loadAPI();
   </script>
 </body></html>"""
     components.html(_LOGIN_MUSIC, height=54)
@@ -537,36 +550,50 @@ _QUIZ_MUSIC = """<!DOCTYPE html>
   #player { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 </style></head>
 <body>
-  <button id="btn" onclick="toggleMute()">🔊 MÚSICA</button>
+  <button id="btn" onclick="handleBtn()">▶ LIGAR MÚSICA</button>
   <div id="player"></div>
   <script>
     var ytPlayer = null;
+    var isPlaying = false;
     var isMuted = false;
-    function loadAPI() {
-      if (window.YT && window.YT.Player) { createPlayer(); }
-      else {
+
+    function handleBtn() {
+      if (!isPlaying) {
+        startMusic();
+      } else {
+        toggleMute();
+      }
+    }
+
+    function startMusic() {
+      document.getElementById('btn').innerHTML = '⏳ A carregar...';
+      if (window.YT && window.YT.Player) {
+        createPlayer();
+      } else {
         var tag = document.createElement('script');
         tag.src = 'https://www.youtube.com/iframe_api';
         document.head.appendChild(tag);
         window.onYouTubeIframeAPIReady = createPlayer;
       }
     }
+
     function createPlayer() {
       ytPlayer = new YT.Player('player', {
         height: '1', width: '1',
         videoId: 'dWVEE2QlckY',
-        playerVars: { autoplay: 1, loop: 1, playlist: 'dWVEE2QlckY', start: 373, controls: 0, mute: 1 },
+        playerVars: { autoplay: 1, loop: 1, playlist: 'dWVEE2QlckY', start: 373, controls: 0 },
         events: {
           onReady: function(e) {
+            e.target.setVolume(65);
             e.target.playVideo();
-            setTimeout(function() {
-              try { e.target.unMute(); e.target.setVolume(65); } catch(ex) {}
-            }, 300);
+            isPlaying = true;
+            document.getElementById('btn').innerHTML = '🔊 MÚSICA';
           },
           onError: function() { document.getElementById('btn').innerHTML = '❌ Erro'; }
         }
       });
     }
+
     function toggleMute() {
       if (!ytPlayer) return;
       if (isMuted) {
@@ -579,7 +606,6 @@ _QUIZ_MUSIC = """<!DOCTYPE html>
         isMuted = true;
       }
     }
-    loadAPI();
   </script>
 </body></html>"""
 components.html(_QUIZ_MUSIC, height=54)
