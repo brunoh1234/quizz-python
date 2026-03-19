@@ -629,13 +629,13 @@ if not st.session_state.splash_shown:
 
   // ── Texto a escrever ──
   const fullText = [
-    "Bem-vindos ao Quizz sobre",
+    "Bem-vindos ao Quiz sobre",
     "Boas Práticas em Reuniões Online Eficazes!",
     "",
-    "Esperamos que apreciem o nosso quizz,",
+    "Esperamos que apreciem o nosso quiz,",
     "onde poderão aprender, relaxar e descontrair.",
     "",
-    "Um muito obrigado a todos em nome do grupo:"
+    "Um muito obrigado em nome do grupo:"
   ].join("\\n");
 
   const el = document.getElementById('typewriter');
@@ -697,19 +697,39 @@ if not st.session_state.splash_shown:
 </html>""", height=620, scrolling=False)
 
     # Botão oculto que o iframe clica
-    col_s1, col_s2, col_s3 = st.columns([1, 2, 1])
-    with col_s2:
-        st.markdown("<div style='display:none'>", unsafe_allow_html=True)
-        if st.button("__splash_enter__", key="splash_btn"):
-            st.session_state.splash_shown = True
-            st.rerun()
-        st.markdown("</div>", unsafe_allow_html=True)
+    if st.button("__splash_enter__", key="splash_btn"):
+        st.session_state.splash_shown = True
+        st.rerun()
 
-        # Botão visível alternativo (caso o iframe não consiga clicar o oculto)
-        st.markdown("<br>", unsafe_allow_html=True)
-        if st.button("🚀 ENTRAR NO QUIZ", key="splash_btn_visible", use_container_width=True):
-            st.session_state.splash_shown = True
-            st.rerun()
+    # JS para esconder o botão de controlo da view
+    components.html("""
+    <script>
+    function hideControlBtn() {
+        var buttons = window.parent.document.querySelectorAll('button');
+        buttons.forEach(function(btn) {
+            if (btn.innerText && btn.innerText.trim() === '__splash_enter__') {
+                btn.style.visibility = 'hidden';
+                btn.style.height = '0px';
+                btn.style.padding = '0px';
+                btn.style.margin = '0px';
+                btn.style.minHeight = '0px';
+                btn.style.overflow = 'hidden';
+                var parent = btn.closest('[data-testid="stButton"]');
+                if (parent) {
+                    parent.style.height = '0px';
+                    parent.style.overflow = 'hidden';
+                    parent.style.margin = '0px';
+                    parent.style.padding = '0px';
+                }
+            }
+        });
+    }
+    setTimeout(hideControlBtn, 100);
+    setTimeout(hideControlBtn, 500);
+    setTimeout(hideControlBtn, 1000);
+    </script>
+    """, height=0)
+
     st.stop()
 
 # Título principal
