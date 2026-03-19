@@ -319,11 +319,6 @@ if "quiz_completed" not in st.session_state:
 if "splash_shown" not in st.session_state:
     st.session_state.splash_shown = False
 
-# Detectar clique no botão do splash via query param
-if st.query_params.get("splash_done") == "1":
-    st.session_state.splash_shown = True
-    st.query_params.clear()
-    st.rerun()
 
 resultados = carregar_resultados()
 
@@ -643,7 +638,7 @@ if not st.session_state.splash_shown:
 
   <!-- Botão música -->
   <button class="music-btn" id="musicBtn" onclick="startMusic()">
-    🎵 Musica
+    🎵 Carregue aqui para ser mais interactivo
   </button>
 
   <div id="yt-div" style="position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;"></div>
@@ -786,13 +781,42 @@ if not st.session_state.splash_shown:
     enterBtn.innerHTML = '⏳ A entrar...';
     enterBtn.style.opacity = '0.7';
     enterBtn.disabled = true;
-    // Navegar com query param — Streamlit detecta e avança
-    var url = window.parent.location.pathname + '?splash_done=1';
-    window.parent.location.href = url;
+    // Clicar no botão Streamlit real (invisível) no parent
+    try {
+      var btns = window.parent.document.querySelectorAll('button');
+      for (var i = 0; i < btns.length; i++) {
+        if (btns[i].innerText.trim() === '__splash_enter__') {
+          btns[i].click();
+          break;
+        }
+      }
+    } catch(e) {}
   }
 </script>
 </body>
 </html>""", height=700, scrolling=False)
+
+    # Botão real invisível que o JS clica
+    st.markdown("""
+    <style>
+    /* Esconde o botão splash — apenas visível por JS */
+    div[data-testid="stButton"] > button {
+        position: fixed !important;
+        top: -9999px !important;
+        left: -9999px !important;
+        width: 1px !important;
+        height: 1px !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    clicked = st.button("__splash_enter__", key="splash_enter_real")
+
+    if clicked:
+        st.session_state.splash_shown = True
+        st.rerun()
 
     st.stop()
 
