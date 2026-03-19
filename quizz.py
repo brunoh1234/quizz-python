@@ -1,79 +1,171 @@
-import streamlit as st
-import pandas as pd
 import os
+import json
 
-# Configuração da página
-st.set_page_config(page_title="Meu Quizz Python", page_icon="📝")
+from datetime import datetime
+ 
+RESULTADOS_FICHEIRO = "resultados.json"
+ 
+# ------------------------------
+# Funções de armazenamento
+# ------------------------------
+ 
+def carregar_resultados():
+    if not os.path.exists(RESULTADOS_FICHEIRO):
+        return {}
+    with open(RESULTADOS_FICHEIRO, "r") as f:
+        return json.load(f)
+ 
+def guardar_resultados(resultados):
+    with open(RESULTADOS_FICHEIRO, "w") as f:
+        json.dump(resultados, f, indent=4)
+ 
+def ja_jogou(user_id, resultados):
+    return user_id in resultados
+ 
+# ------------------------------
 
-# --- FUNÇÕES PARA SIMULAR BANCO DE DADOS ---
-LOG_FILE = "progresso_quizz.csv"
+# Perguntas do quiz
 
-def salvar_progresso(nome, pergunta_atual, pontuacao):
-    dados = {"Nome": [nome], "Ultima_Pergunta": [pergunta_atual], "Pontos": [pontuacao]}
-    df = pd.DataFrame(dados)
-    if not os.path.isfile(LOG_FILE):
-        df.to_csv(LOG_FILE, index=False)
-    else:
-        # Atualiza ou adiciona novo usuário
-        df_existente = pd.read_csv(LOG_FILE)
-        if nome in df_existente['Nome'].values:
-            df_existente.loc[df_existente['Nome'] == nome, ['Ultima_Pergunta', 'Pontos']] = [pergunta_atual, pontuacao]
-            df_existente.to_csv(LOG_FILE, index=False)
+# ------------------------------
+ 
+perguntas = [
+
+    ("Quanto tempo os profissionais passam por ano em reuniões?",
+     ["120h", "200h", "392h", "500h"], 3),
+ 
+    ("Que percentagem das reuniões é considerada improdutiva?",
+     ["20%", "40%", "67%", "90%"], 3),
+ 
+    ("Quantos profissionais têm a caixa de entrada sempre aberta?",
+     ["20%", "50%", "80%", "95%"], 3),
+ 
+    ("O excesso de conectividade provoca:",
+     ["Mais criatividade", "Melhor comunicação", "Perda de foco e bem‑estar", "Menos reuniões"], 3),
+ 
+    ("O Eixo Duplo da Produtividade combina:",
+     ["Horas extra + multitasking", "Foco individual + colaboração eficiente", "Velocidade + pressão", "Automação + reuniões"], 2),
+ 
+    ("Qual NÃO é um dos 5 pilares da gestão de tempo?",
+     ["Expandir perceção", "Demarcar limites", "Erradicar esgotamento", "Trabalhar mais horas"], 4),
+ 
+    ("O método Pomodoro usa ciclos de:",
+     ["10/10", "25/5", "40/10", "60/15"], 2),
+ 
+    ("Eat the Frog significa:",
+     ["Fazer a tarefa mais fácil", "Fazer a mais difícil de manhã", "Fazer várias tarefas", "Evitar pausas"], 2),
+ 
+    ("Pareto 80/20 sugere:",
+     ["80 tarefas em 20 min", "Eliminar 80% em 20% do tempo", "Trabalhar 80% do dia", "Fazer 20% primeiro"], 2),
+ 
+    ("O cérebro faz multitasking?",
+     ["Sim", "Não, alterna rapidamente", "Apenas com treino", "Só com música"], 2),
+ 
+    ("Quantos fazem multitasking em reuniões?",
+     ["30%", "50%", "92%", "100%"], 3),
+ 
+    ("Reuniões mal planeadas:",
+     ["São curtas", "Destruem o foco individual", "Têm poucos participantes", "Ajudam a concentração"], 2),
+ 
+    ("Primeira fase de uma reunião produtiva:",
+     ["Durante", "Depois", "Antes", "Avaliação"], 3),
+ 
+    ("Antes da reunião deve-se:",
+     ["Improvisar agenda", "Convidar todos", "Clarificar objetivo", "Começar sem contexto"], 3),
+ 
+    ("O 'Olhar Digital' implica:",
+     ["Olhar para o teclado", "Câmara desligada", "Olhar para a lente", "Evitar olhar"], 3),
+ 
+    ("O 'Silêncio Tático' significa:",
+     ["Falar sempre", "Mute até falar", "Desligar câmara", "Não participar"], 2),
+ 
+    ("Entrada Antecipada é:",
+     ["20 min antes", "5 min antes", "No minuto exato", "Depois do moderador"], 2),
+ 
+    ("Para reduzir Zoom Fatigue:",
+     ["Reuniões longas", "Chamadas seguidas", "Encurtar reuniões e dar pausas", "Câmara sempre ligada"], 3),
+ 
+    ("Órbita 1 (Videoconferência) é:",
+     ["O cérebro", "O palco", "O arquivo", "O gestor"], 2),
+ 
+    ("Fecho de Sistema inclui:",
+     ["Responder emails", "Planear o dia seguinte", "Agendar reuniões", "Fazer multitasking"], 2)
+
+]
+ 
+# ------------------------------
+
+# Função principal do quiz
+
+# ------------------------------
+ 
+def jogar_quiz():
+    resultados = carregar_resultados()
+    print("\n=== QUIZ TRABALHO HÍBRIDO ===")
+    user_id = input("Insere o teu ID de utilizador: ").strip()
+
+    if ja_jogou(user_id, resultados):
+        dados = resultados[user_id]
+        print("\n⚠ Este utilizador já jogou!")
+        print(f"Pontuação: {dados['score']}")
+        print(f"Data: {dados['data']} {dados['hora']}")
+        return
+ 
+    print("\nVamos começar!\n")
+	
+    score = 0
+    for idx, (pergunta, opcoes, correta) in enumerate(perguntas, start=1):
+        print(f"\nPergunta {idx}: {pergunta}")
+        for i, opcao in enumerate(opcoes, start=1):
+            print(f"{i}) {opcao}")
+        resposta = input("Resposta: ")
+        if resposta.isdigit() and int(resposta) == correta:
+
+            print("✔ Correto!")
+            score += 1
+
         else:
-            df.to_csv(LOG_FILE, mode='a', index=False, header=False)
+            print("❌ Incorreto.")
+ 
+    # Medalhas
 
-# --- INTERFACE DO USUÁRIO ---
-st.title("🏆 Quizz Interativo")
-
-# Passo 1: Identificação
-if 'usuario' not in st.session_state:
-    nome_input = st.text_input("Qual é o seu nome?")
-    if st.button("Começar Quizz"):
-        if nome_input:
-            st.session_state.usuario = nome_input
-            st.session_state.pergunta = 1
-            st.session_state.pontos = 0
-            salvar_progresso(nome_input, "Iniciou", 0)
-            st.rerun()
-        else:
-            st.warning("Por favor, digite seu nome.")
-else:
-    nome = st.session_state.usuario
-    st.sidebar.write(f"Usuário: **{nome}**")
-    st.sidebar.write(f"Pontuação: **{st.session_state.pontos}**")
-
-    # Passo 2: As Perguntas
-    if st.session_state.pergunta == 1:
-        st.subheader("Pergunta 1: Qual dessas linguagens é famosa pela IA?")
-        resp = st.radio("Escolha:", ["Java", "Python", "C++"], key="p1")
-        if st.button("Confirmar"):
-            if resp == "Python": st.session_state.pontos += 10
-            st.session_state.pergunta = 2
-            salvar_progresso(nome, "Respondeu P1", st.session_state.pontos)
-            st.rerun()
-
-    elif st.session_state.pergunta == 2:
-        st.subheader("Pergunta 2: O Streamlit serve para quê?")
-        resp = st.radio("Escolha:", ["Criar Apps Web", "Cozinhar", "Lavar Carros"], key="p2")
-        if st.button("Finalizar"):
-            if resp == "Criar Apps Web": st.session_state.pontos += 10
-            st.session_state.pergunta = "Fim"
-            salvar_progresso(nome, "Finalizou", st.session_state.pontos)
-            st.rerun()
+    if score == 20:
+        medalha = "🥇 Ouro"
+    elif score >= 15:
+        medalha = "🥈 Prata"
+    elif score >= 10:
+        medalha = "🥉 Bronze"
 
     else:
-        st.balloons()
-        st.success(f"Parabéns, {nome}! Você terminou com {st.session_state.pontos} pontos.")
-        if st.button("Reiniciar"):
-            del st.session_state.usuario
-            st.rerun()
+        medalha = "🎗 Participação"
+ 
+    print("\n=== RESULTADOS ===")
+    print(f"Utilizador: {user_id}")
+    print(f"Pontuação: {score}/20")
+    print(f"Medalha: {medalha}")
+ 
+    # Guardar resultados
 
-# --- ÁREA DO ADMINISTRADOR (SÓ VOCÊ VÊ) ---
-st.divider()
-with st.expander("📊 Painel de Controle (Admin)"):
-    if os.path.isfile(LOG_FILE):
-        df_monitor = pd.read_csv(LOG_FILE)
-        st.write("Aqui você vê quem entrou e onde pararam:")
-        st.dataframe(df_monitor)
-    else:
-        st.info("Nenhum dado registrado ainda.")
+    resultados[user_id] = {
+        "score": score,
+        "data": datetime.now().strftime("%d/%m/%Y"),
+        "hora": datetime.now().strftime("%H:%M:%S")
+
+    }
+
+    guardar_resultados(resultados)
+    print("\nResultados guardados com sucesso!")
+    # Mostrar ranking
+    print("\n=== RANKING DOS COLEGAS ===")
+    ranking = sorted(resultados.items(), key=lambda x: x[1]["score"], reverse=True)
+    for pos, (uid, dados) in enumerate(ranking, start=1):
+        print(f"{pos}. {uid} — {dados['score']} pontos ({dados['data']} {dados['hora']})")
+ 
+ 
+# ------------------------------
+
+# Iniciar o programa
+
+# ------------------------------
+ 
+if __name__ == "__main__":
+    jogar_quiz()
