@@ -307,7 +307,7 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
  
 # ------------------------------
-# RESPOSTAS — CAIXAS CLICÁVEIS EM DUAS COLUNAS
+# RESPOSTAS — CAIXAS CLICÁVEIS EM DUAS COLUNAS (SEM DUPLICAÇÃO)
 # ------------------------------
  
 col1, col2 = st.columns(2)
@@ -316,34 +316,43 @@ for i, opcao in enumerate(opcoes, start=1):
  
     letra = chr(64 + i)  # A, B, C, D
  
-    caixa_html = f"""
-<div class='answer-btn'>{letra}) {opcao}</div>
+    # Criar o botão como caixa estilizada
+    botao_html = f"""
+<style>
+    #btn_{idx}_{i} {{
+        background: #1f2937;
+        border: 1px solid #374151;
+        padding: 18px 22px;
+        border-radius: 10px;
+        margin: 12px auto;
+        width: 100%;
+        max-width: 350px;
+        text-align: center;
+        font-size: 22px;
+        color: #e5e7eb;
+        cursor: pointer;
+        transition: 0.2s ease-in-out;
+    }}
+    #btn_{idx}_{i}:hover {{
+        background: #2563eb33;
+        border-color: #60a5fa;
+        transform: scale(1.03);
+    }}
+</style>
     """
  
-    # Primeiras duas respostas na coluna 1
-    if i <= 2:
-        with col1:
-            if st.button(f"{letra}) {opcao}", key=f"btn_{idx}_{i}"):
-                st.session_state.respostas.append(i)
-                st.session_state.pergunta += 1
+    # Inserir CSS
+    st.markdown(botao_html, unsafe_allow_html=True)
  
-                if st.session_state.pergunta >= len(perguntas):
-                    st.session_state.terminou = True
+    # Escolher coluna
+    target_col = col1 if i <= 2 else col2
  
-                st.rerun()
+    with target_col:
+        if st.button(f"{letra}) {opcao}", key=f"btn_{idx}_{i}"):
+            st.session_state.respostas.append(i)
+            st.session_state.pergunta += 1
  
-            st.markdown(caixa_html, unsafe_allow_html=True)
+            if st.session_state.pergunta >= len(perguntas):
+                st.session_state.terminou = True
  
-    # Últimas duas respostas na coluna 2
-    else:
-        with col2:
-            if st.button(f"{letra}) {opcao}", key=f"btn_{idx}_{i}"):
-                st.session_state.respostas.append(i)
-                st.session_state.pergunta += 1
- 
-                if st.session_state.pergunta >= len(perguntas):
-                    st.session_state.terminou = True
- 
-                st.rerun()
- 
-            st.markdown(caixa_html, unsafe_allow_html=True)
+            st.rerun()
