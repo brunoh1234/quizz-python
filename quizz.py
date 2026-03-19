@@ -336,6 +336,35 @@ if not st.session_state.splash_shown:
     }}
     .main .block-container {{ padding: 0 !important; max-width: 100% !important; }}
 
+    /* Botão ENTRAR acima do overlay */
+    [data-testid="stMain"] .stButton {{
+        position: fixed !important;
+        bottom: 60px !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        z-index: 99999 !important;
+        pointer-events: auto !important;
+    }}
+    [data-testid="stMain"] .stButton button {{
+        background: linear-gradient(135deg, #0a2a8a, #0d47a1) !important;
+        color: #fff !important;
+        border: 2px solid #1e90ff !important;
+        border-radius: 12px !important;
+        padding: 14px 40px !important;
+        font-size: 18px !important;
+        font-weight: bold !important;
+        font-family: Georgia, serif !important;
+        letter-spacing: 2px !important;
+        box-shadow: 0 0 20px rgba(30,144,255,0.6) !important;
+        cursor: pointer !important;
+        white-space: nowrap !important;
+        animation: splBtn 2s infinite alternate !important;
+    }}
+    @keyframes splBtn {{
+        from {{ box-shadow: 0 0 15px rgba(30,144,255,0.5); transform: scale(1); }}
+        to   {{ box-shadow: 0 0 35px rgba(30,144,255,0.9); transform: scale(1.04); }}
+    }}
+
     .spl {{
         position: fixed; inset: 0; z-index: 9000;
         display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
