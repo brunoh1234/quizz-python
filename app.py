@@ -430,7 +430,7 @@ def pagina_inicio():
         # Ordenar: maior score → menor; em caso de empate, mais recente
         resultados_ord = sorted(
             resultados,
-            key=lambda x: (-x.get("score", 0), x.get("data", ""), x.get("hora", ""))
+            key=lambda x: (-int(x.get("score", 0)), x.get("data", ""), x.get("hora", ""))
         )
 
         # Cabeçalho
