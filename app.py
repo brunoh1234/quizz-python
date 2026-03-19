@@ -4,24 +4,20 @@ import os
 from datetime import datetime
 
 # ------------------------------
-# 1. CONFIGURAÇÃO DA PÁGINA E ESTILO MILIONÁRIO
+# 1. CONFIGURAÇÃO E CSS "MILIONÁRIO"
 # ------------------------------
 st.set_page_config(page_title="Quem Quer Ser Produtivo?", layout="centered")
 
 st.markdown("""
     <style>
-    /* Esconder menus padrão */
-    #MainMenu {visibility: hidden;}
-    header {visibility: hidden;}
-    footer {visibility: hidden;}
-    
-    /* Fundo Escuro e Gradiente */
+    /* Fundo e Esconder Elementos */
     .stApp {
         background: radial-gradient(circle, #0d1b3e 0%, #02050a 100%);
-        color: #ffffff;
+        color: white;
     }
+    #MainMenu, header, footer {visibility: hidden;}
 
-    /* Título Estilo Logo */
+    /* Título Principal */
     .m-title {
         font-family: 'Trebuchet MS', sans-serif;
         font-size: 45px;
@@ -30,41 +26,38 @@ st.markdown("""
         color: #ffffff;
         text-transform: uppercase;
         letter-spacing: 4px;
-        margin-top: 20px;
-        text-shadow: 0 0 20px #1e90ff, 0 0 30px #1e90ff;
+        text-shadow: 0 0 20px #1e90ff;
+        margin-bottom: 0px;
     }
-
     .m-subtitle {
         text-align: center;
         color: #ff8c00;
         font-size: 18px;
         letter-spacing: 8px;
         margin-bottom: 30px;
-        font-weight: bold;
     }
 
-    /* Caixa da Pergunta */
-    .question-container {
+    /* Caixa da Pergunta (Retângulo Central) */
+    .question-box {
         background: linear-gradient(180deg, #0a1a3c 0%, #000000 100%);
-        border: 2px solid #5d8aa8;
+        border: 2px solid #1e90ff;
         border-radius: 50px / 25px;
-        padding: 25px;
+        padding: 30px;
         text-align: center;
-        margin-bottom: 30px;
-        box-shadow: 0 0 15px rgba(30, 144, 255, 0.4);
+        margin-bottom: 40px;
+        box-shadow: 0 0 15px rgba(30, 144, 255, 0.5);
     }
 
-    /* BOTÕES DE RESPOSTA (O SEGREDO DO DESIGN) */
+    /* BOTÕES DE RESPOSTA (ESTILO RETÂNGULO MILIONÁRIO) */
     div.stButton > button {
         background: linear-gradient(90deg, #0a1a3c 0%, #1a3a7a 50%, #0a1a3c 100%) !important;
         color: #ffffff !important;
         border: 2px solid #1e90ff !important;
-        border-radius: 40px !important; /* Forma alongada/hexagonal */
-        height: 65px !important;
+        border-radius: 40px !important;
+        height: 60px !important;
         width: 100% !important;
-        font-size: 20px !important;
+        font-size: 18px !important;
         font-weight: bold !important;
-        margin-bottom: 15px !important;
         transition: 0.3s all !important;
         box-shadow: 0 0 10px rgba(30, 144, 255, 0.3) !important;
     }
@@ -72,26 +65,24 @@ st.markdown("""
     div.stButton > button:hover {
         background: linear-gradient(90deg, #ff8c00 0%, #ff4500 100%) !important;
         border-color: #ffffff !important;
-        transform: scale(1.05);
+        transform: scale(1.03);
         box-shadow: 0 0 20px #ff8c00 !important;
-        color: white !important;
     }
-
-    /* Inputs de texto */
+    
+    /* Input de Nome */
     .stTextInput input {
         background-color: #0a1a3c !important;
         color: white !important;
         border: 1px solid #1e90ff !important;
-        text-align: center;
     }
     </style>
     """, unsafe_allow_html=True)
 
+# ------------------------------
+# 2. LÓGICA DE DADOS
+# ------------------------------
 RESULTADOS_FICHEIRO = "resultados.json"
 
-# ------------------------------
-# 2. FUNÇÕES AUXILIARES
-# ------------------------------
 def carregar_resultados():
     if not os.path.exists(RESULTADOS_FICHEIRO): return {}
     try:
@@ -101,12 +92,8 @@ def carregar_resultados():
 def guardar_resultados(resultados):
     with open(RESULTADOS_FICHEIRO, "w") as f: json.dump(resultados, f, indent=4)
 
-def resetar_historico():
-    if os.path.exists(RESULTADOS_FICHEIRO):
-        os.remove(RESULTADOS_FICHEIRO)
-
 # ------------------------------
-# 3. BASE DE PERGUNTAS
+# 3. PERGUNTAS
 # ------------------------------
 perguntas = [
     ("Quanto tempo os profissionais passam por ano em reuniões?", ["120h", "200h", "392h", "500h"], 3),
@@ -132,7 +119,7 @@ perguntas = [
 ]
 
 # ------------------------------
-# 4. ESTADO DO JOGO
+# 4. EXECUÇÃO DO JOGO
 # ------------------------------
 if "user_id" not in st.session_state: st.session_state.user_id = None
 if "pergunta" not in st.session_state: st.session_state.pergunta = 0
@@ -141,52 +128,48 @@ if "terminou" not in st.session_state: st.session_state.terminou = False
 
 resultados = carregar_resultados()
 
-# --- ECRÃ DE LOGIN ---
+# --- ECRÃ INICIAL ---
 if st.session_state.user_id is None:
     st.markdown('<p class="m-title">QUEM QUER SER</p>', unsafe_allow_html=True)
     st.markdown('<p class="m-subtitle">PRODUTIVO?</p>', unsafe_allow_html=True)
     
-    user_name = st.text_input("Introduza o seu nome para começar o concurso:", placeholder="O seu nome aqui...")
+    user_name = st.text_input("Introduza o seu nome para jogar:", key="name_input")
     
-    if st.button("COMEÇAR O DESAFIO"):
-        if not user_name.strip():
-            st.warning("⚠️ Insere um nome para entrar no palco.")
-        elif user_name.strip() in resultados:
-            st.error("❌ Este utilizador já participou.")
-        else:
+    if st.button("ENTRAR NO PALCO"):
+        if user_name.strip():
             st.session_state.user_id = user_name.strip()
             st.rerun()
+        else:
+            st.warning("Por favor, insira o seu nome.")
 
     st.markdown("<br><br>", unsafe_allow_html=True)
-    with st.expander("🛠 GESTÃO (LIMPAR HISTÓRICO)"):
-        if st.button("🗑 APAGAR TODA A BASE DE DADOS"):
-            resetar_historico()
-            st.success("Dados eliminados!")
-            st.rerun()
+    with st.expander("🛠 ADMIN: Limpeza de Dados"):
+        if st.button("LIMPAR TODO O HISTÓRICO"):
+            if os.path.exists(RESULTADOS_FICHEIRO): os.remove(RESULTADOS_FICHEIRO)
+            st.success("Histórico apagado.")
     st.stop()
 
-# --- ECRÃ DE PERGUNTAS ---
+# --- ECRÃ DE JOGO ---
 if not st.session_state.terminou:
     idx = st.session_state.pergunta
     txt_pergunta, opcoes, correta = perguntas[idx]
 
-    st.markdown(f'<p style="text-align:center; color:#1e90ff;">NÍVEL {idx+1} DE 20</p>', unsafe_allow_html=True)
-    st.progress((idx) / 20)
-
-    # Caixa de Pergunta Estilo Milionário
+    st.markdown(f'<p style="text-align:center; color:#1e90ff;">NÍVEL {idx+1} / 20</p>', unsafe_allow_html=True)
+    
+    # Pergunta
     st.markdown(f"""
-        <div class="question-container">
-            <h3 style="color: white; font-size: 26px;">{txt_pergunta}</h3>
+        <div class="question-box">
+            <h2 style="color:white; font-size:24px;">{txt_pergunta}</h2>
         </div>
     """, unsafe_allow_html=True)
 
-    # Colunas de Resposta (A/B e C/D)
+    # Respostas em grelha 2x2
     col1, col2 = st.columns(2)
     letras = ["A", "B", "C", "D"]
     
     for i, opt in enumerate(opcoes):
-        col_atual = col1 if i < 2 else col2
-        if col_atual.button(f"{letras[i]}: {opt}", key=f"btn_{idx}_{i}"):
+        target_col = col1 if i < 2 else col2
+        if target_col.button(f"{letras[i]}: {opt}", key=f"q_{idx}_{i}"):
             st.session_state.respostas.append(i + 1)
             if st.session_state.pergunta < 19:
                 st.session_state.pergunta += 1
@@ -198,24 +181,20 @@ if not st.session_state.terminou:
 else:
     score = sum(1 for i, r in enumerate(st.session_state.respostas) if r == perguntas[i][2])
     
-    st.markdown('<p class="m-title">RESULTADO FINAL</p>', unsafe_allow_html=True)
-    st.markdown(f'<h1 style="text-align:center; color:#ff8c00; font-size: 60px;">{score} / 20</h1>', unsafe_allow_html=True)
+    st.markdown('<p class="m-title">PONTUAÇÃO FINAL</p>', unsafe_allow_html=True)
+    st.markdown(f'<h1 style="text-align:center; color:#ff8c00;">{score} / 20</h1>', unsafe_allow_html=True)
 
-    # Guardar no arquivo
-    res = carregar_resultados()
-    res[st.session_state.user_id] = {"score": score, "time": datetime.now().strftime("%d/%m/%Y %H:%M")}
-    guardar_resultados(res)
+    # Guardar resultados
+    resultados[st.session_state.user_id] = {"score": score, "time": datetime.now().strftime("%d/%m/%Y %H:%M")}
+    guardar_resultados(resultados)
 
-    st.markdown("<br><h2 style='text-align:center; color:#1e90ff;'>TOP 5 CONCORRENTES</h2>", unsafe_allow_html=True)
-    ranking = sorted(res.items(), key=lambda x: x[1]['score'], reverse=True)
+    st.write("---")
+    st.markdown("### 🏆 Top 5 Liderança")
+    ranking = sorted(resultados.items(), key=lambda x: x[1]['score'], reverse=True)
     for p, (name, data) in enumerate(ranking[:5], 1):
-        st.markdown(f"""
-            <div style="background: rgba(30,144,255,0.1); padding:10px; border-radius:15px; margin-bottom:10px; border-left: 5px solid #ff8c00; padding-left:20px;">
-                <b>{p}º {name}</b> — {data['score']} Pontos
-            </div>
-        """, unsafe_allow_html=True)
+        st.write(f"{p}º **{name}** — {data['score']} pts")
 
-    if st.button("NOVO JOGADOR / SAIR"):
+    if st.button("VOLTAR AO INÍCIO"):
         st.session_state.user_id = None
         st.session_state.pergunta = 0
         st.session_state.respostas = []
