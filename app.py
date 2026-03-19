@@ -2,24 +2,6 @@ import streamlit as st
 import json
 import os
 from datetime import datetime
-
-# 1. CONFIGURAÇÃO DA PÁGINA (Deve ser a primeira coisa do Streamlit)
-st.set_page_config(
-    page_title="Quiz Trabalho Híbrido",
-    page_icon="💡",
-    initial_sidebar_state="collapsed",
-)
-
-# 2. ESCONDER MENUS DE EDIÇÃO (Oculta botões do GitHub, Deploy e Menu)
-st.markdown("""
-    <style>
-    #MainMenu {visibility: hidden;}
-    header {visibility: hidden;}
-    footer {visibility: hidden;}
-    /* Remove a margem extra no topo */
-    .block-container {padding-top: 2rem;}
-    </style>
-    """, unsafe_allow_html=True)
  
 RESULTADOS_FICHEIRO = "resultados.json"
  
@@ -72,7 +54,7 @@ perguntas = [
     ("Quantos fazem multitasking em reuniões?",
      ["30%", "50%", "92%", "100%"], 2),
     ("Reuniões mal planeadas:",
-     ["São curtas", "Destruem o foco individual", "Têm poucos participantes", "Ajudam a concentração"], 2),
+     ["São curtas", "Destroem o foco individual", "Têm poucos participantes", "Ajudam a concentração"], 2),
     ("Primeira fase de uma reunião produtiva:",
      ["Durante", "Depois", "Antes", "Avaliação"], 3),
     ("Antes da reunião deve-se:",
@@ -92,7 +74,7 @@ perguntas = [
 ]
  
 # ------------------------------
-# CSS CORPORATE + CENTRADO
+# CSS CORPORATE + CENTRADO + RESPOSTAS EM CAIXAS
 # ------------------------------
  
 st.markdown("""
@@ -146,6 +128,34 @@ body {
     text-align: center;
 }
  
+/* Caixa de cada resposta */
+.answer-box {
+    background: #1f2937;
+    border: 1px solid #374151;
+    padding: 14px 22px;
+    border-radius: 10px;
+    margin: 8px 0;
+    width: 100%;
+    max-width: 500px;
+    text-align: center;
+    font-size: 22px;
+    color: #e5e7eb;
+    transition: 0.2s ease-in-out;
+}
+ 
+.answer-box:hover {
+    background: #2563eb33;
+    border-color: #60a5fa;
+    transform: scale(1.02);
+}
+ 
+/* Centrar radio buttons */
+div[role="radiogroup"] {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+ 
 /* Botões */
 button[kind="primary"] {
     background-color: #2563eb !important;
@@ -176,13 +186,6 @@ button[kind="primary"]:hover {
     background: linear-gradient(90deg, #60a5fa, #2563eb);
     border-radius: 10px;
     transition: width 0.5s ease;
-}
- 
-/* Centrar radio buttons */
-div[role="radiogroup"] {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
 }
  
 /* Fade */
@@ -319,10 +322,16 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
  
+# Criar respostas em caixas
+opcoes_formatadas = [
+    f"<div class='answer-box'>{x}) {opcoes[x-1]}</div>"
+    for x in range(1, len(opcoes)+1)
+]
+ 
 escolha = st.radio(
     "",
     list(range(1, len(opcoes)+1)),
-    format_func=lambda x: f"{x}) {opcoes[x-1]}",
+    format_func=lambda x: opcoes_formatadas[x-1],
     key=f"q_{idx}"
 )
  
