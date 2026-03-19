@@ -643,7 +643,7 @@ if not st.session_state.splash_shown:
 
   <!-- Botão música -->
   <button class="music-btn" id="musicBtn" onclick="startMusic()">
-    🎵 Carregue aqui para ser mais interactivo
+    🎵 Musica
   </button>
 
   <div id="yt-div" style="position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;"></div>
