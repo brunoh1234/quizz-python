@@ -432,15 +432,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:Georgia,serif;backg
   transition:background 0.2s,box-shadow 0.2s;
 }
 .enter-btn:hover{background:linear-gradient(135deg,#1e90ff,#00bfff);box-shadow:0 0 35px rgba(30,144,255,0.9);}
-/* ── Botão MÚSICA ── */
-.music-btn{
-  padding:10px 28px;font-size:13px;font-weight:bold;font-family:Georgia,serif;
-  color:#7eb8ff;cursor:pointer;border:2px solid #1e90ff;
-  border-radius:10px;background:linear-gradient(135deg,#0a1a4a,#001030);
-  opacity:0;animation:lineIn 0.5s ease 4.3s both;
-  transition:all 0.3s;
-}
-.music-btn.on{border-color:#00e676;color:#00e676;box-shadow:0 0 18px rgba(0,230,118,0.5);}
+
 #yt-container{display:none;}
 </style>
 </head>
@@ -468,7 +460,6 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:Georgia,serif;backg
     <div class="ch leg lr"></div>
   </div>
   <button class="enter-btn" onclick="enterQuiz()">🚀 ENTRAR NO QUIZ</button>
-  <button class="music-btn" id="musicBtn" onclick="toggleMusic()">🎵 Carregue aqui para ser mais interactivo</button>
   <div id="yt-container"></div>
 </div>
 
