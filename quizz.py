@@ -1283,35 +1283,56 @@ if st.session_state.user_id is None:
     # ── Auto-refresh de 30s: atualiza o histórico à medida que participantes vão terminando ──
     import streamlit.components.v1 as _comp_hist
     _comp_hist.html("""
+    <style>
+        body { margin:0; padding:0; background:transparent; }
+        #refresh-bar {
+            display:flex; align-items:center; justify-content:center; gap:10px;
+            padding: 8px 0;
+            font-family: 'Segoe UI', sans-serif;
+        }
+        #refresh-label {
+            color: #7eb8ff; font-size: 13px; letter-spacing: 1px;
+        }
+        #refresh-progress-wrap {
+            width: 120px; height: 6px; background: #0a1a3c;
+            border-radius: 4px; overflow: hidden; border: 1px solid #1e3a6e;
+        }
+        #refresh-progress-bar {
+            height: 100%; width: 100%; background: #1e90ff;
+            border-radius: 4px; transition: width 1s linear;
+        }
+        #refresh-count {
+            color: #ffffff; font-weight: bold; font-size: 13px; min-width: 30px;
+        }
+    </style>
+    <div id="refresh-bar">
+        <span id="refresh-label">🔄 Atualiza em</span>
+        <div id="refresh-progress-wrap">
+            <div id="refresh-progress-bar"></div>
+        </div>
+        <span id="refresh-count">30s</span>
+    </div>
     <script>
     (function() {
-        // Só inicia o timer se ainda não estiver ativo nesta janela
-        if (window.parent._histRefreshTimer) return;
-        var _seconds = 30;
-        var _container = document.createElement('div');
-        _container.style.cssText = 'position:fixed;bottom:16px;right:16px;background:rgba(10,26,74,0.85);border:1px solid #1e90ff;border-radius:10px;padding:7px 14px;color:#7eb8ff;font-size:12px;font-family:sans-serif;z-index:9999;letter-spacing:1px;';
-        _container.id = '_hist_refresh_badge';
-        document.body.appendChild(_container);
+        var total = 30;
+        var remaining = total;
+        var countEl = document.getElementById('refresh-count');
+        var barEl = document.getElementById('refresh-progress-bar');
 
-        function updateBadge(s) {
-            _container.innerHTML = '🔄 Atualiza em <b>' + s + 's</b>';
-        }
-
-        var _remaining = _seconds;
-        updateBadge(_remaining);
-
-        window.parent._histRefreshTimer = setInterval(function() {
-            _remaining--;
-            updateBadge(_remaining);
-            if (_remaining <= 0) {
-                clearInterval(window.parent._histRefreshTimer);
-                window.parent._histRefreshTimer = null;
+        function tick() {
+            remaining--;
+            countEl.textContent = remaining + 's';
+            barEl.style.width = (remaining / total * 100) + '%';
+            if (remaining <= 0) {
                 window.parent.location.reload();
+            } else {
+                setTimeout(tick, 1000);
             }
-        }, 1000);
+        }
+        setTimeout(tick, 1000);
     })();
     </script>
-    """, height=0)
+    """, height=46)
 
     st.stop()
 
