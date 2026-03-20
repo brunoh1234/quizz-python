@@ -143,7 +143,7 @@ perguntas = [
 # CONFIGURAÇÃO DA PÁGINA
 # ------------------------------
 
-st.set_page_config(page_title="Quem Quer Ser Produtivo?", layout="wide")
+st.set_page_config(page_title="Quem quer acabar com o caus virtual?", layout="wide")
 
 
 
