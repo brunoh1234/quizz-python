@@ -1280,7 +1280,10 @@ if st.session_state.user_id is None:
         </div>
         """, unsafe_allow_html=True)
 
-    # ── Auto-refresh de 30s: atualiza o histórico à medida que participantes vão terminando ──
+    # ── Auto-refresh de 30s via streamlit-autorefresh ──
+    from streamlit_autorefresh import st_autorefresh
+    _refresh_count = st_autorefresh(interval=30000, limit=None, key="hist_autorefresh")
+    # Mostrar badge de "atualiza em Xs" com JS (apenas visual, o reload é feito pelo streamlit-autorefresh)
     import streamlit.components.v1 as _comp_hist
     _comp_hist.html("""
     <style>
@@ -1290,9 +1293,7 @@ if st.session_state.user_id is None:
             padding: 8px 0;
             font-family: 'Segoe UI', sans-serif;
         }
-        #refresh-label {
-            color: #7eb8ff; font-size: 13px; letter-spacing: 1px;
-        }
+        #refresh-label { color: #7eb8ff; font-size: 13px; letter-spacing: 1px; }
         #refresh-progress-wrap {
             width: 120px; height: 6px; background: #0a1a3c;
             border-radius: 4px; overflow: hidden; border: 1px solid #1e3a6e;
@@ -1301,9 +1302,7 @@ if st.session_state.user_id is None:
             height: 100%; width: 100%; background: #1e90ff;
             border-radius: 4px; transition: width 1s linear;
         }
-        #refresh-count {
-            color: #ffffff; font-weight: bold; font-size: 13px; min-width: 30px;
-        }
+        #refresh-count { color: #ffffff; font-weight: bold; font-size: 13px; min-width: 30px; }
     </style>
     <div id="refresh-bar">
         <span id="refresh-label">🔄 Atualiza em</span>
@@ -1318,16 +1317,12 @@ if st.session_state.user_id is None:
         var remaining = total;
         var countEl = document.getElementById('refresh-count');
         var barEl = document.getElementById('refresh-progress-bar');
-
         function tick() {
             remaining--;
+            if (remaining < 0) remaining = 0;
             countEl.textContent = remaining + 's';
             barEl.style.width = (remaining / total * 100) + '%';
-            if (remaining <= 0) {
-                window.parent.location.reload();
-            } else {
-                setTimeout(tick, 1000);
-            }
+            if (remaining > 0) setTimeout(tick, 1000);
         }
         setTimeout(tick, 1000);
     })();
