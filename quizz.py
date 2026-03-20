@@ -143,7 +143,7 @@ perguntas = [
 # CONFIGURAÇÃO DA PÁGINA
 # ------------------------------
 
-st.set_page_config(page_title="Quem quer acabar com o caus virtual?", layout="wide")
+st.set_page_config(page_title="Quem Quer Ser Produtivo?", layout="wide")
 
 
 
@@ -494,7 +494,7 @@ html, body {
 <body>
 <div class="stars"></div>
 <div class="container">
-    <div class="title">&#127919; Quem quer acabar com o caus Virtual</div>
+    <div class="title">&#127919; QUEM QUER SER PRODUTIVO?</div>
     <div class="bubble">
         <div class="sl a1">Bem-vindos ao Quiz sobre</div>
         <div class="sl a2">Boas Pr&#225;ticas em Reuni&#245;es Online Eficazes!</div>
@@ -502,18 +502,258 @@ html, body {
         <div class="sl a4">Um muito obrigado em nome do grupo:</div>
         <div class="sl a5">&#10024; Biljana Paiva &nbsp;&middot;&nbsp; Bruno Henriques &nbsp;&middot;&nbsp; Jorge Brito</div>
     </div>
-    <div class="char">
-        <div class="ch head">
-            <div class="ch eye el"></div>
-            <div class="ch eye er"></div>
-            <div class="ch mouth"></div>
-        </div>
-        <div class="ch body-p"></div>
-        <div class="ch arm al"></div>
-        <div class="ch arm ar"></div>
-        <div class="ch leg ll"></div>
-        <div class="ch leg lr"></div>
-    </div>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 260" width="220" height="180" style="animation:float 3s ease-in-out infinite;filter:drop-shadow(0 0 18px #1e90ff88);flex-shrink:0;">
+  <defs>
+    <!-- Skin gradient -->
+    <radialGradient id="skin" cx="45%" cy="35%" r="55%">
+      <stop offset="0%" stop-color="#FFCC99"/>
+      <stop offset="100%" stop-color="#E8956E"/>
+    </radialGradient>
+    <!-- Shirt gradient -->
+    <linearGradient id="shirt" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2563EB"/>
+      <stop offset="100%" stop-color="#1D4ED8"/>
+    </linearGradient>
+    <!-- Chair gradient -->
+    <linearGradient id="chair" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1e3a6e"/>
+      <stop offset="100%" stop-color="#0d1f3c"/>
+    </linearGradient>
+    <!-- Desk gradient -->
+    <linearGradient id="desk" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1a2a50"/>
+      <stop offset="100%" stop-color="#0f1830"/>
+    </linearGradient>
+    <!-- Monitor gradient -->
+    <linearGradient id="monitor" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0a1628"/>
+      <stop offset="100%" stop-color="#050c18"/>
+    </linearGradient>
+    <!-- Screen glow -->
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <!-- Screen glow strong -->
+    <filter id="glowStrong">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <!-- Shadow -->
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#00000066"/>
+    </filter>
+    <!-- Face avatars on screen -->
+    <radialGradient id="face1" cx="40%" cy="35%" r="60%">
+      <stop offset="0%" stop-color="#FBBF8A"/>
+      <stop offset="100%" stop-color="#D97706"/>
+    </radialGradient>
+    <radialGradient id="face2" cx="40%" cy="35%" r="60%">
+      <stop offset="0%" stop-color="#93C5FD"/>
+      <stop offset="100%" stop-color="#3B82F6"/>
+    </radialGradient>
+    <radialGradient id="face3" cx="40%" cy="35%" r="60%">
+      <stop offset="0%" stop-color="#86EFAC"/>
+      <stop offset="100%" stop-color="#22C55E"/>
+    </radialGradient>
+  </defs>
+
+  <!-- ===== CHAIR ===== -->
+  <rect x="100" y="195" width="80" height="10" rx="4" fill="url(#chair)" filter="url(#shadow)"/>
+  <rect x="118" y="200" width="8" height="35" rx="3" fill="#132040"/>
+  <rect x="154" y="200" width="8" height="35" rx="3" fill="#132040"/>
+  <rect x="106" y="232" width="70" height="8" rx="4" fill="#0d1830"/>
+  <!-- Chair back -->
+  <rect x="115" y="145" width="10" height="55" rx="4" fill="#132040"/>
+  <rect x="155" y="145" width="10" height="55" rx="4" fill="#132040"/>
+  <rect x="108" y="143" width="64" height="45" rx="8" fill="url(#chair)" opacity="0.85"/>
+
+  <!-- ===== DESK ===== -->
+  <rect x="40" y="185" width="240" height="14" rx="6" fill="url(#desk)" filter="url(#shadow)"/>
+  <rect x="52" y="196" width="10" height="40" rx="4" fill="#0d1830"/>
+  <rect x="258" y="196" width="10" height="40" rx="4" fill="#0d1830"/>
+
+  <!-- ===== PERSON BODY ===== -->
+  <!-- Body/torso -->
+  <rect x="121" y="130" width="38" height="58" rx="10" fill="url(#shirt)" filter="url(#shadow)"/>
+  <!-- Collar/neck detail -->
+  <rect x="136" y="128" width="8" height="14" rx="3" fill="url(#skin)"/>
+  <!-- Shirt detail line -->
+  <line x1="140" y1="138" x2="140" y2="168" stroke="#1e4db7" stroke-width="1.5" opacity="0.5"/>
+
+  <!-- Left arm (down on desk) -->
+  <rect x="100" y="145" width="22" height="42" rx="10" fill="url(#shirt)"/>
+  <!-- Left hand on keyboard -->
+  <ellipse cx="111" cy="187" rx="13" ry="7" fill="url(#skin)"/>
+  <!-- Right arm (reaching keyboard) -->
+  <rect x="158" y="148" width="22" height="40" rx="10" fill="url(#shirt)"/>
+  <!-- Right hand on keyboard -->
+  <ellipse cx="169" cy="188" rx="13" ry="7" fill="url(#skin)"/>
+
+  <!-- ===== HEAD ===== -->
+  <ellipse cx="140" cy="105" rx="28" ry="30" fill="url(#skin)" filter="url(#shadow)"/>
+  <!-- Hair -->
+  <ellipse cx="140" cy="82" rx="28" ry="16" fill="#1a0a00"/>
+  <rect x="112" y="82" width="56" height="12" rx="0" fill="#1a0a00"/>
+  <!-- Eyes -->
+  <ellipse cx="130" cy="103" rx="4.5" ry="5" fill="white"/>
+  <ellipse cx="150" cy="103" rx="4.5" ry="5" fill="white"/>
+  <ellipse cx="131" cy="104" rx="3" ry="3.5" fill="#1a0a00"/>
+  <ellipse cx="151" cy="104" rx="3" ry="3.5" fill="#1a0a00"/>
+  <!-- Eye shine -->
+  <circle cx="132" cy="102.5" r="1" fill="white"/>
+  <circle cx="152" cy="102.5" r="1" fill="white"/>
+  <!-- Eyebrows -->
+  <path d="M126 96 Q130 93 134 96" stroke="#3D1500" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M146 96 Q150 93 154 96" stroke="#3D1500" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <!-- Smile -->
+  <path d="M133 115 Q140 121 147 115" stroke="#C0654A" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <!-- Ears -->
+  <ellipse cx="112" cy="107" rx="5" ry="8" fill="url(#skin)"/>
+  <ellipse cx="168" cy="107" rx="5" ry="8" fill="url(#skin)"/>
+  <!-- Headset -->
+  <path d="M115 85 Q140 68 165 85" stroke="#1e90ff" stroke-width="3.5" fill="none"/>
+  <rect x="109" y="101" width="9" height="13" rx="4" fill="#1a3a7a" stroke="#1e90ff" stroke-width="1.5"/>
+  <rect x="162" y="101" width="9" height="13" rx="4" fill="#1a3a7a" stroke="#1e90ff" stroke-width="1.5"/>
+  <!-- Mic boom -->
+  <path d="M110 112 Q95 125 98 133" stroke="#1a3a7a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <circle cx="98" cy="135" r="4" fill="#1e90ff" opacity="0.9"/>
+
+  <!-- ===== MONITOR ===== -->
+  <!-- Monitor stand -->
+  <rect x="137" y="178" width="6" height="10" rx="2" fill="#0a1220"/>
+  <rect x="127" y="184" width="26" height="4" rx="2" fill="#0a1220"/>
+  <!-- Monitor frame -->
+  <rect x="62" y="80" width="156" height="102" rx="10" fill="#0a1628" stroke="#1e3a70" stroke-width="2" filter="url(#shadow)"/>
+  <!-- Screen area -->
+  <rect x="68" y="86" width="144" height="90" rx="6" fill="url(#monitor)"/>
+  <!-- Screen glow effect -->
+  <rect x="68" y="86" width="144" height="90" rx="6" fill="none" stroke="#1e90ff" stroke-width="1" opacity="0.4"/>
+
+  <!-- ===== VIDEO CALL TILES ON SCREEN ===== -->
+  <!-- Tile 1 - top left -->
+  <rect x="74" y="91" width="64" height="40" rx="5" fill="#0d1e40" stroke="#1e3a70" stroke-width="1"/>
+  <!-- Person in tile 1 -->
+  <circle cx="106" cy="104" r="10" fill="url(#face1)"/>
+  <rect x="94" y="116" width="24" height="14" rx="4" fill="#c2410c"/>
+  <!-- Face features tile 1 -->
+  <circle cx="102" cy="102" r="2" fill="#5C2900"/>
+  <circle cx="110" cy="102" r="2" fill="#5C2900"/>
+  <path d="M102 108 Q106 112 110 108" stroke="#5C2900" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <!-- Name label tile 1 -->
+  <rect x="74" y="123" width="64" height="8" rx="2" fill="#0a1628" opacity="0.8"/>
+  <rect x="78" y="125" width="30" height="4" rx="2" fill="#3B82F6" opacity="0.7"/>
+
+  <!-- Tile 2 - top right -->
+  <rect x="144" y="91" width="62" height="40" rx="5" fill="#0d1e40" stroke="#1e3a70" stroke-width="1"/>
+  <!-- Person in tile 2 -->
+  <circle cx="175" cy="104" r="10" fill="url(#face2)"/>
+  <rect x="163" y="116" width="24" height="14" rx="4" fill="#1D4ED8"/>
+  <!-- Face features tile 2 -->
+  <circle cx="171" cy="102" r="2" fill="#1a4a8a"/>
+  <circle cx="179" cy="102" r="2" fill="#1a4a8a"/>
+  <path d="M171 108 Q175 112 179 108" stroke="#1a4a8a" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <!-- Name label tile 2 -->
+  <rect x="144" y="123" width="62" height="8" rx="2" fill="#0a1628" opacity="0.8"/>
+  <rect x="148" y="125" width="28" height="4" rx="2" fill="#3B82F6" opacity="0.7"/>
+
+  <!-- Tile 3 - bottom left -->
+  <rect x="74" y="137" width="64" height="36" rx="5" fill="#0d1e40" stroke="#1e3a70" stroke-width="1"/>
+  <!-- Person in tile 3 -->
+  <circle cx="106" cy="150" r="9" fill="url(#face3)"/>
+  <rect x="95" y="161" width="22" height="11" rx="4" fill="#166534"/>
+  <!-- Face features tile 3 -->
+  <circle cx="102" cy="148" r="2" fill="#14532d"/>
+  <circle cx="110" cy="148" r="2" fill="#14532d"/>
+  <path d="M102 154 Q106 158 110 154" stroke="#14532d" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <!-- Name label tile 3 -->
+  <rect x="74" y="166" width="64" height="8" rx="2" fill="#0a1628" opacity="0.8"/>
+  <rect x="78" y="168" width="25" height="4" rx="2" fill="#3B82F6" opacity="0.7"/>
+
+  <!-- Tile 4 - bottom right (self view - highlighted) -->
+  <rect x="144" y="137" width="62" height="36" rx="5" fill="#0a1a3a" stroke="#1e90ff" stroke-width="1.5"/>
+  <!-- Camera off icon -->
+  <text x="175" y="157" text-anchor="middle" font-size="16" fill="#1e90ff" opacity="0.5">📷</text>
+  <!-- "Você" label -->
+  <rect x="144" y="166" width="62" height="8" rx="2" fill="#0a1628" opacity="0.8"/>
+  <text x="175" y="173" text-anchor="middle" font-size="6" fill="#1e90ff">Você</text>
+
+  <!-- ===== KEYBOARD ===== -->
+  <rect x="95" y="186" width="90" height="14" rx="4" fill="#0d1628" stroke="#1a2a50" stroke-width="1"/>
+  <!-- Keyboard keys -->
+  <rect x="99" y="188" width="6" height="4" rx="1" fill="#1a3060"/><rect x="107" y="188" width="6" height="4" rx="1" fill="#1a3060"/>
+  <rect x="115" y="188" width="6" height="4" rx="1" fill="#1a3060"/><rect x="123" y="188" width="6" height="4" rx="1" fill="#1a3060"/>
+  <rect x="131" y="188" width="6" height="4" rx="1" fill="#1a3060"/><rect x="139" y="188" width="6" height="4" rx="1" fill="#1a3060"/>
+  <rect x="147" y="188" width="6" height="4" rx="1" fill="#1a3060"/><rect x="155" y="188" width="6" height="4" rx="1" fill="#1a3060"/>
+  <rect x="163" y="188" width="6" height="4" rx="1" fill="#1a3060"/><rect x="171" y="188" width="6" height="4" rx="1" fill="#1a3060"/>
+  <rect x="107" y="194" width="66" height="4" rx="1" fill="#1a3060"/>
+
+  <!-- ===== FLOATING ELEMENTS ===== -->
+  <!-- WiFi signal -->
+  <g opacity="0.7" transform="translate(252, 82)">
+    <path d="M0 12 Q10 2 20 12" stroke="#1e90ff" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <path d="M3 16 Q10 9 17 16" stroke="#1e90ff" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <circle cx="10" cy="19" r="2.5" fill="#1e90ff"/>
+  </g>
+
+  <!-- Chat bubble floating -->
+  <g transform="translate(255, 120)">
+    <rect x="0" y="0" width="38" height="24" rx="8" fill="#0d2060" stroke="#1e90ff" stroke-width="1.5" opacity="0.9"/>
+    <polygon points="6,24 14,24 10,30" fill="#0d2060" stroke="#1e90ff" stroke-width="1" stroke-linejoin="round"/>
+    <rect x="6" y="7" width="26" height="3" rx="1.5" fill="#3B82F6" opacity="0.8"/>
+    <rect x="6" y="13" width="18" height="3" rx="1.5" fill="#3B82F6" opacity="0.5"/>
+  </g>
+
+  <!-- ===== CSS ANIMATIONS ===== -->
+  <style>
+    /* Typing animation on keyboard */
+    @keyframes type {
+      0%,100% { opacity:0.6; transform: translateY(0); }
+      50% { opacity:1; transform: translateY(1px); }
+    }
+    /* Screen pulse -->
+    @keyframes screenPulse {
+      0%,100% { opacity:0.4; }
+      50% { opacity:0.8; }
+    }
+    /* Head bob -->
+    @keyframes headBob {
+      0%,100% { transform: translateY(0) rotate(0deg); }
+      25% { transform: translateY(-2px) rotate(-1.5deg); }
+      75% { transform: translateY(-1px) rotate(1deg); }
+    }
+    /* Float chat bubble */
+    @keyframes floatBubble {
+      0%,100% { transform: translate(255px, 120px); }
+      50% { transform: translate(255px, 114px); }
+    }
+    /* Mic pulse -->
+    @keyframes micPulse {
+      0%,100% { opacity:0.9; r:4; }
+      50% { opacity:1; r:5.5; }
+    }
+    /* Typing dots on tile */
+    @keyframes dot1 { 0%,100%{opacity:0.2} 20%{opacity:1} }
+    @keyframes dot2 { 0%,100%{opacity:0.2} 40%{opacity:1} }
+    @keyframes dot3 { 0%,100%{opacity:0.2} 60%{opacity:1} }
+    /* Screen glow animation */
+    @keyframes glowBorder {
+      0%,100% { opacity:0.4; }
+      50% { opacity:0.9; }
+    }
+
+    /* Apply animations -->
+    .head-group { animation: headBob 3s ease-in-out infinite; transform-origin: 140px 130px; }
+    .chat-bubble { animation: floatBubble 2.5s ease-in-out infinite; }
+    .mic-circle { animation: micPulse 1.5s ease-in-out infinite; }
+    .screen-border { animation: glowBorder 2s ease-in-out infinite; }
+    .key1 { animation: type 1.2s ease-in-out infinite; transform-origin: 102px 190px; }
+    .key2 { animation: type 1.2s ease-in-out infinite 0.1s; transform-origin: 110px 190px; }
+    .key3 { animation: type 1.2s ease-in-out infinite 0.2s; transform-origin: 118px 190px; }
+    .key4 { animation: type 1.2s ease-in-out infinite 0.15s; }
+    .wifi-icon { animation: glowBorder 2s ease-in-out infinite; }
+  </style>
+</svg>
     <button class="enter-btn" onclick="enterQuiz()">&#128640; ENTRAR NO QUIZ</button>
 </div>
 <style>
@@ -669,7 +909,7 @@ function enterQuiz() {
 
 
 # Título principal
-st.markdown('<div class="main-title">🎯 Quem quer acabar com o caus Virtual</div>', unsafe_allow_html=True)
+st.markdown('<div class="main-title">🎯 QUEM QUER SER PRODUTIVO?</div>', unsafe_allow_html=True)
 
 # ------------------------------
 # BOTÃO DE RESET
