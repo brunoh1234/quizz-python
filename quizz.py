@@ -1497,29 +1497,65 @@ if resposta_dada is None:
 """, unsafe_allow_html=True)
 
 import time as _time
-# JS para esconder os botões de resposta via MutationObserver (mais fiável que CSS :has)
-_hide_ts = int(_time.time() * 1000)
+# JS para ESTILIZAR (não esconder) os botões de resposta
+_selected_text = f"{letras[pendente]}: {opcoes[pendente]}" if pendente is not None else ""
+_has_pending = (pendente is not None and resposta_dada is None)
+_style_ts = int(_time.time() * 1000)
 components.html(f"""
 <script>
-// ts={_hide_ts}
+// ts={_style_ts}
 (function() {{
-    function hideAnswerBtns() {{
+    var selectedText = {json.dumps(_selected_text)};
+    var hasPending = {'true' if _has_pending else 'false'};
+
+    function styleAnswerBtns() {{
         var btns = window.parent.document.querySelectorAll('button');
         btns.forEach(function(b) {{
             var t = b.textContent.trim();
             if (/^[ABCD]: /.test(t)) {{
-                var c = b.closest('[data-testid="stButton"]');
-                if (c) {{
-                    c.style.cssText += ';position:absolute!important;opacity:0!important;pointer-events:none!important;width:1px!important;height:1px!important;overflow:hidden!important;';
-                }}
+                var isSelected = hasPending && (t === selectedText);
+                var isDimmed   = hasPending && !isSelected;
+                b.style.cssText = [
+                    'background:' + (isSelected
+                        ? 'linear-gradient(135deg,#1a4a7a,#0d2a4a)'
+                        : 'linear-gradient(135deg,#0d1f3c,#0a1628)') + '!important',
+                    'border:' + (isSelected ? '2px solid #ffd700' : '1px solid #1e3a6a') + '!important',
+                    'color:white!important',
+                    'border-radius:8px!important',
+                    'width:100%!important',
+                    'padding:14px 20px!important',
+                    'font-size:15px!important',
+                    'text-align:left!important',
+                    'cursor:pointer!important',
+                    'display:block!important',
+                    'box-shadow:' + (isSelected ? '0 0 20px rgba(255,215,0,0.55)' : 'none') + '!important',
+                    'opacity:' + (isDimmed ? '0.65' : '1') + '!important',
+                    'transition:all 0.2s!important'
+                ].join(';');
+            }}
+            if (t.indexOf('CONFIRMAR') !== -1) {{
+                b.style.cssText = [
+                    'background:linear-gradient(135deg,#ffd700,#f0a800)!important',
+                    'color:#0a1228!important',
+                    'border:none!important',
+                    'border-radius:10px!important',
+                    'width:100%!important',
+                    'padding:12px 32px!important',
+                    'font-size:15px!important',
+                    'font-weight:800!important',
+                    'cursor:pointer!important',
+                    'letter-spacing:1.5px!important',
+                    'box-shadow:0 0 24px rgba(255,215,0,0.45)!important'
+                ].join(';');
             }}
         }});
     }}
-    hideAnswerBtns();
-    setTimeout(hideAnswerBtns, 50);
-    setTimeout(hideAnswerBtns, 200);
-    setTimeout(hideAnswerBtns, 600);
-    var obs = new MutationObserver(hideAnswerBtns);
+
+    styleAnswerBtns();
+    setTimeout(styleAnswerBtns, 50);
+    setTimeout(styleAnswerBtns, 200);
+    setTimeout(styleAnswerBtns, 600);
+    var obs = new MutationObserver(styleAnswerBtns);
     obs.observe(window.parent.document.body, {{childList: true, subtree: true}});
 }})();
 </script>
@@ -1544,115 +1580,25 @@ for i, (opcao, letra) in enumerate(zip(opcoes, letras)):
 </div>
             """, unsafe_allow_html=True)
         else:
-            # Antes de responder (com ou sem pendente):
-            # 1. Botão Streamlit invisível (para gestão de estado — escondido via JS acima)
-            if st.button(f"{letra}: {opcao}", key=f"btn_{idx}_{i}"):
+            # Antes de responder: botão Streamlit normal (estilizado via JS acima)
+            if st.button(f"{letra}: {opcao}", key=f"btn_{idx}_{i}", use_container_width=True):
                 st.session_state.pendente_resposta = i
                 st.rerun()
 
-            # 2. Determinar classe visual
-            classe = "answer-option"
-            if pendente is not None:
-                if i == pendente:
-                    classe += " pending-selected"
-                else:
-                    classe += " pending-dimmed"
-
-            # 3. Div estilizado clicável — aciona o botão oculto via JS
-            st.markdown(f"""
-<div class="{classe}" style="cursor:pointer;"
-     onclick="(function(){{var btns=document.querySelectorAll('button');for(var j=0;j<btns.length;j++){{if(btns[j].textContent.trim().startsWith('{letra}:')){{btns[j].click();return;}}}}}})()">
-    <span class="answer-letter">{letra}:</span>
-    <span class="answer-text">{opcao}</span>
-</div>
-            """, unsafe_allow_html=True)
-
-# ── BARRA DE CONFIRMAÇÃO FIXA (injetada no parent, sempre visível) ──────────
+# ── BOTÃO CONFIRMAR (direto no layout Streamlit) ──────────────────────────
 if pendente is not None and resposta_dada is None:
-    opcao_escolhida = opcoes[pendente]
-    letra_escolhida = letras[pendente]
-
-    # Botão Streamlit oculto — acionado via JS pela barra fixa
-    st.markdown("""<div style="height:0;overflow:hidden;position:absolute;">""", unsafe_allow_html=True)
-    _confirmar_clicked = st.button("✅ Confirmar Resposta", key=f"confirmar_sim_{idx}", use_container_width=False)
-    st.markdown("""</div>""", unsafe_allow_html=True)
-    if _confirmar_clicked:
-        st.session_state.respostas.append(pendente)
-        st.session_state.resposta_dada = None
-        st.session_state.pendente_resposta = None
-        if idx + 1 < len(perguntas):
-            st.session_state.pergunta += 1
-        else:
-            st.session_state.terminou = True
-        st.rerun()
-
-    # Injetar barra fixa no fundo do ecrã via parent document
-    _letra_js = letra_escolhida.replace("'", "\'")
-    _opcao_js = opcao_escolhida.replace("'", "\'").replace('"', '\"')
-    _confirm_bar_html = f"""
-<script>
-(function() {{
-  // Remover barra anterior se existir
-  var old = window.parent.document.getElementById('_tasklet_confirm_bar');
-  if (old) old.remove();
-
-  var bar = window.parent.document.createElement('div');
-  bar.id = '_tasklet_confirm_bar';
-  bar.style.cssText = [
-    'position:fixed', 'bottom:0', 'left:0', 'right:0', 'z-index:99999',
-    'background:linear-gradient(135deg,rgba(8,14,34,0.98),rgba(4,8,20,0.98))',
-    'border-top:2px solid #ffd700',
-    'padding:14px 24px',
-    'display:flex', 'align-items:center', 'justify-content:center', 'gap:18px',
-    'box-shadow:0 -4px 40px rgba(255,215,0,0.25)'
-  ].join(';');
-
-  bar.innerHTML = [
-    '<span style="color:#9bb8e8;font-size:14px;letter-spacing:1px;">SELECIONOU:</span>',
-    '<span style="color:#fff;font-size:17px;font-weight:700;',
-    'background:rgba(255,215,0,0.13);border:1px solid rgba(255,215,0,0.45);',
-    'border-radius:8px;padding:6px 16px;">',
-    '{_letra_js}: {_opcao_js}',
-    '</span>',
-    '<button id="_tasklet_confirm_btn" style="',
-    'background:linear-gradient(135deg,#ffd700,#f0a800);',
-    'color:#0a1228;border:none;border-radius:10px;',
-    'padding:11px 32px;font-size:15px;font-weight:800;',
-    'cursor:pointer;letter-spacing:1.5px;',
-    'box-shadow:0 0 24px rgba(255,215,0,0.45);',
-    'transition:transform 0.1s,box-shadow 0.1s;',
-    '">✅ CONFIRMAR RESPOSTA</button>'
-  ].join('');
-
-  window.parent.document.body.appendChild(bar);
-
-  var btn = window.parent.document.getElementById('_tasklet_confirm_btn');
-  btn.onmouseover = function() {{ this.style.transform='scale(1.04)'; this.style.boxShadow='0 0 36px rgba(255,215,0,0.7)'; }};
-  btn.onmouseout  = function() {{ this.style.transform='scale(1)';    this.style.boxShadow='0 0 24px rgba(255,215,0,0.45)'; }};
-  btn.onclick = function() {{
-    var btns = window.parent.document.querySelectorAll('button');
-    for (var i = 0; i < btns.length; i++) {{
-      if (btns[i].textContent.trim().indexOf('Confirmar Resposta') !== -1) {{
-        btns[i].click();
-        return;
-      }}
-    }}
-  }};
-}})();
-</script>
-"""
-    components.html(_confirm_bar_html, height=0, scrolling=False)
-else:
-    # Remover barra quando já não é necessária
-    _remove_bar_html = """
-<script>
-(function() {
-  var bar = window.parent.document.getElementById('_tasklet_confirm_bar');
-  if (bar) bar.remove();
-})();
-</script>
-"""
-    components.html(_remove_bar_html, height=0, scrolling=False)
+    st.markdown("<br>", unsafe_allow_html=True)
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        if st.button("✅ CONFIRMAR RESPOSTA", key=f"confirmar_sim_{idx}", use_container_width=True):
+            st.session_state.respostas.append(pendente)
+            st.session_state.resposta_dada = None
+            st.session_state.pendente_resposta = None
+            if idx + 1 < len(perguntas):
+                st.session_state.pergunta += 1
+            else:
+                st.session_state.terminou = True
+            st.rerun()
 
 # Mensagem especial se o tempo esgotou
 if resposta_dada == -1:
