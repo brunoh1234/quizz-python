@@ -514,6 +514,12 @@ if "mostrar_resultado_ts" not in st.session_state:
     st.session_state.mostrar_resultado_ts = None
 if "quiz_completed" not in st.session_state:
     st.session_state.quiz_completed = False
+if "tempos_pergunta" not in st.session_state:
+    st.session_state.tempos_pergunta = []
+if "historico_quiz" not in st.session_state:
+    st.session_state.historico_quiz = []
+if "ver_revisao" not in st.session_state:
+    st.session_state.ver_revisao = False
 if "splash_shown" not in st.session_state:
     st.session_state.splash_shown = False
 if "game_id" not in st.session_state:
@@ -1285,40 +1291,27 @@ inject_sound_toggle()
 # ------------------------------
 
 if st.session_state.terminou:
-    score = sum(
-        1 for idx, r in enumerate(st.session_state.respostas)
-        if r == perguntas[idx][2]
-    )
+    hist  = st.session_state.historico_quiz
+    score = sum(1 for h in hist if h["dada"] == h["correta"])
+    total = len(perguntas)
+    tempos = st.session_state.tempos_pergunta
+    avg_t  = round(sum(tempos) / len(tempos), 1) if tempos else 0
 
-    if score == 10:
+    if score == total:
         msg = "🏆 PERFEITO! Domínio total do tema!"
         cor = "#ffd700"
-    elif score >= 15:
+    elif score >= total * 0.7:
         msg = "🥇 Muito bom! Forte domínio do conteúdo."
         cor = "#00e676"
-    elif score >= 10:
+    elif score >= total * 0.5:
         msg = "🥈 Bom esforço! Ainda há espaço para melhorar."
         cor = "#1e90ff"
     else:
         msg = "🥉 Continua a praticar — estás no caminho certo!"
         cor = "#ff9800"
 
-    st.markdown(f"""
-<div class="final-box">
-    <h2 style="color:#ffd700; font-size:32px; text-shadow: 0 0 20px rgba(255,215,0,0.8);">
-        🎉 Quiz Concluído!
-    </h2>
-    <p style="font-size:22px; color:{cor}; font-weight:bold; margin:15px 0;">
-        {st.session_state.user_id}
-    </p>
-    <p style="font-size:48px; font-weight:900; color:#ffffff; text-shadow: 0 0 20px gold;">
-        {score} / 10
-    </p>
-    <p style="font-size:20px; color:#aac8ff;">{msg}</p>
-</div>
-    """, unsafe_allow_html=True)
-
-    # Guardar resultado
+    # ── Guardar resultado ────────────────────────────────────────────────────
+    resultados = carregar_resultados()
     if st.session_state.user_id not in resultados:
         resultados[st.session_state.user_id] = {
             "score": score,
@@ -1328,9 +1321,172 @@ if st.session_state.terminou:
         guardar_resultados(resultados)
     st.session_state.quiz_completed = True
 
-    # Ranking na página final
-    st.markdown('<h3 style="color:#7eb8ff; text-align:center; margin-top:30px; letter-spacing:2px;">🏅 RANKING</h3>', unsafe_allow_html=True)
+    # ── CSS extra para o ecrã de resultados ─────────────────────────────────
+    st.markdown("""
+<style>
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin: 22px 0;
+}
+.stat-card {
+    background: linear-gradient(135deg, #0d1f4a 0%, #050e2a 100%);
+    border: 1px solid #1e3a7a;
+    border-radius: 14px;
+    padding: 18px 10px;
+    text-align: center;
+}
+.stat-card .stat-val  { font-size: 34px; font-weight: 900; color: #ffffff; }
+.stat-card .stat-lbl  { font-size: 12px; color: #7eb8ff; letter-spacing: 1.5px; margin-top: 4px; }
+.review-item {
+    background: linear-gradient(135deg, #0a1a3a 0%, #040d20 100%);
+    border-radius: 14px;
+    padding: 18px 22px;
+    margin-bottom: 16px;
+    border-left: 5px solid #1e3a7a;
+    animation: fadeInQuestion 0.4s ease;
+}
+.review-item.acertou  { border-left-color: #00e676; }
+.review-item.errou    { border-left-color: #ff4444; }
+.review-item.timeout  { border-left-color: #ff9800; }
+.review-q   { font-size: 16px; color: #e0eaff; font-weight: 700; margin-bottom: 12px; }
+.review-opt { font-size: 14px; padding: 7px 14px; border-radius: 8px; margin: 4px 0; }
+.opt-correct { background: rgba(0,230,118,0.15); border: 1px solid #00e676; color: #00e676; }
+.opt-wrong   { background: rgba(255,68,68,0.15);  border: 1px solid #ff4444; color: #ff4444; }
+.opt-neutral { background: rgba(255,255,255,0.04); border: 1px solid #1e3a7a; color: #7eb8ff; }
+.review-time { font-size: 12px; color: #5a7ab0; margin-top: 10px; }
+.q-summary-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 14px;
+    border-radius: 10px;
+    margin: 4px 0;
+    background: rgba(255,255,255,0.03);
+}
+</style>
+    """, unsafe_allow_html=True)
 
+    # ── Caixa principal ──────────────────────────────────────────────────────
+    st.markdown(f"""
+<div class="final-box">
+    <h2 style="color:#ffd700; font-size:32px; text-shadow: 0 0 20px rgba(255,215,0,0.8);">
+        🎉 Quiz Concluído!
+    </h2>
+    <p style="font-size:22px; color:{cor}; font-weight:bold; margin:15px 0;">
+        {st.session_state.user_id}
+    </p>
+    <p style="font-size:52px; font-weight:900; color:#ffffff; text-shadow: 0 0 20px gold; margin:10px 0;">
+        {score} / {total}
+    </p>
+    <p style="font-size:20px; color:#aac8ff;">{msg}</p>
+</div>
+    """, unsafe_allow_html=True)
+
+    # ── Stats grid ───────────────────────────────────────────────────────────
+    acertos  = score
+    erros    = sum(1 for h in hist if h["dada"] != h["correta"] and h["dada"] != -1)
+    timeouts = sum(1 for h in hist if h["dada"] == -1)
+    pct      = round((score / total) * 100)
+
+    st.markdown(f"""
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-val" style="color:#00e676;">✅ {acertos}</div>
+        <div class="stat-lbl">CERTAS</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-val" style="color:#ff4444;">❌ {erros}</div>
+        <div class="stat-lbl">ERRADAS</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-val" style="color:#ffd700;">{pct}%</div>
+        <div class="stat-lbl">PRECISÃO</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-val" style="color:#1e90ff;">{avg_t}s</div>
+        <div class="stat-lbl">TEMPO MÉDIO</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-val" style="color:#ff9800;">⏰ {timeouts}</div>
+        <div class="stat-lbl">TEMPO ESGOTADO</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-val" style="color:#c084fc;">{sum(tempos):.0f}s</div>
+        <div class="stat-lbl">TEMPO TOTAL</div>
+    </div>
+</div>
+    """, unsafe_allow_html=True)
+
+    # ── Resumo rápido por pergunta ───────────────────────────────────────────
+    st.markdown('<h3 style="color:#7eb8ff; text-align:center; margin:24px 0 12px; letter-spacing:2px;">📋 RESUMO</h3>', unsafe_allow_html=True)
+    for i, h in enumerate(hist, 1):
+        if h["dada"] == h["correta"]:
+            icon, cor_r = "✅", "#00e676"
+        elif h["dada"] == -1:
+            icon, cor_r = "⏰", "#ff9800"
+        else:
+            icon, cor_r = "❌", "#ff4444"
+        letras_rev = ["A","B","C","D"]
+        resp_str = letras_rev[h["dada"]] if h["dada"] >= 0 else "—"
+        st.markdown(f"""
+<div class="q-summary-row">
+    <span style="font-size:18px;">{icon}</span>
+    <span style="color:#7eb8ff; font-weight:700; min-width:28px;">#{i}</span>
+    <span style="color:#c8d8ff; flex:1; font-size:14px;">{h["pergunta"][:80]}{"..." if len(h["pergunta"])>80 else ""}</span>
+    <span style="color:{cor_r}; font-size:13px; white-space:nowrap;">⏱ {h["tempo"]}s</span>
+</div>
+        """, unsafe_allow_html=True)
+
+    # ── Botão ver revisão detalhada ──────────────────────────────────────────
+    st.markdown("<br>", unsafe_allow_html=True)
+    col_r1, col_r2, col_r3 = st.columns([1, 2, 1])
+    with col_r2:
+        label_rev = "🙈 Esconder Revisão" if st.session_state.ver_revisao else "🔍 Ver Revisão Detalhada"
+        if st.button(label_rev, key="btn_revisao", use_container_width=True):
+            st.session_state.ver_revisao = not st.session_state.ver_revisao
+            st.rerun()
+
+    # ── Revisão detalhada ────────────────────────────────────────────────────
+    if st.session_state.ver_revisao:
+        st.markdown('<h3 style="color:#7eb8ff; text-align:center; margin:28px 0 16px; letter-spacing:2px;">🔍 REVISÃO DETALHADA</h3>', unsafe_allow_html=True)
+        letras_rev = ["A","B","C","D"]
+        for i, h in enumerate(hist, 1):
+            if h["dada"] == h["correta"]:
+                classe, titulo = "acertou", f"✅ Pergunta {i} — Certa!"
+                t_cor = "#00e676"
+            elif h["dada"] == -1:
+                classe, titulo = "timeout", f"⏰ Pergunta {i} — Tempo Esgotado"
+                t_cor = "#ff9800"
+            else:
+                classe, titulo = "errou", f"❌ Pergunta {i} — Errada"
+                t_cor = "#ff4444"
+
+            opts_html = ""
+            for j, op in enumerate(h["opcoes"]):
+                if j == h["correta"]:
+                    css = "opt-correct"
+                    prefix = "✅ "
+                elif j == h["dada"] and h["dada"] != h["correta"]:
+                    css = "opt-wrong"
+                    prefix = "❌ "
+                else:
+                    css = "opt-neutral"
+                    prefix = f"{letras_rev[j]}. "
+                opts_html += f'<div class="review-opt {css}">{prefix}{op}</div>'
+
+            st.markdown(f"""
+<div class="review-item {classe}">
+    <div style="color:{t_cor}; font-size:14px; font-weight:700; letter-spacing:1px; margin-bottom:8px;">{titulo}</div>
+    <div class="review-q">{h["pergunta"]}</div>
+    {opts_html}
+    <div class="review-time">⏱ Respondido em {h["tempo"]}s</div>
+</div>
+            """, unsafe_allow_html=True)
+
+    # ── Ranking ──────────────────────────────────────────────────────────────
+    st.markdown('<h3 style="color:#7eb8ff; text-align:center; margin-top:30px; letter-spacing:2px;">🏅 RANKING</h3>', unsafe_allow_html=True)
     def score_seguro_final(item):
         try:
             return int(item[1].get("score", 0))
@@ -1340,17 +1496,18 @@ if st.session_state.terminou:
     ranking = sorted(resultados.items(), key=score_seguro_final, reverse=True)
     medalhas = ["🥇", "🥈", "🥉"]
     for pos, (uid, dados) in enumerate(ranking, start=1):
-        medalha = medalhas[pos-1] if pos <= 3 else f"{pos}."
-        destaque = "border: 2px solid #ffd700; box-shadow: 0 0 15px rgba(255,215,0,0.5);" if uid == st.session_state.user_id else ""
+        medalha   = medalhas[pos-1] if pos <= 3 else f"{pos}."
+        destaque  = "border: 2px solid #ffd700; box-shadow: 0 0 15px rgba(255,215,0,0.5);" if uid == st.session_state.user_id else ""
         score_val = score_seguro_final((uid, dados))
         st.markdown(f"""
 <div class="ranking-box" style="{destaque}">
     <span style="font-size:22px;">{medalha}</span>
     <b style="color:#7eb8ff; font-size:18px; margin-left:10px;">{uid}</b>
-    <span style="color:#e0eaff; float:right; font-size:18px;">{score_val}/10 pontos</span>
+    <span style="color:#e0eaff; float:right; font-size:18px;">{score_val}/{total} pontos</span>
 </div>
         """, unsafe_allow_html=True)
 
+    # ── Botão jogar novamente ────────────────────────────────────────────────
     st.markdown("<br>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 1, 1])
     with col2:
@@ -1361,6 +1518,9 @@ if st.session_state.terminou:
             st.session_state.terminou = False
             st.session_state.resposta_dada = None
             st.session_state.pendente_resposta = None
+            st.session_state.tempos_pergunta = []
+            st.session_state.historico_quiz = []
+            st.session_state.ver_revisao = False
             import uuid as _uuid2; st.session_state.game_id = _uuid2.uuid4().hex[:8]
             st.rerun()
 
@@ -1421,6 +1581,16 @@ st.markdown(f"""
 # Botão oculto que o JavaScript clica quando o tempo expira
 timer_expired = st.button("⏰", key=f"timer_exp_{idx}", help="timer")
 if timer_expired:
+    # Timeout: save 60s and question data
+    st.session_state.tempos_pergunta.append(60.0)
+    st.session_state.historico_quiz.append({
+        "pergunta": pergunta,
+        "opcoes": opcoes,
+        "correta": correta,
+        "dada": -1,
+        "tempo": 60.0,
+    })
+    st.session_state.respostas.append(-1)
     st.session_state.resposta_dada = -1   # -1 = sem resposta (tempo esgotado)
     st.rerun()
 
@@ -1713,6 +1883,15 @@ if pendente is not None and resposta_dada is None and st.session_state.get('most
     with col2:
         if st.button("✅ CONFIRMAR RESPOSTA", key=f"confirmar_sim_{idx}", use_container_width=True):
             # Guarda a resposta mas NÃO avança ainda — mostra resultado primeiro
+            _elapsed_s = round((_time.time()*1000 - _timer_start_ms) / 1000, 1)
+            st.session_state.tempos_pergunta.append(min(_elapsed_s, 60.0))
+            st.session_state.historico_quiz.append({
+                "pergunta": pergunta,
+                "opcoes": opcoes,
+                "correta": correta,
+                "dada": pendente,
+                "tempo": min(_elapsed_s, 60.0),
+            })
             st.session_state.respostas.append(pendente)
             st.session_state.resposta_dada = pendente  # mostra verde/vermelho
             st.session_state.pendente_resposta = None
