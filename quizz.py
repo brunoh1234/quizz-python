@@ -72,6 +72,50 @@ def inject_persistent_music(is_intro=False):
 
 
 # ------------------------------
+# Toggle de Som persistente
+# ------------------------------
+def inject_sound_toggle():
+    """
+    Injeta um botao 🔊/🔇 fixo no ecra via window.parent (persiste entre reruns).
+    O estado e guardado em window.parent._soundEnabled.
+    """
+    import html as _html
+    script = (
+        "(function(){"
+        "var p=window.parent;"
+        "if(p._soundToggleInit)return;"
+        "p._soundToggleInit=true;"
+        "if(p._soundEnabled===undefined)p._soundEnabled=true;"
+        "var btn=p.document.createElement('button');"
+        "btn.id='_sound_toggle_btn';"
+        "btn.textContent=p._soundEnabled?'\U0001F50A':'\U0001F507';"
+        "btn.title='Ligar/Desligar som';"
+        "btn.style.cssText="
+        "'position:fixed;top:60px;right:20px;z-index:99999;"
+        "background:rgba(0,0,0,0.55);border:1px solid rgba(255,255,255,0.18);"
+        "color:white;border-radius:50%;width:38px;height:38px;font-size:17px;"
+        "cursor:pointer;transition:all 0.2s;box-shadow:0 2px 8px rgba(0,0,0,0.4);';"
+        "btn.onmouseenter=function(){btn.style.background='rgba(80,80,80,0.75)';};"
+        "btn.onmouseleave=function(){btn.style.background='rgba(0,0,0,0.55)';};"
+        "btn.onclick=function(){"
+        "  p._soundEnabled=!p._soundEnabled;"
+        "  btn.textContent=p._soundEnabled?'\U0001F50A':'\U0001F507';"
+        "};"
+        "p.document.body.appendChild(btn);"
+        "})();"
+    )
+    esc = _html.escape(script)
+    st.markdown(
+        '<iframe srcdoc="<!DOCTYPE html><html><body>'
+        '<script>' + esc + '</script>'
+        '</body></html>" '
+        'style="display:none;position:absolute;width:0;height:0;" '
+        'width="0" height="0"></iframe>',
+        unsafe_allow_html=True,
+    )
+
+
+# ------------------------------
 # Funções de armazenamento
 # ------------------------------
 
@@ -382,6 +426,9 @@ if "quiz_completed" not in st.session_state:
     st.session_state.quiz_completed = False
 if "splash_shown" not in st.session_state:
     st.session_state.splash_shown = False
+if "game_id" not in st.session_state:
+    import uuid as _uuid
+    st.session_state.game_id = _uuid.uuid4().hex[:8]
 
 
 resultados = carregar_resultados()
@@ -1141,6 +1188,7 @@ if st.session_state.user_id is None:
 
 # Música persistente — já inicializada no login, apenas garante continuidade
 inject_persistent_music(is_intro=False)
+inject_sound_toggle()
 
 # ------------------------------
 # ECRÃ FINAL
@@ -1223,6 +1271,7 @@ if st.session_state.terminou:
             st.session_state.terminou = False
             st.session_state.resposta_dada = None
             st.session_state.pendente_resposta = None
+            import uuid as _uuid2; st.session_state.game_id = _uuid2.uuid4().hex[:8]
             st.rerun()
 
     st.stop()
@@ -1628,6 +1677,53 @@ if resposta_dada is not None and resposta_dada != -1:
 </div>
         """, unsafe_allow_html=True)
 
+    # ── SOM DE FEEDBACK (acerto/erro) + duck da música ────────────────────
+    _game_id = st.session_state.get("game_id", "x")
+    _acertou_js = "true" if acertou else "false"
+    st.markdown(f"""
+<script>
+(function(){{
+  var p=window.parent;
+  var soundKey='sfx_{_game_id}_{idx}';
+  if(localStorage.getItem(soundKey))return;
+  localStorage.setItem(soundKey,'1');
+  if(p._soundEnabled===false)return;
+  // Duck music
+  if(p._ytPlayer&&p._ytPlayer.setVolume){{
+    p._ytPlayer.setVolume(15);
+    setTimeout(function(){{if(p._ytPlayer&&p._ytPlayer.setVolume)p._ytPlayer.setVolume(70);}},2800);
+  }}
+  // Web Audio
+  try{{
+    var ctx=new(p.AudioContext||p.webkitAudioContext)();
+    if({_acertou_js}){{
+      // Arpejo ascendente C5-E5-G5
+      [523.25,659.25,783.99].forEach(function(freq,i){{
+        var o=ctx.createOscillator(),g=ctx.createGain();
+        o.connect(g);g.connect(ctx.destination);
+        o.frequency.value=freq;o.type='sine';
+        var t=ctx.currentTime+i*0.14;
+        g.gain.setValueAtTime(0,t);
+        g.gain.linearRampToValueAtTime(0.45,t+0.03);
+        g.gain.exponentialRampToValueAtTime(0.001,t+0.55);
+        o.start(t);o.stop(t+0.55);
+      }});
+    }}else{{
+      // Buzzer descendente
+      var o=ctx.createOscillator(),g=ctx.createGain();
+      o.connect(g);g.connect(ctx.destination);
+      o.type='sawtooth';
+      o.frequency.setValueAtTime(240,ctx.currentTime);
+      o.frequency.linearRampToValueAtTime(90,ctx.currentTime+0.65);
+      g.gain.setValueAtTime(0.3,ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.65);
+      o.start(ctx.currentTime);o.stop(ctx.currentTime+0.65);
+    }}
+  }}catch(e){{console.log('sfx err:',e);}}
+}})();
+</script>
+""", unsafe_allow_html=True)
+
     # Auto-avançar após 5 segundos
     _ts_res = st.session_state.get("mostrar_resultado_ts")
     elapsed = _time.time() - _ts_res if _ts_res is not None else 0
@@ -1659,6 +1755,39 @@ if resposta_dada == -1:
     ⏰ Tempo esgotado! A resposta correta era: <span style="color:#00e676;">{opcoes[correta]}</span>
 </div>
     """, unsafe_allow_html=True)
+
+
+    # ── SOM DE TEMPO ESGOTADO ──────────────────────────────────────────────
+    _game_id_exp = st.session_state.get("game_id", "x")
+    st.markdown(f"""
+<script>
+(function(){{
+  var p=window.parent;
+  var soundKey='sfx_timeout_{_game_id_exp}_{idx}';
+  if(localStorage.getItem(soundKey))return;
+  localStorage.setItem(soundKey,'1');
+  if(p._soundEnabled===false)return;
+  if(p._ytPlayer&&p._ytPlayer.setVolume){{
+    p._ytPlayer.setVolume(15);
+    setTimeout(function(){{if(p._ytPlayer&&p._ytPlayer.setVolume)p._ytPlayer.setVolume(70);}},2800);
+  }}
+  try{{
+    var ctx=new(p.AudioContext||p.webkitAudioContext)();
+    // Dois beeps graves de tempo esgotado
+    [0,0.4].forEach(function(delay){{
+      var o=ctx.createOscillator(),g=ctx.createGain();
+      o.connect(g);g.connect(ctx.destination);
+      o.type='square';o.frequency.value=130;
+      var t=ctx.currentTime+delay;
+      g.gain.setValueAtTime(0,t);
+      g.gain.linearRampToValueAtTime(0.25,t+0.02);
+      g.gain.exponentialRampToValueAtTime(0.001,t+0.3);
+      o.start(t);o.stop(t+0.3);
+    }});
+  }}catch(e){{console.log('sfx err:',e);}}
+}})();
+</script>
+""", unsafe_allow_html=True)
 
     _ts_exp = st.session_state.get("mostrar_resultado_ts")
     if _ts_exp is None:
