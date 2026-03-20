@@ -1424,7 +1424,63 @@ _timer_html = f"""
 import streamlit.components.v1 as components
 components.html(_timer_html, height=130, scrolling=False)
 
+# ── TECLADO: A/B/C/D seleciona, Enter confirma ───────────────────────────────
+_keyboard_html = f"""
+<script>
+(function() {{
+  // Evitar duplicar listeners
+  if (window._kbListenerActive) return;
+  window._kbListenerActive = true;
+
+  function getParentDoc() {{ return window.parent.document; }}
+
+  function clickButtonByText(text) {{
+    var btns = getParentDoc().querySelectorAll('button');
+    for (var b of btns) {{
+      if (b.textContent.trim() === text) {{ b.click(); return true; }}
+    }}
+    return false;
+  }}
+
+  function clickAnswerByLetter(letter) {{
+    var btns = getParentDoc().querySelectorAll('button');
+    for (var b of btns) {{
+      if (b.textContent.trim().startsWith(letter + ':')) {{
+        b.click(); return true;
+      }}
+    }}
+    return false;
+  }}
+
+  window.parent.document.addEventListener('keydown', function(e) {{
+    var key = e.key.toUpperCase();
+
+    // Selecionar resposta com A/B/C/D (só quando não há pendente)
+    if (['A','B','C','D'].includes(key)) {{
+      // Só funciona se os botões de resposta estiverem visíveis
+      clickAnswerByLetter(key);
+    }}
+
+    // Confirmar com Enter ou Espaço
+    if (key === 'ENTER' || key === ' ') {{
+      clickButtonByText('✅ Confirmar Resposta');
+    }}
+  }}, false);
+}})();
+</script>
+"""
+import streamlit.components.v1 as components
+components.html(_keyboard_html, height=0, scrolling=False)
+
 # ─────────────────────────────────────────────────────────────────────────────
+
+# Dica de teclado (discreta, só aparece quando pode selecionar)
+if resposta_dada is None and pendente is None:
+    st.markdown("""
+<div style="text-align:center; color:rgba(100,160,255,0.55); font-size:12px; margin-bottom:4px; letter-spacing:1px;">
+    ⌨️ &nbsp; Pressione <b>A</b> · <b>B</b> · <b>C</b> · <b>D</b> para selecionar &nbsp;|&nbsp; <b>Enter</b> para confirmar
+</div>
+""", unsafe_allow_html=True)
 
 # Caixa da pergunta
 st.markdown(f"""
