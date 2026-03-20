@@ -1529,49 +1529,92 @@ for i, (opcao, letra) in enumerate(zip(opcoes, letras)):
 </div>
             """, unsafe_allow_html=True)
 
-# ── MODAL DE CONFIRMAÇÃO ─────────────────────────────────────────────────────
+# ── BARRA DE CONFIRMAÇÃO FIXA (injetada no parent, sempre visível) ──────────
 if pendente is not None and resposta_dada is None:
     opcao_escolhida = opcoes[pendente]
     letra_escolhida = letras[pendente]
-    st.markdown(f"""
-<div style="
-    background: linear-gradient(135deg, rgba(10,18,40,0.97) 0%, rgba(5,10,25,0.97) 100%);
-    border: 2px solid #ffd700;
-    border-radius: 16px;
-    padding: 18px 28px;
-    margin: 16px 0 8px 0;
-    text-align: center;
-    box-shadow: 0 0 30px rgba(255,215,0,0.25), 0 0 60px rgba(255,215,0,0.10);
-">
-    <div style="color:#ccd6f6; font-size:15px; margin-bottom:6px;">
-        Selecionou a opção:
-    </div>
-    <div style="
-        color:#ffffff; font-size:18px; font-weight:700;
-        background: rgba(255,215,0,0.12);
-        border: 1px solid rgba(255,215,0,0.4);
-        border-radius: 8px;
-        padding: 8px 16px;
-        display: inline-block;
-        margin: 4px 0 10px 0;
-    ">
-        {letra_escolhida}: {opcao_escolhida}
-    </div>
-</div>
-    """, unsafe_allow_html=True)
 
-    col_l, col_c, col_r = st.columns([1, 2, 1])
-    with col_c:
-        if st.button("✅ Confirmar Resposta", key=f"confirmar_sim_{idx}", use_container_width=True):
-            # Registar resposta e avançar
-            st.session_state.respostas.append(pendente)
-            st.session_state.resposta_dada = None
-            st.session_state.pendente_resposta = None
-            if idx + 1 < len(perguntas):
-                st.session_state.pergunta += 1
-            else:
-                st.session_state.terminou = True
-            st.rerun()
+    # Botão Streamlit oculto — acionado via JS pela barra fixa
+    st.markdown("""<div style="height:0;overflow:hidden;position:absolute;">""", unsafe_allow_html=True)
+    _confirmar_clicked = st.button("✅ Confirmar Resposta", key=f"confirmar_sim_{idx}", use_container_width=False)
+    st.markdown("""</div>""", unsafe_allow_html=True)
+    if _confirmar_clicked:
+        st.session_state.respostas.append(pendente)
+        st.session_state.resposta_dada = None
+        st.session_state.pendente_resposta = None
+        if idx + 1 < len(perguntas):
+            st.session_state.pergunta += 1
+        else:
+            st.session_state.terminou = True
+        st.rerun()
+
+    # Injetar barra fixa no fundo do ecrã via parent document
+    _letra_js = letra_escolhida.replace("'", "\'")
+    _opcao_js = opcao_escolhida.replace("'", "\'").replace('"', '\"')
+    _confirm_bar_html = f"""
+<script>
+(function() {{
+  // Remover barra anterior se existir
+  var old = window.parent.document.getElementById('_tasklet_confirm_bar');
+  if (old) old.remove();
+
+  var bar = window.parent.document.createElement('div');
+  bar.id = '_tasklet_confirm_bar';
+  bar.style.cssText = [
+    'position:fixed', 'bottom:0', 'left:0', 'right:0', 'z-index:99999',
+    'background:linear-gradient(135deg,rgba(8,14,34,0.98),rgba(4,8,20,0.98))',
+    'border-top:2px solid #ffd700',
+    'padding:14px 24px',
+    'display:flex', 'align-items:center', 'justify-content:center', 'gap:18px',
+    'box-shadow:0 -4px 40px rgba(255,215,0,0.25)'
+  ].join(';');
+
+  bar.innerHTML = [
+    '<span style="color:#9bb8e8;font-size:14px;letter-spacing:1px;">SELECIONOU:</span>',
+    '<span style="color:#fff;font-size:17px;font-weight:700;',
+    'background:rgba(255,215,0,0.13);border:1px solid rgba(255,215,0,0.45);',
+    'border-radius:8px;padding:6px 16px;">',
+    '{_letra_js}: {_opcao_js}',
+    '</span>',
+    '<button id="_tasklet_confirm_btn" style="',
+    'background:linear-gradient(135deg,#ffd700,#f0a800);',
+    'color:#0a1228;border:none;border-radius:10px;',
+    'padding:11px 32px;font-size:15px;font-weight:800;',
+    'cursor:pointer;letter-spacing:1.5px;',
+    'box-shadow:0 0 24px rgba(255,215,0,0.45);',
+    'transition:transform 0.1s,box-shadow 0.1s;',
+    '">✅ CONFIRMAR RESPOSTA</button>'
+  ].join('');
+
+  window.parent.document.body.appendChild(bar);
+
+  var btn = window.parent.document.getElementById('_tasklet_confirm_btn');
+  btn.onmouseover = function() {{ this.style.transform='scale(1.04)'; this.style.boxShadow='0 0 36px rgba(255,215,0,0.7)'; }};
+  btn.onmouseout  = function() {{ this.style.transform='scale(1)';    this.style.boxShadow='0 0 24px rgba(255,215,0,0.45)'; }};
+  btn.onclick = function() {{
+    var btns = window.parent.document.querySelectorAll('button');
+    for (var i = 0; i < btns.length; i++) {{
+      if (btns[i].textContent.trim().indexOf('Confirmar Resposta') !== -1) {{
+        btns[i].click();
+        return;
+      }}
+    }}
+  }};
+}})();
+</script>
+"""
+    components.html(_confirm_bar_html, height=0, scrolling=False)
+else:
+    # Remover barra quando já não é necessária
+    _remove_bar_html = """
+<script>
+(function() {
+  var bar = window.parent.document.getElementById('_tasklet_confirm_bar');
+  if (bar) bar.remove();
+})();
+</script>
+"""
+    components.html(_remove_bar_html, height=0, scrolling=False)
 
 # Mensagem especial se o tempo esgotou
 if resposta_dada == -1:
