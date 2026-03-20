@@ -516,59 +516,145 @@ html, body {
     </div>
     <button class="enter-btn" onclick="enterQuiz()">&#128640; ENTRAR NO QUIZ</button>
 </div>
+<style>
+#countdown-overlay {
+    display:none; position:fixed; inset:0; z-index:9999;
+    background:radial-gradient(circle at 50% 50%, #0d1b3e 0%, #02050a 100%);
+    align-items:center; justify-content:center; flex-direction:column;
+}
+#countdown-overlay.active { display:flex; }
+.cd-number {
+    font-size:200px; font-weight:900; font-family:Georgia,serif;
+    color:#fff; text-shadow:0 0 60px #1e90ff, 0 0 120px #1e90ff88;
+    animation:cdPop 0.9s ease forwards;
+    letter-spacing:-5px; line-height:1;
+}
+@keyframes cdPop {
+    0%   { transform:scale(2.5); opacity:0; }
+    30%  { transform:scale(1);   opacity:1; }
+    70%  { transform:scale(1);   opacity:1; }
+    100% { transform:scale(0.4); opacity:0; }
+}
+.cd-label {
+    font-size:18px; letter-spacing:4px; color:#1e90ff;
+    text-transform:uppercase; margin-top:10px;
+    text-shadow:0 0 15px #1e90ff;
+    animation:fadeLabel 0.5s ease 0.2s both;
+}
+@keyframes fadeLabel { from{opacity:0} to{opacity:1} }
+.cd-ring {
+    position:absolute; width:280px; height:280px;
+    border:3px solid #1e90ff44; border-radius:50%;
+    box-shadow:0 0 40px #1e90ff33;
+    animation:ringPulse 0.9s ease forwards;
+}
+@keyframes ringPulse {
+    0%   { transform:scale(0.3); opacity:0; }
+    30%  { transform:scale(1);   opacity:1; }
+    70%  { transform:scale(1);   opacity:0.6; }
+    100% { transform:scale(1.8); opacity:0; }
+}
+.cd-go {
+    font-size:100px; font-weight:900; font-family:Georgia,serif;
+    letter-spacing:8px; color:#ffd700;
+    text-shadow:0 0 60px #ffd700, 0 0 120px #ffa50088;
+    animation:goAnim 0.8s ease forwards;
+}
+@keyframes goAnim {
+    0%   { transform:scale(0.5); opacity:0; }
+    50%  { transform:scale(1.15); opacity:1; }
+    100% { transform:scale(1);   opacity:1; }
+}
+</style>
+<div id="countdown-overlay">
+    <div class="cd-ring" id="cd-ring"></div>
+    <div id="cd-content" class="cd-number">3</div>
+    <div class="cd-label" id="cd-label">PREPARAR</div>
+</div>
 <script>
 function enterQuiz() {
     var p = window.parent;
 
-    // Iniciar musica no parent (gesto do utilizador = browser permite autoplay)
+    // --- INICIAR MUSICA (gesto direto do utilizador = autoplay permitido) ---
     if (!p._ytMusicInit) {
         p._ytMusicInit = true;
+        p._ytPhase = 1; // começa já na fase 1 (transição) — intro foi durante o splash
         var d = p.document.createElement('div');
         d.id = '_yt_persist';
         d.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;overflow:hidden;';
         p.document.body.appendChild(d);
-        var tag = p.document.createElement('script');
-        tag.src = 'https://www.youtube.com/iframe_api';
-        p.document.head.appendChild(tag);
-        p.onYouTubeIframeAPIReady = function() {
-            var phase = 0; // 0=intro, 1=transicao, 2=quiz
-            var introVid = '2oPVdx3QaAM';
+        function buildPlayer() {
             var transVid = 'iahlZ4g6RQc';
             var quizVid  = 'ren6rd9FfV8';
             p._ytPlayer = new p.YT.Player('_yt_persist', {
-                width: '1', height: '1', videoId: introVid,
+                width:'1', height:'1', videoId: transVid,
                 playerVars: { autoplay:1, controls:0, disablekb:1, fs:0, rel:0 },
                 events: {
                     onReady: function(e) { e.target.setVolume(70); },
                     onStateChange: function(e) {
                         if (e.data === 0) {
-                            if (phase === 0) {
-                                phase = 1;
-                                p._ytPlayer.loadVideoById(transVid);
-                            } else if (phase === 1) {
-                                phase = 2;
+                            if (p._ytPhase === 1) {
+                                p._ytPhase = 2;
                                 p._ytPlayer.loadVideoById(quizVid);
-                            } else if (phase === 2) {
-                                p._ytPlayer.playVideo();
+                            } else if (p._ytPhase === 2) {
+                                p._ytPlayer.playVideo(); // loop
                             }
                         }
                     }
                 }
             });
-        };
+        }
+        if (p.YT && p.YT.Player) { buildPlayer(); }
+        else {
+            p.onYouTubeIframeAPIReady = buildPlayer;
+            var tag = p.document.createElement('script');
+            tag.src = 'https://www.youtube.com/iframe_api';
+            p.document.head.appendChild(tag);
+        }
     }
 
-    // Clicar no botao de navegacao Streamlit escondido
-    setTimeout(function() {
-        var btns = p.document.querySelectorAll('button');
-        for (var i = 0; i < btns.length; i++) {
-            if (btns[i].textContent.trim() === 'SPLASH_NAV') {
-                btns[i].click();
-                return;
-            }
+    // --- COUNTDOWN ANIMADO 3, 2, 1, GO! ---
+    var overlay = document.getElementById('countdown-overlay');
+    var content = document.getElementById('cd-content');
+    var label   = document.getElementById('cd-label');
+    var ring    = document.getElementById('cd-ring');
+    overlay.classList.add('active');
+
+    var steps = [
+        { text:'3', lbl:'PREPARAR', cls:'cd-number' },
+        { text:'2', lbl:'ATENÇÃO',  cls:'cd-number' },
+        { text:'1', lbl:'JÁ!',      cls:'cd-number' },
+        { text:'GO!', lbl:'',       cls:'cd-go'      }
+    ];
+    var idx = 0;
+
+    function showStep() {
+        if (idx >= steps.length) {
+            // Avançar para login
+            setTimeout(function() {
+                var btns = p.document.querySelectorAll('button');
+                for (var i = 0; i < btns.length; i++) {
+                    if (btns[i].textContent.trim() === 'SPLASH_NAV') {
+                        btns[i].click(); return;
+                    }
+                }
+                if (btns.length > 0) btns[0].click();
+            }, 100);
+            return;
         }
-        if (btns.length > 0) btns[0].click();
-    }, 150);
+        var s = steps[idx];
+        content.className = s.cls;
+        content.style.animation = 'none';
+        ring.style.animation = 'none';
+        void content.offsetWidth; // reflow
+        content.textContent = s.text;
+        label.textContent   = s.lbl;
+        content.style.animation = '';
+        ring.style.animation = '';
+        idx++;
+        setTimeout(showStep, 950);
+    }
+    showStep();
 }
 </script>
 </body></html>"""
