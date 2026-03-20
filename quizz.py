@@ -1510,7 +1510,7 @@ components.html(f"""
             if (/^[ABCD]: /.test(t)) {{
                 var c = b.closest('[data-testid="stButton"]');
                 if (c) {{
-                    c.style.cssText += ';display:none!important;margin:0!important;padding:0!important;height:0!important;min-height:0!important;overflow:hidden!important;max-height:0!important;';
+                    c.style.cssText += ';position:absolute!important;opacity:0!important;pointer-events:none!important;width:1px!important;height:1px!important;overflow:hidden!important;';
                 }}
             }}
         }});
@@ -1561,7 +1561,7 @@ for i, (opcao, letra) in enumerate(zip(opcoes, letras)):
             # 3. Div estilizado clicável — aciona o botão oculto via JS
             st.markdown(f"""
 <div class="{classe}" style="cursor:pointer;"
-     onclick="(function(){{var btns=window.parent.document.querySelectorAll('button');for(var j=0;j<btns.length;j++){{if(btns[j].textContent.trim().startsWith('{letra}:')){{btns[j].click();return;}}}}}})()">
+     onclick="(function(){{var btns=document.querySelectorAll('button');for(var j=0;j<btns.length;j++){{if(btns[j].textContent.trim().startsWith('{letra}:')){{btns[j].click();return;}}}}}})()">
     <span class="answer-letter">{letra}:</span>
     <span class="answer-text">{opcao}</span>
 </div>
