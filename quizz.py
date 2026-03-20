@@ -212,6 +212,22 @@ st.markdown("""
     border-color: #ff1744;
     box-shadow: 0 0 25px rgba(255, 23, 68, 0.8);
 }
+.answer-option.pending-selected {
+    background: linear-gradient(135deg, #1a4a7a 0%, #0d2a4a 100%);
+    border-color: #ffd700;
+    box-shadow: 0 0 20px rgba(255,215,0,0.55), inset 0 0 12px rgba(255,215,0,0.12);
+    animation: pulse-gold 1s ease-in-out infinite;
+}
+.answer-option.pending-dimmed {
+    background: linear-gradient(135deg, #0d1520 0%, #080f18 100%);
+    border-color: #1a2a50;
+    opacity: 0.40;
+    pointer-events: none;
+}
+@keyframes pulse-gold {
+    0%, 100% { box-shadow: 0 0 20px rgba(255,215,0,0.55); }
+    50%       { box-shadow: 0 0 36px rgba(255,215,0,0.90); }
+}
 
 /* Letra da resposta (A, B, C, D) */
 .answer-letter {
@@ -359,6 +375,8 @@ if "terminou" not in st.session_state:
     st.session_state.terminou = False
 if "resposta_dada" not in st.session_state:
     st.session_state.resposta_dada = None
+if "pendente_resposta" not in st.session_state:
+    st.session_state.pendente_resposta = None
 if "quiz_completed" not in st.session_state:
     st.session_state.quiz_completed = False
 if "splash_shown" not in st.session_state:
@@ -1203,6 +1221,7 @@ if st.session_state.terminou:
             st.session_state.respostas = []
             st.session_state.terminou = False
             st.session_state.resposta_dada = None
+            st.session_state.pendente_resposta = None
             st.rerun()
 
     st.stop()
@@ -1264,6 +1283,7 @@ div[data-testid="stButton"] > button[title="timer"] {
 """, unsafe_allow_html=True)
 
 # Timer circular via components.html — usa localStorage para persistir entre reruns
+_is_paused = st.session_state.pendente_resposta is not None
 _timer_html = f"""
 <div style="display:flex;justify-content:center;align-items:center;margin:0 0 8px 0;">
   <div id="timer-wrap" style="position:relative;width:110px;height:110px;">
@@ -1277,7 +1297,7 @@ _timer_html = f"""
               stroke-linecap="round"
               stroke-dasharray="301.6" stroke-dashoffset="0"
               transform="rotate(-90 55 55)"
-              style="transition:stroke-dashoffset 1s linear, stroke 0.5s;"/>
+              style="transition:stroke-dashoffset 0.5s linear, stroke 0.5s;"/>
       <!-- Número central -->
       <text id="timer-num" x="55" y="62"
             text-anchor="middle" dominant-baseline="middle"
@@ -1288,13 +1308,16 @@ _timer_html = f"""
 </div>
 <script>
 (function(){{
-  var TOTAL = 60;
-  var KEY   = "quiz_timer_q{idx}";
-  var arc   = document.getElementById("timer-arc");
-  var num   = document.getElementById("timer-num");
-  var CIRC  = 2 * Math.PI * 48; // ~301.6
+  var TOTAL     = 60;
+  var KEY       = "quiz_timer_q{idx}";
+  var PAUSE_KEY = "quiz_timer_pause_{idx}";
+  var IS_PAUSED = {'true' if _is_paused else 'false'};
 
-  // Obter ou inicializar o timestamp de início (persiste entre reruns)
+  var arc  = document.getElementById("timer-arc");
+  var num  = document.getElementById("timer-num");
+  var CIRC = 2 * Math.PI * 48; // ~301.6
+
+  // Obter ou inicializar o timestamp de início
   var stored = localStorage.getItem(KEY);
   var startTs;
   if (stored) {{
@@ -1304,42 +1327,65 @@ _timer_html = f"""
     localStorage.setItem(KEY, startTs);
   }}
 
+  // ── Lógica de pausa/retoma ──────────────────────────────────────
+  if (IS_PAUSED) {{
+    // Python diz que está em pausa → guardar momento da pausa (se ainda não guardado)
+    if (!localStorage.getItem(PAUSE_KEY)) {{
+      var elapsedNow = (Date.now() - startTs) / 1000;
+      var remNow = Math.max(0, TOTAL - elapsedNow);
+      localStorage.setItem(PAUSE_KEY, JSON.stringify({{ pauseTs: Date.now(), remAtPause: remNow }}));
+    }}
+  }} else {{
+    // Python diz que NÃO está em pausa → se havia pausa, ajustar startTs
+    var pauseRaw = localStorage.getItem(PAUSE_KEY);
+    if (pauseRaw) {{
+      var pd = JSON.parse(pauseRaw);
+      var pausedMs = Date.now() - pd.pauseTs;
+      // Avançar o startTs pelo tempo que esteve pausado
+      startTs = startTs + pausedMs;
+      localStorage.setItem(KEY, startTs.toString());
+      localStorage.removeItem(PAUSE_KEY);
+    }}
+  }}
+
   var timerDone = false;
 
-  function tick() {{
+  function getRemaining() {{
+    var pauseRaw = localStorage.getItem(PAUSE_KEY);
+    if (pauseRaw) {{
+      return JSON.parse(pauseRaw).remAtPause; // congelado
+    }}
     var elapsed = (Date.now() - startTs) / 1000;
-    var remaining = Math.max(0, TOTAL - elapsed);
-    var secs = Math.ceil(remaining);
+    return Math.max(0, TOTAL - elapsed);
+  }}
 
-    // Atualizar número
+  function tick() {{
+    var remaining = getRemaining();
+    var secs = Math.ceil(remaining);
     num.textContent = secs;
 
-    // Atualizar arco (stroke-dashoffset proporcional ao tempo restante)
     var pct = remaining / TOTAL;
     arc.style.strokeDashoffset = CIRC * (1 - pct);
 
-    // Mudar cor conforme urgência
     if (remaining > 20) {{
-      arc.style.stroke = "#00e676";   // verde
+      arc.style.stroke = "#00e676";
       num.style.fill   = "#ffffff";
     }} else if (remaining > 10) {{
-      arc.style.stroke = "#ffd700";   // amarelo
+      arc.style.stroke = "#ffd700";
       num.style.fill   = "#ffd700";
     }} else {{
-      arc.style.stroke = "#ff4444";   // vermelho
+      arc.style.stroke = "#ff4444";
       num.style.fill   = "#ff4444";
     }}
 
-    if (remaining <= 0 && !timerDone) {{
+    // Só dispara expiração se NÃO estiver pausado
+    var isPausedNow = !!localStorage.getItem(PAUSE_KEY);
+    if (remaining <= 0 && !timerDone && !isPausedNow) {{
       timerDone = true;
       localStorage.removeItem(KEY);
-      // Clicar no botão oculto do Streamlit para sinalizar expiração
       var btns = window.parent.document.querySelectorAll("button");
       for (var b of btns) {{
-        if (b.textContent.trim() === "⏰") {{
-          b.click();
-          break;
-        }}
+        if (b.textContent.trim() === "⏰") {{ b.click(); break; }}
       }}
     }}
   }}
@@ -1347,8 +1393,7 @@ _timer_html = f"""
   tick();
   var iv = setInterval(function() {{
     tick();
-    var elapsed2 = (Date.now() - startTs) / 1000;
-    if (elapsed2 >= TOTAL + 2) clearInterval(iv);
+    if (getRemaining() <= 0 && !localStorage.getItem(PAUSE_KEY)) clearInterval(iv);
   }}, 500);
 }})();
 </script>
@@ -1369,18 +1414,30 @@ st.markdown(f"""
 
 # Grelha de respostas 2x2
 resposta_dada = st.session_state.resposta_dada
+pendente = st.session_state.pendente_resposta
 
 col1, col2 = st.columns(2)
 colunas = [col1, col2, col1, col2]
 
 for i, (opcao, letra) in enumerate(zip(opcoes, letras)):
     with colunas[i]:
-        if resposta_dada is None:
+        if resposta_dada is None and pendente is None:
             # Antes de responder: botão clicável
             if st.button(f"{letra}: {opcao}", key=f"btn_{idx}_{i}", use_container_width=True):
-                st.session_state.resposta_dada = i
-                # Limpar timer do localStorage via JS (clicou antes do tempo)
+                st.session_state.pendente_resposta = i   # pausa timer + mostra confirmação
                 st.rerun()
+        elif resposta_dada is None and pendente is not None:
+            # Em confirmação: mostrar opções semi-desativadas (a selecionada realçada)
+            if i == pendente:
+                classe = "answer-option pending-selected"
+            else:
+                classe = "answer-option pending-dimmed"
+            st.markdown(f"""
+<div class="{classe}">
+    <span class="answer-letter">{letra}:</span>
+    <span class="answer-text">{opcao}</span>
+</div>
+            """, unsafe_allow_html=True)
         else:
             # Depois de responder (ou tempo esgotado): div estilizado
             classe = "answer-option"
@@ -1394,6 +1451,54 @@ for i, (opcao, letra) in enumerate(zip(opcoes, letras)):
     <span class="answer-text">{opcao}</span>
 </div>
             """, unsafe_allow_html=True)
+
+# ── MODAL DE CONFIRMAÇÃO ─────────────────────────────────────────────────────
+if pendente is not None and resposta_dada is None:
+    opcao_escolhida = opcoes[pendente]
+    letra_escolhida = letras[pendente]
+    st.markdown(f"""
+<div style="
+    background: linear-gradient(135deg, rgba(10,18,40,0.97) 0%, rgba(5,10,25,0.97) 100%);
+    border: 2px solid #ffd700;
+    border-radius: 16px;
+    padding: 22px 28px;
+    margin: 16px 0 8px 0;
+    text-align: center;
+    box-shadow: 0 0 30px rgba(255,215,0,0.25), 0 0 60px rgba(255,215,0,0.10);
+">
+    <div style="color:#ffd700; font-size:22px; font-weight:900; letter-spacing:2px; margin-bottom:8px;">
+        ⚠️ BLOQUEAR RESPOSTA?
+    </div>
+    <div style="color:#ccd6f6; font-size:16px; margin-bottom:4px;">
+        Selecionou a opção:
+    </div>
+    <div style="
+        color:#ffffff; font-size:18px; font-weight:700;
+        background: rgba(255,215,0,0.12);
+        border: 1px solid rgba(255,215,0,0.4);
+        border-radius: 8px;
+        padding: 8px 16px;
+        display: inline-block;
+        margin: 6px 0 14px 0;
+    ">
+        {letra_escolhida}: {opcao_escolhida}
+    </div>
+    <div style="color:#8892b0; font-size:14px;">
+        O timer foi pausado. Confirma a sua escolha?
+    </div>
+</div>
+    """, unsafe_allow_html=True)
+
+    col_sim, col_nao = st.columns(2)
+    with col_sim:
+        if st.button("✅ SIM, BLOQUEAR", key=f"confirmar_sim_{idx}", use_container_width=True):
+            st.session_state.resposta_dada = pendente
+            st.session_state.pendente_resposta = None
+            st.rerun()
+    with col_nao:
+        if st.button("❌ NÃO, VOLTAR", key=f"confirmar_nao_{idx}", use_container_width=True):
+            st.session_state.pendente_resposta = None
+            st.rerun()
 
 # Mensagem especial se o tempo esgotou
 if resposta_dada == -1:
