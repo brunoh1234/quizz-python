@@ -221,8 +221,7 @@ st.markdown("""
 .answer-option.pending-dimmed {
     background: linear-gradient(135deg, #0d1520 0%, #080f18 100%);
     border-color: #1a2a50;
-    opacity: 0.40;
-    pointer-events: none;
+    opacity: 0.65;
 }
 @keyframes pulse-gold {
     0%, 100% { box-shadow: 0 0 20px rgba(255,215,0,0.55); }
@@ -1486,10 +1485,14 @@ resposta_dada = st.session_state.resposta_dada
 pendente = st.session_state.pendente_resposta
 
 # Dica de teclado (discreta, só aparece quando pode selecionar)
-if resposta_dada is None and pendente is None:
-    st.markdown("""
+if resposta_dada is None:
+    if pendente is None:
+        hint_text = "⌨️ &nbsp; Pressione <b>A</b> · <b>B</b> · <b>C</b> · <b>D</b> para selecionar &nbsp;|&nbsp; <b>Enter</b> para confirmar"
+    else:
+        hint_text = "⌨️ &nbsp; Pressione <b>A</b> · <b>B</b> · <b>C</b> · <b>D</b> para mudar seleção &nbsp;|&nbsp; <b>Enter</b> para confirmar"
+    st.markdown(f"""
 <div style="text-align:center; color:rgba(100,160,255,0.55); font-size:12px; margin-bottom:4px; letter-spacing:1px;">
-    ⌨️ &nbsp; Pressione <b>A</b> · <b>B</b> · <b>C</b> · <b>D</b> para selecionar &nbsp;|&nbsp; <b>Enter</b> para confirmar
+    {hint_text}
 </div>
 """, unsafe_allow_html=True)
 
@@ -1504,17 +1507,26 @@ for i, (opcao, letra) in enumerate(zip(opcoes, letras)):
                 st.session_state.pendente_resposta = i   # pausa timer + mostra confirmação
                 st.rerun()
         elif resposta_dada is None and pendente is not None:
-            # Em confirmação: mostrar opções semi-desativadas (a selecionada realçada)
+            # Em confirmação: botões clicáveis para trocar seleção
             if i == pendente:
-                classe = "answer-option pending-selected"
-            else:
-                classe = "answer-option pending-dimmed"
-            st.markdown(f"""
-<div class="{classe}">
+                # Opção selecionada — clicável para desselecionar
+                st.markdown(f"""
+<div class="answer-option pending-selected" style="margin-bottom:4px;">
     <span class="answer-letter">{letra}:</span>
     <span class="answer-text">{opcao}</span>
 </div>
-            """, unsafe_allow_html=True)
+                """, unsafe_allow_html=True)
+                # Botão invisível sobreposto para permitir trocar
+                st.markdown('<div style="height:0;margin-top:-52px;opacity:0;">', unsafe_allow_html=True)
+                if st.button(f"{letra}: {opcao}", key=f"btn_{idx}_{i}", use_container_width=True):
+                    st.session_state.pendente_resposta = i
+                    st.rerun()
+                st.markdown('</div>', unsafe_allow_html=True)
+            else:
+                # Outras opções: clicáveis para mudar seleção
+                if st.button(f"{letra}: {opcao}", key=f"btn_{idx}_{i}", use_container_width=True):
+                    st.session_state.pendente_resposta = i
+                    st.rerun()
         else:
             # Depois de responder (ou tempo esgotado): div estilizado
             classe = "answer-option"
