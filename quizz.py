@@ -1496,17 +1496,34 @@ if resposta_dada is None:
 </div>
 """, unsafe_allow_html=True)
 
-# CSS para esconder completamente os botões de resposta ocultos
-st.markdown("""
-<style>
-div[data-testid="stButton"]:has(> button[title="hidden-answer"]) {
-    display: none !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    height: 0 !important;
-}
-</style>
-""", unsafe_allow_html=True)
+import time as _time
+# JS para esconder os botões de resposta via MutationObserver (mais fiável que CSS :has)
+_hide_ts = int(_time.time() * 1000)
+components.html(f"""
+<script>
+// ts={_hide_ts}
+(function() {{
+    function hideAnswerBtns() {{
+        var btns = window.parent.document.querySelectorAll('button');
+        btns.forEach(function(b) {{
+            var t = b.textContent.trim();
+            if (/^[ABCD]: /.test(t)) {{
+                var c = b.closest('[data-testid="stButton"]');
+                if (c) {{
+                    c.style.cssText += ';display:none!important;margin:0!important;padding:0!important;height:0!important;min-height:0!important;overflow:hidden!important;max-height:0!important;';
+                }}
+            }}
+        }});
+    }}
+    hideAnswerBtns();
+    setTimeout(hideAnswerBtns, 50);
+    setTimeout(hideAnswerBtns, 200);
+    setTimeout(hideAnswerBtns, 600);
+    var obs = new MutationObserver(hideAnswerBtns);
+    obs.observe(window.parent.document.body, {{childList: true, subtree: true}});
+}})();
+</script>
+""", height=0)
 
 col1, col2 = st.columns(2)
 colunas = [col1, col2, col1, col2]
@@ -1528,8 +1545,8 @@ for i, (opcao, letra) in enumerate(zip(opcoes, letras)):
             """, unsafe_allow_html=True)
         else:
             # Antes de responder (com ou sem pendente):
-            # 1. Botão Streamlit completamente oculto (para gestão de estado)
-            if st.button(f"{letra}: {opcao}", key=f"btn_{idx}_{i}", help="hidden-answer"):
+            # 1. Botão Streamlit invisível (para gestão de estado — escondido via JS acima)
+            if st.button(f"{letra}: {opcao}", key=f"btn_{idx}_{i}"):
                 st.session_state.pendente_resposta = i
                 st.rerun()
 
@@ -1544,7 +1561,7 @@ for i, (opcao, letra) in enumerate(zip(opcoes, letras)):
             # 3. Div estilizado clicável — aciona o botão oculto via JS
             st.markdown(f"""
 <div class="{classe}" style="cursor:pointer;"
-     onclick="(function(){{var btns=window.parent.document.querySelectorAll('button');for(var j=0;j<btns.length;j++){{if(btns[j].textContent.trim().startsWith('{letra}:')){{btns[j].click();return;}}}}}})()" >
+     onclick="(function(){{var btns=window.parent.document.querySelectorAll('button');for(var j=0;j<btns.length;j++){{if(btns[j].textContent.trim().startsWith('{letra}:')){{btns[j].click();return;}}}}}})()">
     <span class="answer-letter">{letra}:</span>
     <span class="answer-text">{opcao}</span>
 </div>
