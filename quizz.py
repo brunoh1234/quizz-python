@@ -1231,6 +1231,17 @@ if st.session_state.terminou:
 
 idx = st.session_state.pergunta
 pergunta, opcoes, correta = perguntas[idx]
+
+# Inicializar timer_start_ms quando muda de pergunta ou primeira vez
+import time as _time
+_timer_key = f"timer_start_ms_{idx}"
+if _timer_key not in st.session_state:
+    # Limpar timers de perguntas anteriores
+    for k in list(st.session_state.keys()):
+        if k.startswith("timer_start_ms_") and k != _timer_key:
+            del st.session_state[k]
+    st.session_state[_timer_key] = int(_time.time() * 1000)
+_timer_start_ms = st.session_state[_timer_key]
 letras = ["A", "B", "C", "D"]
 progresso = int((idx / len(perguntas)) * 100)
 
@@ -1309,30 +1320,17 @@ _timer_html = f"""
 <script>
 (function(){{
   var TOTAL      = 60;
-  var KEY        = "quiz_timer_q{idx}";
   var FROZEN_KEY = "quiz_timer_frozen_{idx}";
+  // startTs vem sempre do Python (session_state) — nunca do localStorage
+  var startTs    = {_timer_start_ms};
   var IS_STOPPED = {'true' if _is_stopped else 'false'};
 
   var arc  = document.getElementById("timer-arc");
   var num  = document.getElementById("timer-num");
-  var CIRC = 2 * Math.PI * 48; // ~301.6
-
-  // Limpar sempre qualquer dado de pausa antigo (não usamos mais pausa)
-  localStorage.removeItem("quiz_timer_pause_{idx}");
-
-  // Obter ou inicializar o timestamp de início
-  var stored = localStorage.getItem(KEY);
-  var startTs;
-  if (stored) {{
-    startTs = parseInt(stored, 10);
-  }} else {{
-    startTs = Date.now();
-    localStorage.setItem(KEY, startTs);
-  }}
+  var CIRC = 2 * Math.PI * 48;
 
   // ── Paragem definitiva (resposta confirmada) ──────────────────────
   if (IS_STOPPED) {{
-    // Ler tempo congelado ou calcular agora
     var frozenRaw = localStorage.getItem(FROZEN_KEY);
     var frozenRem;
     if (frozenRaw) {{
@@ -1348,10 +1346,9 @@ _timer_html = f"""
     arc.style.strokeDashoffset = CIRC * (1 - frozenPct);
     num.textContent = frozenSecs;
     num.style.fill  = "#555555";
-    return; // timer congelado — sem intervalo
+    return;
   }}
 
-  // Não está parado → limpar qualquer frozen antigo
   localStorage.removeItem(FROZEN_KEY);
 
   var timerDone = false;
@@ -1381,7 +1378,6 @@ _timer_html = f"""
 
     if (remaining <= 0 && !timerDone) {{
       timerDone = true;
-      localStorage.removeItem(KEY);
       var btns = window.parent.document.querySelectorAll("button");
       for (var b of btns) {{
         if (b.textContent.trim() === "⏰") {{ b.click(); break; }}
