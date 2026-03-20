@@ -1047,7 +1047,7 @@ if st.session_state.user_id is None:
             elif ja_jogou(user_id.strip(), resultados):
                 dados = resultados[user_id.strip()]
                 st.error("Este utilizador já jogou.")
-                st.info(f"Pontuação anterior: {dados['score']}/20 — {dados['data']} às {dados['hora']}")
+                st.info(f"Pontuação anterior: {dados['score']}/10 — {dados['data']} às {dados['hora']}")
             else:
                 st.session_state.user_id = user_id.strip()
                 st.rerun()
@@ -1090,7 +1090,7 @@ if st.session_state.user_id is None:
             hora_val = dados.get("hora", "—")
 
             # Barra de progresso
-            pct = int((score_val / 20) * 100)
+            pct = int((score_val / 10) * 100)
             if pct >= 70:
                 cor_barra = "#00e676"
             elif pct >= 40:
@@ -1107,7 +1107,7 @@ if st.session_state.user_id is None:
         <div style="background:#0a1a3c; border-radius:6px; height:10px; width:100px; overflow:hidden; border:1px solid #1e3a6e;">
             <div style="width:{pct}%; height:100%; background:{cor_barra}; border-radius:6px;"></div>
         </div>
-        <span style="color:#ffffff; font-weight:900; font-size:17px; white-space:nowrap;">{score_val}/20</span>
+        <span style="color:#ffffff; font-weight:900; font-size:17px; white-space:nowrap;">{score_val}/10</span>
     </div>
 </div>
             """, unsafe_allow_html=True)
@@ -1133,7 +1133,7 @@ if st.session_state.terminou:
         if r == perguntas[idx][2]
     )
 
-    if score == 20:
+    if score == 10:
         msg = "🏆 PERFEITO! Domínio total do tema!"
         cor = "#ffd700"
     elif score >= 15:
@@ -1155,7 +1155,7 @@ if st.session_state.terminou:
         {st.session_state.user_id}
     </p>
     <p style="font-size:48px; font-weight:900; color:#ffffff; text-shadow: 0 0 20px gold;">
-        {score} / 20
+        {score} / 10
     </p>
     <p style="font-size:20px; color:#aac8ff;">{msg}</p>
 </div>
@@ -1190,7 +1190,7 @@ if st.session_state.terminou:
 <div class="ranking-box" style="{destaque}">
     <span style="font-size:22px;">{medalha}</span>
     <b style="color:#7eb8ff; font-size:18px; margin-left:10px;">{uid}</b>
-    <span style="color:#e0eaff; float:right; font-size:18px;">{score_val}/20 pontos</span>
+    <span style="color:#e0eaff; float:right; font-size:18px;">{score_val}/10 pontos</span>
 </div>
         """, unsafe_allow_html=True)
 
