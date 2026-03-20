@@ -909,6 +909,52 @@ function enterQuiz() {
         }
     }
 
+    function showIntroVideo() {
+        // Silenciar o player de fundo para ouvir só o vídeo
+        try { if (p._ytPlayer) p._ytPlayer.mute(); } catch(e){}
+
+        // Transformar overlay num player de vídeo
+        overlay.style.background = 'rgba(0,0,0,0.97)';
+        overlay.innerHTML = ''
+            + '<div style="display:flex;flex-direction:column;align-items:center;'
+            + 'justify-content:center;width:100%;height:100%;gap:20px;">'
+            + '<div style="font-size:28px;font-weight:700;color:#ffd700;'
+            + 'text-shadow:0 0 20px #ffd700;letter-spacing:4px;font-family:Georgia,serif;">'
+            + '🏆 QUEM QUER SER PRODUTIVO? 🏆</div>'
+            + '<div id="yt-intro-player" style="width:854px;max-width:90vw;height:480px;'
+            + 'max-height:55vh;border-radius:12px;overflow:hidden;'
+            + 'box-shadow:0 0 60px #1e90ff88;"></div>'
+            + '<div style="font-size:15px;color:#aaa;letter-spacing:2px;">'
+            + 'O quiz começa a seguir...</div>'
+            + '</div>';
+
+        function createVideoPlayer() {
+            new YT.Player('yt-intro-player', {
+                width: '100%', height: '100%',
+                videoId: '2oPVdx3QaAM',
+                playerVars: { autoplay:1, controls:1, rel:0, modestbranding:1 },
+                events: {
+                    onReady: function(e) { e.target.setVolume(80); },
+                    onStateChange: function(e) {
+                        if (e.data === 0) { // vídeo terminou
+                            try { if (p._ytPlayer) p._ytPlayer.unMute(); } catch(ex){}
+                            navigateToLogin();
+                        }
+                    }
+                }
+            });
+        }
+        // Carregar YouTube API neste contexto (iframe local)
+        if (window.YT && window.YT.Player) {
+            createVideoPlayer();
+        } else {
+            window.onYouTubeIframeAPIReady = createVideoPlayer;
+            var tag = document.createElement('script');
+            tag.src = 'https://www.youtube.com/iframe_api';
+            document.head.appendChild(tag);
+        }
+    }
+
     function navigateToLogin() {
         var btns = p.document.querySelectorAll('button');
         for (var i = 0; i < btns.length; i++) {
@@ -932,11 +978,11 @@ function enterQuiz() {
             }
         }
 
-        // Avançar para login ao segundo 20 (após o GO!)
+        // Após o GO! ao segundo 20 → mostrar vídeo 2oPVdx3QaAM
         if (!navigated && t >= 20) {
             navigated = true;
             clearInterval(cdInterval);
-            navigateToLogin();
+            showIntroVideo();
         }
     }, 100);
 }
