@@ -794,6 +794,18 @@ html, body {
     70%  { transform:scale(1);   opacity:0.6; }
     100% { transform:scale(1.8); opacity:0; }
 }
+.cd-word {
+    font-size:72px; font-weight:700; font-family:Georgia,serif;
+    color:#fff; letter-spacing:6px; text-align:center;
+    text-shadow:0 0 30px #1e90ff, 0 0 60px #1e90ff44;
+    animation:wordPop 0.85s ease forwards;
+}
+@keyframes wordPop {
+    0%   { transform:translateY(30px) scale(0.8); opacity:0; }
+    20%  { transform:translateY(0)    scale(1);   opacity:1; }
+    70%  { transform:translateY(0)    scale(1);   opacity:1; }
+    100% { transform:translateY(-30px) scale(0.8); opacity:0; }
+}
 .cd-go {
     font-size:100px; font-weight:900; font-family:Georgia,serif;
     letter-spacing:8px; color:#ffd700;
@@ -807,9 +819,9 @@ html, body {
 }
 </style>
 <div id="countdown-overlay">
-    <div class="cd-ring" id="cd-ring"></div>
-    <div id="cd-content" class="cd-number">3</div>
-    <div class="cd-label" id="cd-label">PREPARAR</div>
+    <div class="cd-ring" id="cd-ring" style="opacity:0"></div>
+    <div id="cd-content" class="cd-word" style="opacity:0"></div>
+    <div class="cd-label" id="cd-label" style="opacity:0"></div>
 </div>
 <script>
 function enterQuiz() {
@@ -860,12 +872,20 @@ function enterQuiz() {
     var cdRing    = document.getElementById('cd-ring');
     overlay.classList.add('active');
 
-    // Timestamps em segundos: quando a voz diz cada número
+    // Timestamps em segundos: palavras karaoke + números
     var steps = [
-        { time: 9,  text:'3',   lbl:'PREPARAR', cls:'cd-number' },
-        { time: 11, text:'2',   lbl:'ATENÇÃO',  cls:'cd-number' },
-        { time: 13, text:'1',   lbl:'JÁ!',      cls:'cd-number' },
-        { time: 16, text:'GO!', lbl:'',          cls:'cd-go'     }
+        { time: 1,  text:'WELCOME',    lbl:'', cls:'cd-word',   ring:false },
+        { time: 2,  text:'LADIES',     lbl:'', cls:'cd-word',   ring:false },
+        { time: 3,  text:'AND',        lbl:'', cls:'cd-word',   ring:false },
+        { time: 4,  text:'GENTLEMEN',  lbl:'', cls:'cd-word',   ring:false },
+        { time: 5,  text:'THE',        lbl:'', cls:'cd-word',   ring:false },
+        { time: 6,  text:'SHOW',       lbl:'', cls:'cd-word',   ring:false },
+        { time: 7,  text:'STARTS',     lbl:'', cls:'cd-word',   ring:false },
+        { time: 8,  text:'IN',         lbl:'', cls:'cd-word',   ring:false },
+        { time: 9,  text:'3',          lbl:'PREPARAR', cls:'cd-number', ring:true },
+        { time: 11, text:'2',          lbl:'ATENÇÃO',  cls:'cd-number', ring:true },
+        { time: 13, text:'1',          lbl:'JÁ!',      cls:'cd-number', ring:true },
+        { time: 15, text:'GO!',        lbl:'',         cls:'cd-go',     ring:false }
     ];
     var stepShown = [false, false, false, false];
     var navigated = false;
@@ -877,8 +897,16 @@ function enterQuiz() {
         void cdContent.offsetWidth; // reflow
         cdContent.textContent = s.text;
         cdLabel.textContent   = s.lbl;
+        cdContent.style.opacity = '1';
+        cdLabel.style.opacity = s.lbl ? '1' : '0';
         cdContent.style.animation = '';
-        cdRing.style.animation = '';
+        if (s.ring) {
+            cdRing.style.opacity = '1';
+            cdRing.style.animation = '';
+        } else {
+            cdRing.style.opacity = '0';
+            cdRing.style.animation = 'none';
+        }
     }
 
     function navigateToLogin() {
