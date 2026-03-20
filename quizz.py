@@ -910,45 +910,124 @@ function enterQuiz() {
     }
 
     function showIntroVideo() {
-        // Silenciar o player de fundo para ouvir só o vídeo
-        try { if (p._ytPlayer) p._ytPlayer.mute(); } catch(e){}
+        // ─── ECRÃ CINEMATOGRÁFICO ESTILO ESTÚDIO ───
+        overlay.style.background = 'radial-gradient(ellipse at center, #0a1628 0%, #020509 100%)';
+        overlay.style.overflow = 'hidden';
 
-        // Transformar overlay num player de vídeo
-        overlay.style.background = 'rgba(0,0,0,0.97)';
-        overlay.innerHTML = ''
-            + '<div style="display:flex;flex-direction:column;align-items:center;'
-            + 'justify-content:center;width:100%;height:100%;gap:20px;">'
-            + '<div style="font-size:28px;font-weight:700;color:#ffd700;'
-            + 'text-shadow:0 0 20px #ffd700;letter-spacing:4px;font-family:Georgia,serif;">'
-            + '🏆 QUEM QUER SER PRODUTIVO? 🏆</div>'
-            + '<div id="yt-intro-player" style="width:854px;max-width:90vw;height:480px;'
-            + 'max-height:55vh;border-radius:12px;overflow:hidden;'
-            + 'box-shadow:0 0 60px #1e90ff88;"></div>'
-            + '<div style="font-size:15px;color:#aaa;letter-spacing:2px;">'
-            + 'O quiz começa a seguir...</div>'
-            + '</div>';
+        overlay.innerHTML =
+        '<style>' +
+        '@keyframes rotateLights { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }' +
+        '@keyframes rotateLightsRev { from{transform:rotate(0deg)} to{transform:rotate(-360deg)} }' +
+        '@keyframes pulseRing { 0%{transform:scale(0.6);opacity:0.8} 100%{transform:scale(2.2);opacity:0} }' +
+        '@keyframes titleReveal { 0%{opacity:0;letter-spacing:20px;transform:scale(0.8)} 100%{opacity:1;letter-spacing:6px;transform:scale(1)} }' +
+        '@keyframes subReveal { 0%{opacity:0;transform:translateY(20px)} 100%{opacity:1;transform:translateY(0)} }' +
+        '@keyframes ladderIn { 0%{opacity:0;transform:translateX(60px)} 100%{opacity:1;transform:translateX(0)} }' +
+        '@keyframes goldGlow { 0%,100%{text-shadow:0 0 20px #ffd700,0 0 40px #ff8800} 50%{text-shadow:0 0 40px #ffd700,0 0 80px #ffa500,0 0 120px #ff6600} }' +
+        '@keyframes btnPulse { 0%,100%{box-shadow:0 0 20px #1e90ff66,0 0 0 0 #1e90ff44} 50%{box-shadow:0 0 40px #1e90ffaa,0 0 0 10px transparent} }' +
+        '@keyframes starFloat { 0%,100%{opacity:0.3;transform:translateY(0)} 50%{opacity:1;transform:translateY(-8px)} }' +
+        '.ci-wrap{position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;overflow:hidden}' +
+        '.ci-lights{position:absolute;top:50%;left:50%;width:1px;height:1px;animation:rotateLights 12s linear infinite}' +
+        '.ci-lights2{position:absolute;top:50%;left:50%;width:1px;height:1px;animation:rotateLightsRev 18s linear infinite}' +
+        '.ci-beam{position:absolute;top:0;left:0;width:2px;height:55vh;transform-origin:0 0;background:linear-gradient(to bottom,transparent,rgba(30,144,255,0.35),transparent)}' +
+        '.ci-beam2{background:linear-gradient(to bottom,transparent,rgba(100,180,255,0.2),transparent)}' +
+        '.ci-ring{position:absolute;top:50%;left:50%;border-radius:50%;border:1px solid rgba(30,144,255,0.5);transform:translate(-50%,-50%);animation:pulseRing 3s ease-out infinite}' +
+        '.ci-center{position:relative;z-index:10;text-align:center;display:flex;flex-direction:column;align-items:center;gap:18px}' +
+        '.ci-pre{font-size:14px;letter-spacing:8px;color:#4a9eff;font-family:Georgia,serif;text-transform:uppercase;animation:subReveal 1s ease forwards;opacity:0;animation-delay:0.5s}' +
+        '.ci-title1{font-size:clamp(28px,5vw,52px);font-weight:900;color:#ffd700;font-family:Georgia,serif;text-transform:uppercase;animation:titleReveal 1.5s ease forwards,goldGlow 3s ease infinite;opacity:0;animation-delay:1s}' +
+        '.ci-title2{font-size:clamp(36px,7vw,72px);font-weight:900;color:#ffffff;font-family:Georgia,serif;text-transform:uppercase;animation:titleReveal 1.5s ease forwards;opacity:0;animation-delay:1.5s;text-shadow:0 0 30px #1e90ff,0 0 60px #1e90ff88}' +
+        '.ci-sub{font-size:clamp(11px,1.8vw,16px);color:#8ab8ff;letter-spacing:3px;animation:subReveal 1s ease forwards;opacity:0;animation-delay:2.5s;max-width:500px}' +
+        '.ci-ladder{position:absolute;right:30px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column-reverse;gap:6px;animation:ladderIn 1s ease forwards;opacity:0;animation-delay:2s}' +
+        '.ci-rung{padding:6px 18px;border-radius:4px;font-size:12px;font-weight:700;letter-spacing:1px;text-align:center;min-width:110px;border-left:3px solid}' +
+        '.ci-rung.gold{background:linear-gradient(90deg,#3d2200,#5a3500);color:#ffd700;border-color:#ffd700;text-shadow:0 0 10px #ffd700}' +
+        '.ci-rung.silver{background:linear-gradient(90deg,#1a2a3a,#243548);color:#87ceeb;border-color:#4a9eff}' +
+        '.ci-rung.bronze{background:linear-gradient(90deg,#1a1a1a,#2a2a2a);color:#888;border-color:#444}' +
+        '.ci-rung.safe{background:linear-gradient(90deg,#0a2a0a,#143214);color:#44dd44;border-color:#22aa22}' +
+        '.ci-btn{margin-top:10px;padding:16px 48px;font-size:18px;font-weight:700;letter-spacing:4px;color:#fff;background:linear-gradient(135deg,#0a3080,#1e90ff);border:2px solid #4ab0ff;border-radius:8px;cursor:pointer;animation:subReveal 1s ease forwards,btnPulse 2s ease infinite;opacity:0;animation-delay:3s;transition:transform 0.15s,background 0.2s}' +
+        '.ci-btn:hover{transform:scale(1.06);background:linear-gradient(135deg,#1040a0,#4ab0ff)}' +
+        '.ci-stars{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none}' +
+        '.ci-star{position:absolute;border-radius:50%;background:#fff}' +
+        '#ci-hidden-audio{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}' +
+        '</style>' +
+        '<div class="ci-wrap">' +
+        // Stars background
+        '<div class="ci-stars" id="ci-stars"></div>' +
+        // Rotating beams layer 1
+        '<div class="ci-lights" id="ci-lights1"></div>' +
+        // Rotating beams layer 2
+        '<div class="ci-lights2" id="ci-lights2"></div>' +
+        // Pulsing rings
+        '<div class="ci-ring" style="width:300px;height:300px;animation-delay:0s"></div>' +
+        '<div class="ci-ring" style="width:500px;height:500px;animation-delay:1s"></div>' +
+        '<div class="ci-ring" style="width:700px;height:700px;animation-delay:2s"></div>' +
+        // Prize ladder (right side)
+        '<div class="ci-ladder" id="ci-ladder">' +
+        '<div class="ci-rung gold">🏆 20/20 — GÉNIO</div>' +
+        '<div class="ci-rung gold">⭐ 18/20 — EXPERT</div>' +
+        '<div class="ci-rung silver">💡 15/20 — PRODUTIVO</div>' +
+        '<div class="ci-rung safe">🛡️ 10/20 — SEGURO</div>' +
+        '<div class="ci-rung silver">📚  5/20 — APRENDIZ</div>' +
+        '<div class="ci-rung bronze">🚀  1/20 — INÍCIO</div>' +
+        '</div>' +
+        // Center content
+        '<div class="ci-center">' +
+        '<div class="ci-pre">✦ APRESENTA ✦</div>' +
+        '<div class="ci-title1">QUEM QUER SER</div>' +
+        '<div class="ci-title2">PRODUTIVO?</div>' +
+        '<div class="ci-sub">Quiz sobre Boas Práticas em Reuniões Online Eficazes</div>' +
+        '<button class="ci-btn" onclick="navigateToLogin()">▶ &nbsp; ENTRAR NO QUIZ</button>' +
+        '</div>' +
+        // Hidden audio player
+        '<div id="ci-hidden-audio"></div>' +
+        '</div>';
 
-        function createVideoPlayer() {
-            new YT.Player('yt-intro-player', {
-                width: '100%', height: '100%',
-                videoId: '2oPVdx3QaAM',
-                playerVars: { autoplay:1, controls:1, rel:0, modestbranding:1 },
-                events: {
-                    onReady: function(e) { e.target.setVolume(80); },
-                    onStateChange: function(e) {
-                        if (e.data === 0) { // vídeo terminou
-                            try { if (p._ytPlayer) p._ytPlayer.unMute(); } catch(ex){}
-                            navigateToLogin();
-                        }
+        // Gerar estrelas aleatórias
+        var stars = document.getElementById('ci-stars');
+        for (var s = 0; s < 120; s++) {
+            var st = document.createElement('div');
+            st.className = 'ci-star';
+            var sz = Math.random() * 2.5 + 0.5;
+            st.style.cssText = 'width:' + sz + 'px;height:' + sz + 'px;'
+                + 'top:' + Math.random()*100 + '%;left:' + Math.random()*100 + '%;'
+                + 'opacity:' + (Math.random()*0.6+0.2) + ';'
+                + 'animation:starFloat ' + (Math.random()*4+2) + 's ease infinite;'
+                + 'animation-delay:' + (Math.random()*4) + 's;';
+            stars.appendChild(st);
+        }
+
+        // Gerar raios de luz
+        var l1 = document.getElementById('ci-lights1');
+        var l2 = document.getElementById('ci-lights2');
+        for (var b = 0; b < 18; b++) {
+            var bm = document.createElement('div');
+            bm.className = 'ci-beam';
+            bm.style.transform = 'rotate(' + (b * 20) + 'deg)';
+            l1.appendChild(bm);
+        }
+        for (var b2 = 0; b2 < 12; b2++) {
+            var bm2 = document.createElement('div');
+            bm2.className = 'ci-beam ci-beam2';
+            bm2.style.transform = 'rotate(' + (b2 * 30 + 15) + 'deg)';
+            l2.appendChild(bm2);
+        }
+
+        // Áudio oculto — reproduzir 2oPVdx3QaAM sem mostrar player
+        function startAudio() {
+            new YT.Player('ci-hidden-audio', {
+                width:'1', height:'1',
+                videoId:'2oPVdx3QaAM',
+                playerVars:{autoplay:1, controls:0, mute:0, rel:0},
+                events:{
+                    onReady: function(e){ e.target.setVolume(75); },
+                    onStateChange: function(e){
+                        if (e.data === 0) navigateToLogin();
                     }
                 }
             });
         }
-        // Carregar YouTube API neste contexto (iframe local)
         if (window.YT && window.YT.Player) {
-            createVideoPlayer();
+            startAudio();
         } else {
-            window.onYouTubeIframeAPIReady = createVideoPlayer;
+            window.onYouTubeIframeAPIReady = startAudio;
             var tag = document.createElement('script');
             tag.src = 'https://www.youtube.com/iframe_api';
             document.head.appendChild(tag);
