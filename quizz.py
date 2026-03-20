@@ -1282,7 +1282,7 @@ div[data-testid="stButton"] > button[title="timer"] {
 """, unsafe_allow_html=True)
 
 # Timer circular via components.html — usa localStorage para persistir entre reruns
-_is_paused  = st.session_state.pendente_resposta is not None
+_is_paused  = False  # timer nunca pausa ao selecionar resposta — só para ao confirmar
 _is_stopped = st.session_state.resposta_dada is not None  # resposta confirmada → congela timer
 _timer_html = f"""
 <div style="display:flex;justify-content:center;align-items:center;margin:0 0 8px 0;">
@@ -1308,15 +1308,17 @@ _timer_html = f"""
 </div>
 <script>
 (function(){{
-  var TOTAL     = 60;
-  var KEY       = "quiz_timer_q{idx}";
-  var PAUSE_KEY = "quiz_timer_pause_{idx}";
-  var IS_PAUSED   = {'true' if _is_paused else 'false'};
-  var IS_STOPPED  = {'true' if _is_stopped else 'false'};
+  var TOTAL      = 60;
+  var KEY        = "quiz_timer_q{idx}";
+  var FROZEN_KEY = "quiz_timer_frozen_{idx}";
+  var IS_STOPPED = {'true' if _is_stopped else 'false'};
 
   var arc  = document.getElementById("timer-arc");
   var num  = document.getElementById("timer-num");
   var CIRC = 2 * Math.PI * 48; // ~301.6
+
+  // Limpar sempre qualquer dado de pausa antigo (não usamos mais pausa)
+  localStorage.removeItem("quiz_timer_pause_{idx}");
 
   // Obter ou inicializar o timestamp de início
   var stored = localStorage.getItem(KEY);
@@ -1328,55 +1330,34 @@ _timer_html = f"""
     localStorage.setItem(KEY, startTs);
   }}
 
-  // ── Lógica de paragem definitiva (resposta confirmada) ──────────
+  // ── Paragem definitiva (resposta confirmada) ──────────────────────
   if (IS_STOPPED) {{
-    // Congela o timer e muda para cinzento — sem intervalo
-    if (!localStorage.getItem(PAUSE_KEY)) {{
-      var elapsedNow = (Date.now() - startTs) / 1000;
-      var remNow = Math.max(0, TOTAL - elapsedNow);
-      localStorage.setItem(PAUSE_KEY, JSON.stringify({{ pauseTs: Date.now(), remAtPause: remNow }}));
+    // Ler tempo congelado ou calcular agora
+    var frozenRaw = localStorage.getItem(FROZEN_KEY);
+    var frozenRem;
+    if (frozenRaw) {{
+      frozenRem = parseFloat(frozenRaw);
+    }} else {{
+      frozenRem = Math.max(0, TOTAL - (Date.now() - startTs) / 1000);
+      localStorage.setItem(FROZEN_KEY, frozenRem.toString());
     }}
-    var frozenData = JSON.parse(localStorage.getItem(PAUSE_KEY));
-    var frozenSecs = Math.ceil(frozenData.remAtPause);
-    var frozenPct  = frozenData.remAtPause / TOTAL;
+    var frozenSecs = Math.ceil(frozenRem);
+    var frozenPct  = frozenRem / TOTAL;
     arc.style.transition = "none";
     arc.style.stroke = "#555555";
     arc.style.strokeDashoffset = CIRC * (1 - frozenPct);
     num.textContent = frozenSecs;
     num.style.fill  = "#555555";
-    return; // Não iniciar o intervalo — timer totalmente parado
+    return; // timer congelado — sem intervalo
   }}
 
-  // ── Lógica de pausa/retoma ──────────────────────────────────────
-  if (IS_PAUSED) {{
-    // Python diz que está em pausa → guardar momento da pausa (se ainda não guardado)
-    if (!localStorage.getItem(PAUSE_KEY)) {{
-      var elapsedNow = (Date.now() - startTs) / 1000;
-      var remNow = Math.max(0, TOTAL - elapsedNow);
-      localStorage.setItem(PAUSE_KEY, JSON.stringify({{ pauseTs: Date.now(), remAtPause: remNow }}));
-    }}
-  }} else {{
-    // Python diz que NÃO está em pausa → se havia pausa, ajustar startTs
-    var pauseRaw = localStorage.getItem(PAUSE_KEY);
-    if (pauseRaw) {{
-      var pd = JSON.parse(pauseRaw);
-      var pausedMs = Date.now() - pd.pauseTs;
-      // Avançar o startTs pelo tempo que esteve pausado
-      startTs = startTs + pausedMs;
-      localStorage.setItem(KEY, startTs.toString());
-      localStorage.removeItem(PAUSE_KEY);
-    }}
-  }}
+  // Não está parado → limpar qualquer frozen antigo
+  localStorage.removeItem(FROZEN_KEY);
 
   var timerDone = false;
 
   function getRemaining() {{
-    var pauseRaw = localStorage.getItem(PAUSE_KEY);
-    if (pauseRaw) {{
-      return JSON.parse(pauseRaw).remAtPause; // congelado
-    }}
-    var elapsed = (Date.now() - startTs) / 1000;
-    return Math.max(0, TOTAL - elapsed);
+    return Math.max(0, TOTAL - (Date.now() - startTs) / 1000);
   }}
 
   function tick() {{
@@ -1398,9 +1379,7 @@ _timer_html = f"""
       num.style.fill   = "#ff4444";
     }}
 
-    // Só dispara expiração se NÃO estiver pausado
-    var isPausedNow = !!localStorage.getItem(PAUSE_KEY);
-    if (remaining <= 0 && !timerDone && !isPausedNow) {{
+    if (remaining <= 0 && !timerDone) {{
       timerDone = true;
       localStorage.removeItem(KEY);
       var btns = window.parent.document.querySelectorAll("button");
@@ -1413,7 +1392,7 @@ _timer_html = f"""
   tick();
   var iv = setInterval(function() {{
     tick();
-    if (getRemaining() <= 0 && !localStorage.getItem(PAUSE_KEY)) clearInterval(iv);
+    if (getRemaining() <= 0) clearInterval(iv);
   }}, 500);
 }})();
 </script>
