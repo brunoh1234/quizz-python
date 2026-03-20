@@ -1283,7 +1283,8 @@ div[data-testid="stButton"] > button[title="timer"] {
 """, unsafe_allow_html=True)
 
 # Timer circular via components.html — usa localStorage para persistir entre reruns
-_is_paused = st.session_state.pendente_resposta is not None
+_is_paused  = st.session_state.pendente_resposta is not None
+_is_stopped = st.session_state.resposta_dada is not None  # resposta confirmada → congela timer
 _timer_html = f"""
 <div style="display:flex;justify-content:center;align-items:center;margin:0 0 8px 0;">
   <div id="timer-wrap" style="position:relative;width:110px;height:110px;">
@@ -1311,7 +1312,8 @@ _timer_html = f"""
   var TOTAL     = 60;
   var KEY       = "quiz_timer_q{idx}";
   var PAUSE_KEY = "quiz_timer_pause_{idx}";
-  var IS_PAUSED = {'true' if _is_paused else 'false'};
+  var IS_PAUSED   = {'true' if _is_paused else 'false'};
+  var IS_STOPPED  = {'true' if _is_stopped else 'false'};
 
   var arc  = document.getElementById("timer-arc");
   var num  = document.getElementById("timer-num");
@@ -1325,6 +1327,25 @@ _timer_html = f"""
   }} else {{
     startTs = Date.now();
     localStorage.setItem(KEY, startTs);
+  }}
+
+  // ── Lógica de paragem definitiva (resposta confirmada) ──────────
+  if (IS_STOPPED) {{
+    // Congela o timer e muda para cinzento — sem intervalo
+    if (!localStorage.getItem(PAUSE_KEY)) {{
+      var elapsedNow = (Date.now() - startTs) / 1000;
+      var remNow = Math.max(0, TOTAL - elapsedNow);
+      localStorage.setItem(PAUSE_KEY, JSON.stringify({{ pauseTs: Date.now(), remAtPause: remNow }}));
+    }}
+    var frozenData = JSON.parse(localStorage.getItem(PAUSE_KEY));
+    var frozenSecs = Math.ceil(frozenData.remAtPause);
+    var frozenPct  = frozenData.remAtPause / TOTAL;
+    arc.style.transition = "none";
+    arc.style.stroke = "#555555";
+    arc.style.strokeDashoffset = CIRC * (1 - frozenPct);
+    num.textContent = frozenSecs;
+    num.style.fill  = "#555555";
+    return; // Não iniciar o intervalo — timer totalmente parado
   }}
 
   // ── Lógica de pausa/retoma ──────────────────────────────────────
