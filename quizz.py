@@ -1280,6 +1280,39 @@ if st.session_state.user_id is None:
         </div>
         """, unsafe_allow_html=True)
 
+    # ── Auto-refresh de 30s: atualiza o histórico à medida que participantes vão terminando ──
+    import streamlit.components.v1 as _comp_hist
+    _comp_hist.html("""
+    <script>
+    (function() {
+        // Só inicia o timer se ainda não estiver ativo nesta janela
+        if (window.parent._histRefreshTimer) return;
+        var _seconds = 30;
+        var _container = document.createElement('div');
+        _container.style.cssText = 'position:fixed;bottom:16px;right:16px;background:rgba(10,26,74,0.85);border:1px solid #1e90ff;border-radius:10px;padding:7px 14px;color:#7eb8ff;font-size:12px;font-family:sans-serif;z-index:9999;letter-spacing:1px;';
+        _container.id = '_hist_refresh_badge';
+        document.body.appendChild(_container);
+
+        function updateBadge(s) {
+            _container.innerHTML = '🔄 Atualiza em <b>' + s + 's</b>';
+        }
+
+        var _remaining = _seconds;
+        updateBadge(_remaining);
+
+        window.parent._histRefreshTimer = setInterval(function() {
+            _remaining--;
+            updateBadge(_remaining);
+            if (_remaining <= 0) {
+                clearInterval(window.parent._histRefreshTimer);
+                window.parent._histRefreshTimer = null;
+                window.parent.location.reload();
+            }
+        }, 1000);
+    })();
+    </script>
+    """, height=0)
+
     st.stop()
 
 # Música persistente — já inicializada no login, apenas garante continuidade
