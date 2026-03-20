@@ -1474,14 +1474,6 @@ components.html(_keyboard_html, height=0, scrolling=False)
 
 # ─────────────────────────────────────────────────────────────────────────────
 
-# Dica de teclado (discreta, só aparece quando pode selecionar)
-if resposta_dada is None and pendente is None:
-    st.markdown("""
-<div style="text-align:center; color:rgba(100,160,255,0.55); font-size:12px; margin-bottom:4px; letter-spacing:1px;">
-    ⌨️ &nbsp; Pressione <b>A</b> · <b>B</b> · <b>C</b> · <b>D</b> para selecionar &nbsp;|&nbsp; <b>Enter</b> para confirmar
-</div>
-""", unsafe_allow_html=True)
-
 # Caixa da pergunta
 st.markdown(f"""
 <div class="question-box">
@@ -1492,6 +1484,14 @@ st.markdown(f"""
 # Grelha de respostas 2x2
 resposta_dada = st.session_state.resposta_dada
 pendente = st.session_state.pendente_resposta
+
+# Dica de teclado (discreta, só aparece quando pode selecionar)
+if resposta_dada is None and pendente is None:
+    st.markdown("""
+<div style="text-align:center; color:rgba(100,160,255,0.55); font-size:12px; margin-bottom:4px; letter-spacing:1px;">
+    ⌨️ &nbsp; Pressione <b>A</b> · <b>B</b> · <b>C</b> · <b>D</b> para selecionar &nbsp;|&nbsp; <b>Enter</b> para confirmar
+</div>
+""", unsafe_allow_html=True)
 
 col1, col2 = st.columns(2)
 colunas = [col1, col2, col1, col2]
