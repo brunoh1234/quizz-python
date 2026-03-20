@@ -494,7 +494,7 @@ html, body {
 <body>
 <div class="stars"></div>
 <div class="container">
-    <div class="title">&#127919; QUEM QUER SER PRODUTIVO?</div>
+    <div class="title">&#127919; Quem quer acabar com o caus Virtual</div>
     <div class="bubble">
         <div class="sl a1">Bem-vindos ao Quiz sobre</div>
         <div class="sl a2">Boas Pr&#225;ticas em Reuni&#245;es Online Eficazes!</div>
@@ -669,7 +669,7 @@ function enterQuiz() {
 
 
 # Título principal
-st.markdown('<div class="main-title">🎯 QUEM QUER SER PRODUTIVO?</div>', unsafe_allow_html=True)
+st.markdown('<div class="main-title">🎯 Quem quer acabar com o caus Virtual</div>', unsafe_allow_html=True)
 
 # ------------------------------
 # BOTÃO DE RESET
