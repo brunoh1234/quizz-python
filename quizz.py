@@ -1482,15 +1482,12 @@ if pendente is not None and resposta_dada is None:
     background: linear-gradient(135deg, rgba(10,18,40,0.97) 0%, rgba(5,10,25,0.97) 100%);
     border: 2px solid #ffd700;
     border-radius: 16px;
-    padding: 22px 28px;
+    padding: 18px 28px;
     margin: 16px 0 8px 0;
     text-align: center;
     box-shadow: 0 0 30px rgba(255,215,0,0.25), 0 0 60px rgba(255,215,0,0.10);
 ">
-    <div style="color:#ffd700; font-size:22px; font-weight:900; letter-spacing:2px; margin-bottom:8px;">
-        ⚠️ BLOQUEAR RESPOSTA?
-    </div>
-    <div style="color:#ccd6f6; font-size:16px; margin-bottom:4px;">
+    <div style="color:#ccd6f6; font-size:15px; margin-bottom:6px;">
         Selecionou a opção:
     </div>
     <div style="
@@ -1500,25 +1497,24 @@ if pendente is not None and resposta_dada is None:
         border-radius: 8px;
         padding: 8px 16px;
         display: inline-block;
-        margin: 6px 0 14px 0;
+        margin: 4px 0 10px 0;
     ">
         {letra_escolhida}: {opcao_escolhida}
-    </div>
-    <div style="color:#8892b0; font-size:14px;">
-        O timer foi pausado. Confirma a sua escolha?
     </div>
 </div>
     """, unsafe_allow_html=True)
 
-    col_sim, col_nao = st.columns(2)
-    with col_sim:
-        if st.button("✅ SIM, BLOQUEAR", key=f"confirmar_sim_{idx}", use_container_width=True):
-            st.session_state.resposta_dada = pendente
+    col_l, col_c, col_r = st.columns([1, 2, 1])
+    with col_c:
+        if st.button("✅ Confirmar Resposta", key=f"confirmar_sim_{idx}", use_container_width=True):
+            # Registar resposta e avançar
+            st.session_state.respostas.append(pendente)
+            st.session_state.resposta_dada = None
             st.session_state.pendente_resposta = None
-            st.rerun()
-    with col_nao:
-        if st.button("❌ NÃO, VOLTAR", key=f"confirmar_nao_{idx}", use_container_width=True):
-            st.session_state.pendente_resposta = None
+            if idx + 1 < len(perguntas):
+                st.session_state.pergunta += 1
+            else:
+                st.session_state.terminou = True
             st.rerun()
 
 # Mensagem especial se o tempo esgotou
@@ -1530,16 +1526,14 @@ if resposta_dada == -1:
 </div>
     """, unsafe_allow_html=True)
 
-# Botão "Próxima pergunta" após responder ou tempo esgotar
-if resposta_dada is not None:
+# Botão "Próxima pergunta" — apenas quando o tempo esgota
+if resposta_dada == -1:
     st.markdown("<br>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 1, 1])
     with col2:
         btn_texto = "➡️ Próxima Pergunta" if idx < len(perguntas) - 1 else "🏁 Ver Resultado Final"
         if st.button(btn_texto, use_container_width=True):
-            # Só conta como correta se respondeu dentro do tempo
-            r = resposta_dada if resposta_dada != -1 else -1
-            st.session_state.respostas.append(r)
+            st.session_state.respostas.append(-1)
             st.session_state.resposta_dada = None
             if idx + 1 < len(perguntas):
                 st.session_state.pergunta += 1
