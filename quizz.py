@@ -376,6 +376,8 @@ if "resposta_dada" not in st.session_state:
     st.session_state.resposta_dada = None
 if "pendente_resposta" not in st.session_state:
     st.session_state.pendente_resposta = None
+if "mostrar_resultado_ts" not in st.session_state:
+    st.session_state.mostrar_resultado_ts = None
 if "quiz_completed" not in st.session_state:
     st.session_state.quiz_completed = False
 if "splash_shown" not in st.session_state:
@@ -1566,16 +1568,56 @@ if pendente is not None and resposta_dada is None:
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         if st.button("✅ CONFIRMAR RESPOSTA", key=f"confirmar_sim_{idx}", use_container_width=True):
+            # Guarda a resposta mas NÃO avança ainda — mostra resultado primeiro
             st.session_state.respostas.append(pendente)
-            st.session_state.resposta_dada = None
+            st.session_state.resposta_dada = pendente  # mostra verde/vermelho
             st.session_state.pendente_resposta = None
-            if idx + 1 < len(perguntas):
-                st.session_state.pergunta += 1
-            else:
-                st.session_state.terminou = True
+            st.session_state.mostrar_resultado_ts = _time.time()
             st.rerun()
 
-# Mensagem especial se o tempo esgotou
+# ── MOSTRAR RESULTADO após confirmar (verde/vermelho) + auto-avançar 5s ────
+if resposta_dada is not None and resposta_dada != -1:
+    acertou = (resposta_dada == correta)
+    if acertou:
+        st.markdown(f"""
+<div style="text-align:center; color:#00e676; font-size:20px; font-weight:bold;
+            margin:14px 0; text-shadow: 0 0 12px #00e676;">
+    ✅ Correto! <span style="color:#00e676;">{opcoes[correta]}</span>
+</div>
+        """, unsafe_allow_html=True)
+    else:
+        st.markdown(f"""
+<div style="text-align:center; font-size:18px; font-weight:bold; margin:14px 0;">
+    <span style="color:#ff4444;">❌ Errado!</span><br>
+    <span style="color:#aaa; font-size:15px;">A tua resposta: </span>
+    <span style="color:#ff4444;">{opcoes[resposta_dada]}</span><br>
+    <span style="color:#aaa; font-size:15px;">Resposta correta: </span>
+    <span style="color:#00e676;">{opcoes[correta]}</span>
+</div>
+        """, unsafe_allow_html=True)
+
+    # Auto-avançar após 5 segundos
+    elapsed = _time.time() - st.session_state.get("mostrar_resultado_ts", _time.time())
+    segundos_restantes = max(0, 5 - int(elapsed))
+    st.markdown(f"""
+<div style="text-align:center; color:#888; font-size:13px; margin-top:8px;">
+    A avançar em {segundos_restantes}s...
+</div>
+    """, unsafe_allow_html=True)
+
+    if elapsed >= 5:
+        st.session_state.resposta_dada = None
+        st.session_state.mostrar_resultado_ts = None
+        if idx + 1 < len(perguntas):
+            st.session_state.pergunta += 1
+        else:
+            st.session_state.terminou = True
+        st.rerun()
+    else:
+        _time.sleep(1)
+        st.rerun()
+
+# ── TEMPO ESGOTADO ──────────────────────────────────────────────────────────
 if resposta_dada == -1:
     st.markdown(f"""
 <div style="text-align:center; color:#ff6b6b; font-size:18px; font-weight:bold;
@@ -1584,17 +1626,26 @@ if resposta_dada == -1:
 </div>
     """, unsafe_allow_html=True)
 
-# Botão "Próxima pergunta" — apenas quando o tempo esgota
-if resposta_dada == -1:
-    st.markdown("<br>", unsafe_allow_html=True)
-    col1, col2, col3 = st.columns([1, 1, 1])
-    with col2:
-        btn_texto = "➡️ Próxima Pergunta" if idx < len(perguntas) - 1 else "🏁 Ver Resultado Final"
-        if st.button(btn_texto, use_container_width=True):
-            st.session_state.respostas.append(-1)
-            st.session_state.resposta_dada = None
-            if idx + 1 < len(perguntas):
-                st.session_state.pergunta += 1
-            else:
-                st.session_state.terminou = True
-            st.rerun()
+    elapsed_exp = _time.time() - st.session_state.get("mostrar_resultado_ts", _time.time())
+    if st.session_state.get("mostrar_resultado_ts") is None:
+        st.session_state.mostrar_resultado_ts = _time.time()
+        elapsed_exp = 0
+
+    segundos_restantes_exp = max(0, 5 - int(elapsed_exp))
+    st.markdown(f"""
+<div style="text-align:center; color:#888; font-size:13px; margin-top:8px;">
+    A avançar em {segundos_restantes_exp}s...
+</div>
+    """, unsafe_allow_html=True)
+
+    if elapsed_exp >= 5:
+        st.session_state.resposta_dada = None
+        st.session_state.mostrar_resultado_ts = None
+        if idx + 1 < len(perguntas):
+            st.session_state.pergunta += 1
+        else:
+            st.session_state.terminou = True
+        st.rerun()
+    else:
+        _time.sleep(1)
+        st.rerun()
