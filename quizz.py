@@ -115,6 +115,71 @@ def inject_sound_toggle():
     )
 
 
+def play_sfx(sound_type: str, key: str):
+    """
+    Toca um som (correct / wrong / timeout) via components.html() que corre
+    num iframe e acede a window.parent para Web Audio API + duck da musica.
+    key  -- string unica (ex: "sfx_correct_gameid_3") para garantir execucao 1x.
+    """
+    import streamlit.components.v1 as _comp
+    if sound_type == "correct":
+        sound_js = """
+      [523.25,659.25,783.99].forEach(function(freq,i){
+        var o=ctx.createOscillator(),g=ctx.createGain();
+        o.connect(g);g.connect(ctx.destination);
+        o.frequency.value=freq;o.type='sine';
+        var t=ctx.currentTime+i*0.14;
+        g.gain.setValueAtTime(0,t);
+        g.gain.linearRampToValueAtTime(0.45,t+0.03);
+        g.gain.exponentialRampToValueAtTime(0.001,t+0.55);
+        o.start(t);o.stop(t+0.55);
+      });"""
+    elif sound_type == "wrong":
+        sound_js = """
+      var o=ctx.createOscillator(),g=ctx.createGain();
+      o.connect(g);g.connect(ctx.destination);
+      o.type='sawtooth';
+      o.frequency.setValueAtTime(240,ctx.currentTime);
+      o.frequency.linearRampToValueAtTime(90,ctx.currentTime+0.65);
+      g.gain.setValueAtTime(0.3,ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.65);
+      o.start(ctx.currentTime);o.stop(ctx.currentTime+0.65);"""
+    elif sound_type == "timeout":
+        sound_js = """
+      [0,0.4].forEach(function(delay){
+        var o=ctx.createOscillator(),g=ctx.createGain();
+        o.connect(g);g.connect(ctx.destination);
+        o.type='square';o.frequency.value=130;
+        var t=ctx.currentTime+delay;
+        g.gain.setValueAtTime(0,t);
+        g.gain.linearRampToValueAtTime(0.25,t+0.02);
+        g.gain.exponentialRampToValueAtTime(0.001,t+0.3);
+        o.start(t);o.stop(t+0.3);
+      });"""
+    else:
+        return
+
+    html_code = f"""<!DOCTYPE html><html><body><script>
+(function(){{
+  var p=window.parent;
+  var k='{key}';
+  if(localStorage.getItem(k))return;
+  localStorage.setItem(k,'1');
+  if(p._soundEnabled===false)return;
+  if(p._ytPlayer&&p._ytPlayer.setVolume){{
+    p._ytPlayer.setVolume(15);
+    setTimeout(function(){{if(p._ytPlayer&&p._ytPlayer.setVolume)p._ytPlayer.setVolume(70);}},2800);
+  }}
+  try{{
+    var ctx=new(p.AudioContext||p.webkitAudioContext)();
+    {sound_js}
+  }}catch(e){{console.log('sfx err:',e);}}
+}})();
+</script></body></html>"""
+    _comp.html(html_code, height=0)
+
+
+
 # ------------------------------
 # Funções de armazenamento
 # ------------------------------
@@ -177,6 +242,22 @@ st.set_page_config(page_title="Quem Quer Ser Produtivo?", layout="wide")
 
 st.markdown("""
 <style>
+
+/* ── FADE IN entre perguntas ── */
+@keyframes fadeInQuestion {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.question-box {
+  animation: fadeInQuestion 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.answer-btn-wrap, .stButton > button {
+  animation: fadeInQuestion 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.result-box {
+  animation: fadeInQuestion 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 
 /* Fundo escuro tipo Milionário */
 .stApp {
@@ -1679,50 +1760,8 @@ if resposta_dada is not None and resposta_dada != -1:
 
     # ── SOM DE FEEDBACK (acerto/erro) + duck da música ────────────────────
     _game_id = st.session_state.get("game_id", "x")
-    _acertou_js = "true" if acertou else "false"
-    st.markdown(f"""
-<script>
-(function(){{
-  var p=window.parent;
-  var soundKey='sfx_{_game_id}_{idx}';
-  if(localStorage.getItem(soundKey))return;
-  localStorage.setItem(soundKey,'1');
-  if(p._soundEnabled===false)return;
-  // Duck music
-  if(p._ytPlayer&&p._ytPlayer.setVolume){{
-    p._ytPlayer.setVolume(15);
-    setTimeout(function(){{if(p._ytPlayer&&p._ytPlayer.setVolume)p._ytPlayer.setVolume(70);}},2800);
-  }}
-  // Web Audio
-  try{{
-    var ctx=new(p.AudioContext||p.webkitAudioContext)();
-    if({_acertou_js}){{
-      // Arpejo ascendente C5-E5-G5
-      [523.25,659.25,783.99].forEach(function(freq,i){{
-        var o=ctx.createOscillator(),g=ctx.createGain();
-        o.connect(g);g.connect(ctx.destination);
-        o.frequency.value=freq;o.type='sine';
-        var t=ctx.currentTime+i*0.14;
-        g.gain.setValueAtTime(0,t);
-        g.gain.linearRampToValueAtTime(0.45,t+0.03);
-        g.gain.exponentialRampToValueAtTime(0.001,t+0.55);
-        o.start(t);o.stop(t+0.55);
-      }});
-    }}else{{
-      // Buzzer descendente
-      var o=ctx.createOscillator(),g=ctx.createGain();
-      o.connect(g);g.connect(ctx.destination);
-      o.type='sawtooth';
-      o.frequency.setValueAtTime(240,ctx.currentTime);
-      o.frequency.linearRampToValueAtTime(90,ctx.currentTime+0.65);
-      g.gain.setValueAtTime(0.3,ctx.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.65);
-      o.start(ctx.currentTime);o.stop(ctx.currentTime+0.65);
-    }}
-  }}catch(e){{console.log('sfx err:',e);}}
-}})();
-</script>
-""", unsafe_allow_html=True)
+    _sfx_type = "correct" if acertou else "wrong"
+    play_sfx(_sfx_type, f"sfx_{_game_id}_{idx}")
 
     # Auto-avançar após 5 segundos
     _ts_res = st.session_state.get("mostrar_resultado_ts")
@@ -1759,35 +1798,7 @@ if resposta_dada == -1:
 
     # ── SOM DE TEMPO ESGOTADO ──────────────────────────────────────────────
     _game_id_exp = st.session_state.get("game_id", "x")
-    st.markdown(f"""
-<script>
-(function(){{
-  var p=window.parent;
-  var soundKey='sfx_timeout_{_game_id_exp}_{idx}';
-  if(localStorage.getItem(soundKey))return;
-  localStorage.setItem(soundKey,'1');
-  if(p._soundEnabled===false)return;
-  if(p._ytPlayer&&p._ytPlayer.setVolume){{
-    p._ytPlayer.setVolume(15);
-    setTimeout(function(){{if(p._ytPlayer&&p._ytPlayer.setVolume)p._ytPlayer.setVolume(70);}},2800);
-  }}
-  try{{
-    var ctx=new(p.AudioContext||p.webkitAudioContext)();
-    // Dois beeps graves de tempo esgotado
-    [0,0.4].forEach(function(delay){{
-      var o=ctx.createOscillator(),g=ctx.createGain();
-      o.connect(g);g.connect(ctx.destination);
-      o.type='square';o.frequency.value=130;
-      var t=ctx.currentTime+delay;
-      g.gain.setValueAtTime(0,t);
-      g.gain.linearRampToValueAtTime(0.25,t+0.02);
-      g.gain.exponentialRampToValueAtTime(0.001,t+0.3);
-      o.start(t);o.stop(t+0.3);
-    }});
-  }}catch(e){{console.log('sfx err:',e);}}
-}})();
-</script>
-""", unsafe_allow_html=True)
+    play_sfx("timeout", f"sfx_timeout_{_game_id_exp}_{idx}")
 
     _ts_exp = st.session_state.get("mostrar_resultado_ts")
     if _ts_exp is None:
