@@ -1496,39 +1496,25 @@ if resposta_dada is None:
 </div>
 """, unsafe_allow_html=True)
 
+# CSS para esconder completamente os botões de resposta ocultos
+st.markdown("""
+<style>
+div[data-testid="stButton"]:has(> button[title="hidden-answer"]) {
+    display: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    height: 0 !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
 col1, col2 = st.columns(2)
 colunas = [col1, col2, col1, col2]
 
 for i, (opcao, letra) in enumerate(zip(opcoes, letras)):
     with colunas[i]:
-        if resposta_dada is None and pendente is None:
-            # Antes de responder: botão clicável
-            if st.button(f"{letra}: {opcao}", key=f"btn_{idx}_{i}", use_container_width=True):
-                st.session_state.pendente_resposta = i   # pausa timer + mostra confirmação
-                st.rerun()
-        elif resposta_dada is None and pendente is not None:
-            # Em confirmação: botões clicáveis para trocar seleção
-            if i == pendente:
-                # Opção selecionada — clicável para desselecionar
-                st.markdown(f"""
-<div class="answer-option pending-selected" style="margin-bottom:4px;">
-    <span class="answer-letter">{letra}:</span>
-    <span class="answer-text">{opcao}</span>
-</div>
-                """, unsafe_allow_html=True)
-                # Botão invisível sobreposto para permitir trocar
-                st.markdown('<div style="height:0;margin-top:-52px;opacity:0;">', unsafe_allow_html=True)
-                if st.button(f"{letra}: {opcao}", key=f"btn_{idx}_{i}", use_container_width=True):
-                    st.session_state.pendente_resposta = i
-                    st.rerun()
-                st.markdown('</div>', unsafe_allow_html=True)
-            else:
-                # Outras opções: clicáveis para mudar seleção
-                if st.button(f"{letra}: {opcao}", key=f"btn_{idx}_{i}", use_container_width=True):
-                    st.session_state.pendente_resposta = i
-                    st.rerun()
-        else:
-            # Depois de responder (ou tempo esgotado): div estilizado
+        if resposta_dada is not None:
+            # Depois de responder (ou tempo esgotado): div estilizado sem botão
             classe = "answer-option"
             if i == correta:
                 classe += " correct"
@@ -1536,6 +1522,29 @@ for i, (opcao, letra) in enumerate(zip(opcoes, letras)):
                 classe += " wrong"
             st.markdown(f"""
 <div class="{classe}">
+    <span class="answer-letter">{letra}:</span>
+    <span class="answer-text">{opcao}</span>
+</div>
+            """, unsafe_allow_html=True)
+        else:
+            # Antes de responder (com ou sem pendente):
+            # 1. Botão Streamlit completamente oculto (para gestão de estado)
+            if st.button(f"{letra}: {opcao}", key=f"btn_{idx}_{i}", help="hidden-answer"):
+                st.session_state.pendente_resposta = i
+                st.rerun()
+
+            # 2. Determinar classe visual
+            classe = "answer-option"
+            if pendente is not None:
+                if i == pendente:
+                    classe += " pending-selected"
+                else:
+                    classe += " pending-dimmed"
+
+            # 3. Div estilizado clicável — aciona o botão oculto via JS
+            st.markdown(f"""
+<div class="{classe}" style="cursor:pointer;"
+     onclick="(function(){{var btns=window.parent.document.querySelectorAll('button');for(var j=0;j<btns.length;j++){{if(btns[j].textContent.trim().startsWith('{letra}:')){{btns[j].click();return;}}}}}})()" >
     <span class="answer-letter">{letra}:</span>
     <span class="answer-text">{opcao}</span>
 </div>
