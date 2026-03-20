@@ -1247,6 +1247,119 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
+# ── TIMER CIRCULAR (60 segundos) ──────────────────────────────────────────────
+# Botão oculto que o JavaScript clica quando o tempo expira
+timer_expired = st.button("⏰", key=f"timer_exp_{idx}", help="timer")
+if timer_expired:
+    st.session_state.resposta_dada = -1   # -1 = sem resposta (tempo esgotado)
+    st.rerun()
+
+# CSS para esconder o botão do timer e manter componente compacto
+st.markdown("""
+<style>
+div[data-testid="stButton"] > button[title="timer"] {
+    display: none !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# Timer circular via components.html — usa localStorage para persistir entre reruns
+_timer_html = f"""
+<div style="display:flex;justify-content:center;align-items:center;margin:0 0 8px 0;">
+  <div id="timer-wrap" style="position:relative;width:110px;height:110px;">
+    <svg width="110" height="110" viewBox="0 0 110 110">
+      <!-- Fundo do anel -->
+      <circle cx="55" cy="55" r="48" fill="#0a1220"
+              stroke="#1a2a50" stroke-width="9"/>
+      <!-- Arco animado do tempo restante -->
+      <circle id="timer-arc" cx="55" cy="55" r="48"
+              fill="none" stroke="#00e676" stroke-width="9"
+              stroke-linecap="round"
+              stroke-dasharray="301.6" stroke-dashoffset="0"
+              transform="rotate(-90 55 55)"
+              style="transition:stroke-dashoffset 1s linear, stroke 0.5s;"/>
+      <!-- Número central -->
+      <text id="timer-num" x="55" y="62"
+            text-anchor="middle" dominant-baseline="middle"
+            font-size="32" font-weight="900" fill="#ffffff"
+            font-family="Arial Black, sans-serif">60</text>
+    </svg>
+  </div>
+</div>
+<script>
+(function(){{
+  var TOTAL = 60;
+  var KEY   = "quiz_timer_q{idx}";
+  var arc   = document.getElementById("timer-arc");
+  var num   = document.getElementById("timer-num");
+  var CIRC  = 2 * Math.PI * 48; // ~301.6
+
+  // Obter ou inicializar o timestamp de início (persiste entre reruns)
+  var stored = localStorage.getItem(KEY);
+  var startTs;
+  if (stored) {{
+    startTs = parseInt(stored, 10);
+  }} else {{
+    startTs = Date.now();
+    localStorage.setItem(KEY, startTs);
+  }}
+
+  var timerDone = false;
+
+  function tick() {{
+    var elapsed = (Date.now() - startTs) / 1000;
+    var remaining = Math.max(0, TOTAL - elapsed);
+    var secs = Math.ceil(remaining);
+
+    // Atualizar número
+    num.textContent = secs;
+
+    // Atualizar arco (stroke-dashoffset proporcional ao tempo restante)
+    var pct = remaining / TOTAL;
+    arc.style.strokeDashoffset = CIRC * (1 - pct);
+
+    // Mudar cor conforme urgência
+    if (remaining > 20) {{
+      arc.style.stroke = "#00e676";   // verde
+      num.style.fill   = "#ffffff";
+    }} else if (remaining > 10) {{
+      arc.style.stroke = "#ffd700";   // amarelo
+      num.style.fill   = "#ffd700";
+    }} else {{
+      arc.style.stroke = "#ff4444";   // vermelho
+      num.style.fill   = "#ff4444";
+    }}
+
+    if (remaining <= 0 && !timerDone) {{
+      timerDone = true;
+      localStorage.removeItem(KEY);
+      // Clicar no botão oculto do Streamlit para sinalizar expiração
+      var btns = window.parent.document.querySelectorAll("button");
+      for (var b of btns) {{
+        if (b.textContent.trim() === "⏰") {{
+          b.click();
+          break;
+        }}
+      }}
+    }}
+  }}
+
+  tick();
+  var iv = setInterval(function() {{
+    tick();
+    var elapsed2 = (Date.now() - startTs) / 1000;
+    if (elapsed2 >= TOTAL + 2) clearInterval(iv);
+  }}, 500);
+}})();
+</script>
+"""
+
+# Limpar o timer do localStorage quando a pergunta muda (nova pergunta = novo timer)
+import streamlit.components.v1 as components
+components.html(_timer_html, height=130, scrolling=False)
+
+# ─────────────────────────────────────────────────────────────────────────────
+
 # Caixa da pergunta
 st.markdown(f"""
 <div class="question-box">
@@ -1263,16 +1376,17 @@ colunas = [col1, col2, col1, col2]
 for i, (opcao, letra) in enumerate(zip(opcoes, letras)):
     with colunas[i]:
         if resposta_dada is None:
-            # Antes de responder: só o botão clicável
+            # Antes de responder: botão clicável
             if st.button(f"{letra}: {opcao}", key=f"btn_{idx}_{i}", use_container_width=True):
                 st.session_state.resposta_dada = i
+                # Limpar timer do localStorage via JS (clicou antes do tempo)
                 st.rerun()
         else:
-            # Depois de responder: só o div estilizado (correto/errado)
+            # Depois de responder (ou tempo esgotado): div estilizado
             classe = "answer-option"
             if i == correta:
                 classe += " correct"
-            elif i == resposta_dada and i != correta:
+            elif resposta_dada != -1 and i == resposta_dada and i != correta:
                 classe += " wrong"
             st.markdown(f"""
 <div class="{classe}">
@@ -1281,14 +1395,25 @@ for i, (opcao, letra) in enumerate(zip(opcoes, letras)):
 </div>
             """, unsafe_allow_html=True)
 
-# Botão "Próxima pergunta" após responder
+# Mensagem especial se o tempo esgotou
+if resposta_dada == -1:
+    st.markdown(f"""
+<div style="text-align:center; color:#ff6b6b; font-size:18px; font-weight:bold;
+            margin:12px 0; text-shadow: 0 0 10px #ff4444;">
+    ⏰ Tempo esgotado! A resposta correta era: <span style="color:#00e676;">{opcoes[correta]}</span>
+</div>
+    """, unsafe_allow_html=True)
+
+# Botão "Próxima pergunta" após responder ou tempo esgotar
 if resposta_dada is not None:
     st.markdown("<br>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 1, 1])
     with col2:
         btn_texto = "➡️ Próxima Pergunta" if idx < len(perguntas) - 1 else "🏁 Ver Resultado Final"
         if st.button(btn_texto, use_container_width=True):
-            st.session_state.respostas.append(resposta_dada)
+            # Só conta como correta se respondeu dentro do tempo
+            r = resposta_dada if resposta_dada != -1 else -1
+            st.session_state.respostas.append(r)
             st.session_state.resposta_dada = None
             if idx + 1 < len(perguntas):
                 st.session_state.pergunta += 1
