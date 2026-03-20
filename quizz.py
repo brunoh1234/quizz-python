@@ -136,14 +136,23 @@ def play_sfx(sound_type: str, key: str):
       });"""
     elif sound_type == "wrong":
         sound_js = """
-      var o=ctx.createOscillator(),g=ctx.createGain();
-      o.connect(g);g.connect(ctx.destination);
-      o.type='sawtooth';
-      o.frequency.setValueAtTime(240,ctx.currentTime);
-      o.frequency.linearRampToValueAtTime(90,ctx.currentTime+0.65);
-      g.gain.setValueAtTime(0.3,ctx.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.65);
-      o.start(ctx.currentTime);o.stop(ctx.currentTime+0.65);"""
+      // Três notas descendentes suaves (Lá4 → Fá4 → Ré4) — estilo quiz clássico
+      [
+        {freq:440, delay:0.0},
+        {freq:349, delay:0.22},
+        {freq:293, delay:0.44}
+      ].forEach(function(n){
+        var o=ctx.createOscillator(),g=ctx.createGain();
+        o.connect(g);g.connect(ctx.destination);
+        o.type='sine';
+        o.frequency.value=n.freq;
+        var t=ctx.currentTime+n.delay;
+        g.gain.setValueAtTime(0,t);
+        g.gain.linearRampToValueAtTime(0.35,t+0.04);
+        g.gain.setValueAtTime(0.35,t+0.16);
+        g.gain.exponentialRampToValueAtTime(0.001,t+0.38);
+        o.start(t);o.stop(t+0.4);
+      });"""
     elif sound_type == "timeout":
         sound_js = """
       [0,0.4].forEach(function(delay){
