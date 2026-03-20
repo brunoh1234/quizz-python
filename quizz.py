@@ -853,48 +853,64 @@ function enterQuiz() {
         }
     }
 
-    // --- COUNTDOWN ANIMADO 3, 2, 1, GO! ---
+    // --- COUNTDOWN SINCRONIZADO COM A MÚSICA ---
     var overlay = document.getElementById('countdown-overlay');
-    var content = document.getElementById('cd-content');
-    var label   = document.getElementById('cd-label');
-    var ring    = document.getElementById('cd-ring');
+    var cdContent = document.getElementById('cd-content');
+    var cdLabel   = document.getElementById('cd-label');
+    var cdRing    = document.getElementById('cd-ring');
     overlay.classList.add('active');
 
+    // Timestamps em segundos: quando a voz diz cada número
     var steps = [
-        { text:'3', lbl:'PREPARAR', cls:'cd-number' },
-        { text:'2', lbl:'ATENÇÃO',  cls:'cd-number' },
-        { text:'1', lbl:'JÁ!',      cls:'cd-number' },
-        { text:'GO!', lbl:'',       cls:'cd-go'      }
+        { time: 9,  text:'3',   lbl:'PREPARAR', cls:'cd-number' },
+        { time: 11, text:'2',   lbl:'ATENÇÃO',  cls:'cd-number' },
+        { time: 13, text:'1',   lbl:'JÁ!',      cls:'cd-number' },
+        { time: 16, text:'GO!', lbl:'',          cls:'cd-go'     }
     ];
-    var idx = 0;
+    var stepShown = [false, false, false, false];
+    var navigated = false;
 
-    function showStep() {
-        if (idx >= steps.length) {
-            // Avançar para login
-            setTimeout(function() {
-                var btns = p.document.querySelectorAll('button');
-                for (var i = 0; i < btns.length; i++) {
-                    if (btns[i].textContent.trim() === 'SPLASH_NAV') {
-                        btns[i].click(); return;
-                    }
-                }
-                if (btns.length > 0) btns[0].click();
-            }, 100);
-            return;
-        }
-        var s = steps[idx];
-        content.className = s.cls;
-        content.style.animation = 'none';
-        ring.style.animation = 'none';
-        void content.offsetWidth; // reflow
-        content.textContent = s.text;
-        label.textContent   = s.lbl;
-        content.style.animation = '';
-        ring.style.animation = '';
-        idx++;
-        setTimeout(showStep, 950);
+    function showCdStep(s) {
+        cdContent.className = s.cls;
+        cdContent.style.animation = 'none';
+        cdRing.style.animation = 'none';
+        void cdContent.offsetWidth; // reflow
+        cdContent.textContent = s.text;
+        cdLabel.textContent   = s.lbl;
+        cdContent.style.animation = '';
+        cdRing.style.animation = '';
     }
-    showStep();
+
+    function navigateToLogin() {
+        var btns = p.document.querySelectorAll('button');
+        for (var i = 0; i < btns.length; i++) {
+            if (btns[i].textContent.trim() === 'SPLASH_NAV') {
+                btns[i].click(); return;
+            }
+        }
+        if (btns.length > 0) btns[0].click();
+    }
+
+    // Polling a cada 100ms para verificar o tempo atual da música
+    var cdInterval = setInterval(function() {
+        var player = p._ytPlayer;
+        if (!player || typeof player.getCurrentTime !== 'function') return;
+        var t = player.getCurrentTime();
+
+        for (var i = 0; i < steps.length; i++) {
+            if (!stepShown[i] && t >= steps[i].time) {
+                stepShown[i] = true;
+                showCdStep(steps[i]);
+            }
+        }
+
+        // Avançar para login ao segundo 20 (após o GO!)
+        if (!navigated && t >= 20) {
+            navigated = true;
+            clearInterval(cdInterval);
+            navigateToLogin();
+        }
+    }, 100);
 }
 </script>
 </body></html>"""
