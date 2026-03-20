@@ -1484,12 +1484,17 @@ components.html(f"""
 (function() {{
     var selectedText = {json.dumps(_selected_text)};
     var hasPending = {'true' if _has_pending else 'false'};
+    var isConfirmed = {'true' if (st.session_state.resposta_dada is not None) else 'false'};
 
     function styleAnswerBtns() {{
         var btns = window.parent.document.querySelectorAll('button');
         btns.forEach(function(b) {{
             var t = b.textContent.trim();
             if (/^[ABCD]: /.test(t)) {{
+                if (isConfirmed) {{
+                    b.style.cssText = 'display:none!important';
+                    return;
+                }}
                 var isSelected = hasPending && (t === selectedText);
                 var isDimmed   = hasPending && !isSelected;
                 b.style.cssText = [
@@ -1563,7 +1568,7 @@ for i, (opcao, letra) in enumerate(zip(opcoes, letras)):
                 st.rerun()
 
 # ── BOTÃO CONFIRMAR (direto no layout Streamlit) ──────────────────────────
-if pendente is not None and resposta_dada is None:
+if pendente is not None and resposta_dada is None and st.session_state.get('mostrar_resultado_ts') is None:
     st.markdown("<br>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
@@ -1574,6 +1579,33 @@ if pendente is not None and resposta_dada is None:
             st.session_state.pendente_resposta = None
             st.session_state.mostrar_resultado_ts = _time.time()
             st.rerun()
+
+# ── ESCONDER BOTÃO CONFIRMAR via CSS após responder ─────────────────────────
+if resposta_dada is not None:
+    st.markdown("""
+<style>
+/* Esconder botão Confirmar após responder */
+div[data-testid="stButton"] button[kind="secondary"],
+div[data-testid="stButton"] button {
+    /* só esconde se contiver CONFIRMAR — via JS abaixo */
+}
+</style>
+<script>
+(function hideConfirmar() {
+    var btns = window.parent.document.querySelectorAll('button');
+    btns.forEach(function(b) {
+        if (b.innerText && b.innerText.indexOf('CONFIRMAR') !== -1) {
+            b.style.setProperty('display', 'none', 'important');
+            var p = b.parentElement;
+            if (p) p.style.setProperty('display', 'none', 'important');
+            var pp = p && p.parentElement;
+            if (pp) pp.style.setProperty('display', 'none', 'important');
+        }
+    });
+    setTimeout(hideConfirmar, 100);
+})();
+</script>
+""", unsafe_allow_html=True)
 
 # ── MOSTRAR RESULTADO após confirmar (verde/vermelho) + auto-avançar 5s ────
 if resposta_dada is not None and resposta_dada != -1:
@@ -1597,7 +1629,8 @@ if resposta_dada is not None and resposta_dada != -1:
         """, unsafe_allow_html=True)
 
     # Auto-avançar após 5 segundos
-    elapsed = _time.time() - st.session_state.get("mostrar_resultado_ts", _time.time())
+    _ts_res = st.session_state.get("mostrar_resultado_ts")
+    elapsed = _time.time() - _ts_res if _ts_res is not None else 0
     segundos_restantes = max(0, 5 - int(elapsed))
     st.markdown(f"""
 <div style="text-align:center; color:#888; font-size:13px; margin-top:8px;">
@@ -1608,6 +1641,7 @@ if resposta_dada is not None and resposta_dada != -1:
     if elapsed >= 5:
         st.session_state.resposta_dada = None
         st.session_state.mostrar_resultado_ts = None
+        st.session_state.pendente_resposta = None
         if idx + 1 < len(perguntas):
             st.session_state.pergunta += 1
         else:
@@ -1626,10 +1660,13 @@ if resposta_dada == -1:
 </div>
     """, unsafe_allow_html=True)
 
-    elapsed_exp = _time.time() - st.session_state.get("mostrar_resultado_ts", _time.time())
-    if st.session_state.get("mostrar_resultado_ts") is None:
+    _ts_exp = st.session_state.get("mostrar_resultado_ts")
+    if _ts_exp is None:
         st.session_state.mostrar_resultado_ts = _time.time()
+        _ts_exp = st.session_state.mostrar_resultado_ts
         elapsed_exp = 0
+    else:
+        elapsed_exp = _time.time() - _ts_exp
 
     segundos_restantes_exp = max(0, 5 - int(elapsed_exp))
     st.markdown(f"""
@@ -1641,6 +1678,7 @@ if resposta_dada == -1:
     if elapsed_exp >= 5:
         st.session_state.resposta_dada = None
         st.session_state.mostrar_resultado_ts = None
+        st.session_state.pendente_resposta = None
         if idx + 1 < len(perguntas):
             st.session_state.pergunta += 1
         else:
