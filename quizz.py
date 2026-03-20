@@ -26,26 +26,25 @@ def inject_persistent_music(is_intro=False):
         "p._ytMusicInit=true;"
         "var isIntro=" + is_intro_js + ";"
         "var introVid='2oPVdx3QaAM';"
+        "var transVid='iahlZ4g6RQc';"
         "var quizVid='ren6rd9FfV8';"
+        "var phase=isIntro?0:2;"
         "var d=p.document.createElement('div');"
         "d.id='_yt_persist';"
         "d.style.cssText='position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;';"
         "p.document.body.appendChild(d);"
         "function build(){"
-        "  var vid=isIntro?introVid:quizVid;"
+        "  var vid=phase===0?introVid:quizVid;"
         "  var pv={autoplay:1,controls:0,disablekb:1,fs:0,rel:0};"
-        "  if(!isIntro){pv.loop=1;pv.playlist=quizVid;}"
         "  p._ytPlayer=new p.YT.Player('_yt_persist',{"
         "    width:'1',height:'1',videoId:vid,playerVars:pv,"
         "    events:{"
         "      onReady:function(e){e.target.setVolume(70);},"
         "      onStateChange:function(e){"
-        "        if(e.data===0&&isIntro){"
-        "          isIntro=false;"
-        "          setTimeout(function(){"
-        "            p._ytPlayer.loadVideoById(quizVid);"
-        "            setTimeout(function(){p._ytPlayer.setLoop(true);},1500);"
-        "          },3000);"
+        "        if(e.data===0){"
+        "          if(phase===0){phase=1;p._ytPlayer.loadVideoById(transVid);}"
+        "          else if(phase===1){phase=2;p._ytPlayer.loadVideoById(quizVid);}"
+        "          else if(phase===2){p._ytPlayer.playVideo();}"
         "        }"
         "      }"
         "    }"
@@ -532,8 +531,9 @@ function enterQuiz() {
         tag.src = 'https://www.youtube.com/iframe_api';
         p.document.head.appendChild(tag);
         p.onYouTubeIframeAPIReady = function() {
-            var isIntro = true;
+            var phase = 0; // 0=intro, 1=transicao, 2=quiz
             var introVid = '2oPVdx3QaAM';
+            var transVid = 'iahlZ4g6RQc';
             var quizVid  = 'ren6rd9FfV8';
             p._ytPlayer = new p.YT.Player('_yt_persist', {
                 width: '1', height: '1', videoId: introVid,
@@ -541,12 +541,16 @@ function enterQuiz() {
                 events: {
                     onReady: function(e) { e.target.setVolume(70); },
                     onStateChange: function(e) {
-                        if (e.data === 0 && isIntro) {
-                            isIntro = false;
-                            setTimeout(function() {
-                                p._ytPlayer.loadVideoById({ videoId: quizVid });
-                                setTimeout(function() { p._ytPlayer.setLoop(true); }, 1000);
-                            }, 500);
+                        if (e.data === 0) {
+                            if (phase === 0) {
+                                phase = 1;
+                                p._ytPlayer.loadVideoById(transVid);
+                            } else if (phase === 1) {
+                                phase = 2;
+                                p._ytPlayer.loadVideoById(quizVid);
+                            } else if (phase === 2) {
+                                p._ytPlayer.playVideo();
+                            }
                         }
                     }
                 }
