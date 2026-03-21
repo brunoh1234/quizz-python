@@ -1586,28 +1586,6 @@ if st.session_state.terminou and st.session_state.get("user_id") is not None:
 </div>
             """, unsafe_allow_html=True)
 
-    # ── Ranking ──────────────────────────────────────────────────────────────
-    st.markdown('<h3 style="color:#7eb8ff; text-align:center; margin-top:30px; letter-spacing:2px;">🏅 RANKING</h3>', unsafe_allow_html=True)
-    def score_seguro_final(item):
-        try:
-            return int(item[1].get("score", 0))
-        except (ValueError, TypeError):
-            return 0
-
-    ranking = sorted(resultados.items(), key=score_seguro_final, reverse=True)
-    medalhas = ["🥇", "🥈", "🥉"]
-    for pos, (uid, dados) in enumerate(ranking, start=1):
-        medalha   = medalhas[pos-1] if pos <= 3 else f"{pos}."
-        destaque  = "border: 2px solid #ffd700; box-shadow: 0 0 15px rgba(255,215,0,0.5);" if uid == st.session_state.user_id else ""
-        score_val = score_seguro_final((uid, dados))
-        st.markdown(f"""
-<div class="ranking-box" style="{destaque}">
-    <span style="font-size:22px;">{medalha}</span>
-    <b style="color:#7eb8ff; font-size:18px; margin-left:10px;">{uid}</b>
-    <span style="color:#e0eaff; float:right; font-size:18px;">{score_val}/{total} pontos</span>
-</div>
-        """, unsafe_allow_html=True)
-
     # ── Botão jogar novamente ────────────────────────────────────────────────
     st.markdown("<br>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 1, 1])
