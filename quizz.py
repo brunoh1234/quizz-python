@@ -2382,12 +2382,6 @@ with col_reset:
 
 if st.session_state.user_id is None:
     remove_avatar_mascot()
-    st.markdown("""
-    <div class="login-box">
-        <h2 style="color:#7eb8ff; margin-bottom:20px;">👤 Identificação</h2>
-        <p style="color:#aac8ff; font-size:16px;">Insere o teu nome para começar o quiz</p>
-    </div>
-    """, unsafe_allow_html=True)
 
     # Avatar button CSS
     st.markdown("""
@@ -2416,8 +2410,8 @@ div[data-testid="column"] button {
         ("\U0001f3e0",       "remoto",       "Remoto"),
     ]
 
-    st.markdown('<p style="color:#aac8ff; text-align:center; font-size:14px; margin:14px 0 6px 0;">Escolhe o teu avatar de reuniao:</p>', unsafe_allow_html=True)
-
+    # --- Avatar selection buttons (top row) ---
+    st.markdown('<p style="color:#aac8ff; text-align:center; font-size:14px; margin:10px 0 6px 0;">Escolhe o teu avatar de reuniao:</p>', unsafe_allow_html=True)
     _av_cols = st.columns(8)
     for _i, (_av_emoji, _av_key, _av_name) in enumerate(_AVATARS):
         with _av_cols[_i]:
@@ -2429,8 +2423,38 @@ div[data-testid="column"] button {
                 st.session_state.avatar = _av_key
                 st.rerun()
 
-    # 3D avatar preview - shows animated 3D character for the selected avatar
-    render_3d_avatar_preview(st.session_state.avatar or "")
+    # --- Main card: avatar preview (left) + identification form (right) ---
+    _col_av, _col_form = st.columns([1, 1.4])
+
+    with _col_av:
+        render_3d_avatar_preview(st.session_state.avatar or "")
+
+    with _col_form:
+        st.markdown("""
+        <div class="login-box" style="margin-top:0; padding: 28px 28px 20px 28px;">
+            <h2 style="color:#7eb8ff; margin-bottom:10px; font-size:22px;">&#128100; Identifica&#231;&#227;o</h2>
+            <p style="color:#aac8ff; font-size:14px; margin-bottom:18px;">Insere o teu nome para come&#231;ar o quiz</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        user_id = st.text_input("", placeholder="O teu nome...", label_visibility="collapsed")
+
+        if st.button("\u25b6\ufe0f  COME\u00c7AR O QUIZ", use_container_width=True):
+            import re as _re
+            if st.session_state.get('avatar') is None:
+                st.warning("Por favor escolhe um avatar! \U0001f3ad")
+            elif not user_id.strip():
+                st.warning("Por favor insere o teu nome.")
+            elif not _re.fullmatch(r"[A-Za-z\u00C0-\u00FF\s]+", user_id.strip()):
+                st.error("\u274c Nome inv\u00e1lido - s\u00f3 s\u00e3o aceites letras.")
+            elif ja_jogou(user_id.strip(), resultados):
+                dados = resultados[user_id.strip()]
+                st.error("Este utilizador j\u00e1 jogou.")
+                st.info(f"Pontua\u00e7\u00e3o anterior: {dados['score']}/10 - {dados['data']} \u00e0s {dados['hora']}")
+            else:
+                st.session_state.pending_user_id = user_id.strip()
+                st.session_state.show_countdown = True
+                st.rerun()
 
     # JS to highlight selected avatar button with gold border
     import json as _json_av
@@ -2453,26 +2477,6 @@ div[data-testid="column"] button {
     setTimeout(style, 250);
 }})();
 </script>""", height=0)
-
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        user_id = st.text_input("", placeholder="O teu nome...", label_visibility="collapsed")
-        if st.button("▶️  COMEÇAR O QUIZ", use_container_width=True):
-            import re as _re
-            if st.session_state.get('avatar') is None:
-                st.warning("Por favor escolhe um avatar! 🎭")
-            elif not user_id.strip():
-                st.warning("Por favor insere o teu nome.")
-            elif not _re.fullmatch(r"[A-Za-zÀ-ÿ\s]+", user_id.strip()):
-                st.error("❌ Nome inválido - só são aceites letras.")
-            elif ja_jogou(user_id.strip(), resultados):
-                dados = resultados[user_id.strip()]
-                st.error("Este utilizador já jogou.")
-                st.info(f"Pontuação anterior: {dados['score']}/10 - {dados['data']} às {dados['hora']}")
-            else:
-                st.session_state.pending_user_id = user_id.strip()
-                st.session_state.show_countdown = True
-                st.rerun()
 
     # Música persistente - sobrevive a reruns via window.parent
     inject_persistent_music(is_intro=not st.session_state.quiz_completed)
