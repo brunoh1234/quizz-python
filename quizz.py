@@ -115,6 +115,27 @@ def inject_sound_toggle():
     )
 
 
+def reset_para_novo_jogo():
+    """Reseta o estado para um novo jogo sem recarregar a página (mantém música)."""
+    import uuid as _uuid
+    keys_to_delete = [
+        'user_id', 'pergunta', 'respostas', 'terminou',
+        'resposta_dada', 'pendente_resposta', 'mostrar_resultado_ts',
+        'tempos_pergunta', 'historico_quiz', 'ver_revisao',
+    ]
+    for k in keys_to_delete:
+        if k in st.session_state:
+            del st.session_state[k]
+    # Limpar chaves de timer e som por pergunta
+    for k in list(st.session_state.keys()):
+        if k.startswith('timer_start_ms_') or k.startswith('sfx_played_'):
+            del st.session_state[k]
+    st.session_state.quiz_completed = True   # mantém música quiz em loop
+    st.session_state.splash_shown   = True   # salta o splash
+    st.session_state.scroll_to_top  = True   # trigger scroll no próximo render
+    st.session_state.game_id = _uuid.uuid4().hex[:8]
+
+
 def play_sfx(sound_type: str, key: str):
     """
     Toca um som (correct / wrong / timeout) via components.html() que corre
@@ -545,13 +566,6 @@ st.markdown("""
 # Estado inicial
 # ------------------------------
 
-# ── Detectar navegação de "Jogar Novamente" (query param new_game=1) ──────────
-_qp = st.query_params
-if _qp.get("new_game") == "1":
-    # Reload completo → sessão fresca → saltar splash
-    st.session_state.splash_shown = True
-    st.query_params.clear()
-
 if "user_id" not in st.session_state:
     st.session_state.user_id = None
 if "pergunta" not in st.session_state:
@@ -576,6 +590,8 @@ if "ver_revisao" not in st.session_state:
     st.session_state.ver_revisao = False
 if "splash_shown" not in st.session_state:
     st.session_state.splash_shown = False
+if "scroll_to_top" not in st.session_state:
+    st.session_state.scroll_to_top = False
 if "game_id" not in st.session_state:
     import uuid as _uuid
     st.session_state.game_id = _uuid.uuid4().hex[:8]
@@ -1273,59 +1289,21 @@ if st.session_state.user_id is None:
         # Música persistente — sobrevive a reruns via window.parent
         inject_persistent_music(is_intro=not st.session_state.quiz_completed)
 
-    # ── Ranking na página principal ────────────────────────────────────────
-    resultados_atuais = carregar_resultados()
-    if resultados_atuais:
-        st.markdown("<br>", unsafe_allow_html=True)
-        ranking = sorted(resultados_atuais.items(), key=lambda x: x[1]['score'], reverse=True)
-        rows_html = ""
-        for pos, (nome, dados) in enumerate(ranking, start=1):
-            score_val = dados['score']
-            total_q = 10
-            pct = round((score_val / total_q) * 100)
-            if pos == 1:
-                medal = "🥇"; cor_pos = "#ffd700"
-            elif pos == 2:
-                medal = "🥈"; cor_pos = "#c0c0c0"
-            elif pos == 3:
-                medal = "🥉"; cor_pos = "#cd7f32"
-            else:
-                medal = f"#{pos}"; cor_pos = "#7eb8ff"
-            if pct >= 70:
-                cor_score = "#00e676"
-            elif pct >= 50:
-                cor_score = "#1e90ff"
-            else:
-                cor_score = "#ff9800"
-            rows_html += f"""
-<div style="display:flex; align-items:center; justify-content:space-between;
-    padding: 8px 14px; margin: 5px 0;
-    background: rgba(255,255,255,0.04);
-    border-radius: 10px; border: 1px solid rgba(30,58,122,0.5);">
-  <span style="color:{cor_pos}; font-weight:bold; font-size:16px; min-width:36px;">{medal}</span>
-  <span style="color:#e0eaff; font-size:15px; flex:1; margin-left:10px;">{nome}</span>
-  <span style="color:{cor_score}; font-weight:bold; font-size:16px;">{score_val}/{total_q}</span>
-  <span style="color:#5a7ab0; font-size:12px; margin-left:14px;">{dados['data']} {dados['hora']}</span>
-</div>"""
-
-        st.markdown(f"""
-<div style="display:flex; justify-content:center; width:100%;">
-  <div style="
-      background: linear-gradient(135deg, #0d1f4a 0%, #050e2a 100%);
-      border: 1px solid #1e3a7a; border-radius: 16px;
-      padding: 20px 24px; width: 100%; max-width: 560px;">
-    <h3 style="color:#ffd700; text-align:center; margin:0 0 14px 0; font-size:18px;">
-        🏆 Ranking dos Participantes
-    </h3>
-    {rows_html}
-  </div>
-</div>
-""", unsafe_allow_html=True)
-
-    # Auto-refresh silencioso a cada 30 segundos (mantém sessão, fora do if)
-    import time as _t_rank
-    _t_rank.sleep(30)
-    st.rerun()
+    # Scroll to top após "Jogar Novamente" (sem reload de página)
+    if st.session_state.get('scroll_to_top'):
+        st.session_state.scroll_to_top = False
+        components.html("""<script>
+(function(){
+    var n = 0;
+    function up() {
+        window.parent.scrollTo(0, 0);
+        window.parent.document.documentElement.scrollTop = 0;
+        window.parent.document.body.scrollTop = 0;
+        if (++n < 30) setTimeout(up, 80);
+    }
+    up();
+})();
+</script>""", height=1)
 
     st.stop()
 
@@ -1538,23 +1516,53 @@ if st.session_state.terminou and st.session_state.get("user_id") is not None:
 </div>
             """, unsafe_allow_html=True)
 
+    # ── Ranking dos Participantes ─────────────────────────────────────────────
+    st.markdown("<br>", unsafe_allow_html=True)
+    _res_rank = carregar_resultados()
+    if _res_rank:
+        _ranking = sorted(_res_rank.items(), key=lambda x: x[1]['score'], reverse=True)
+        _rows_html = ""
+        for _pos, (_nome, _dados) in enumerate(_ranking, start=1):
+            _sv = _dados['score']
+            _pct = round((_sv / 10) * 100)
+            if _pos == 1:   _medal, _cp = "🥇", "#ffd700"
+            elif _pos == 2: _medal, _cp = "🥈", "#c0c0c0"
+            elif _pos == 3: _medal, _cp = "🥉", "#cd7f32"
+            else:           _medal, _cp = f"#{_pos}", "#7eb8ff"
+            _cs = "#00e676" if _pct >= 70 else ("#1e90ff" if _pct >= 50 else "#ff9800")
+            _rows_html += f"""
+<div style="display:flex;align-items:center;justify-content:space-between;
+    padding:8px 14px;margin:5px 0;background:rgba(255,255,255,0.04);
+    border-radius:10px;border:1px solid rgba(30,58,122,0.5);">
+  <span style="color:{_cp};font-weight:bold;font-size:16px;min-width:36px;">{_medal}</span>
+  <span style="color:#e0eaff;font-size:15px;flex:1;margin-left:10px;">{_nome}</span>
+  <span style="color:{_cs};font-weight:bold;font-size:16px;">{_sv}/10</span>
+  <span style="color:#5a7ab0;font-size:12px;margin-left:14px;">{_dados['data']} {_dados['hora']}</span>
+</div>"""
+        st.markdown(f"""
+<div style="display:flex;justify-content:center;width:100%;">
+  <div style="background:linear-gradient(135deg,#0d1f4a 0%,#050e2a 100%);
+      border:1px solid #1e3a7a;border-radius:16px;
+      padding:20px 24px;width:100%;max-width:560px;">
+    <h3 style="color:#ffd700;text-align:center;margin:0 0 14px 0;font-size:18px;">
+        🏆 Ranking dos Participantes
+    </h3>
+    {_rows_html}
+  </div>
+</div>""", unsafe_allow_html=True)
+
     # ── Botão jogar novamente ────────────────────────────────────────────────
     st.markdown("<br>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 1, 1])
     with col2:
-        # Botão como link HTML direto — navega sem depender de iframes/JS
-        st.markdown("""
-<div style="text-align:center; margin-top:8px;">
-  <a href="?new_game=1" target="_self"
-     style="display:inline-block; padding:12px 28px; background:#4CAF50;
-            color:white; border-radius:8px; font-size:16px; font-weight:600;
-            text-decoration:none; cursor:pointer;">
-    🔄 Jogar Novamente
-  </a>
-</div>
-""", unsafe_allow_html=True)
+        if st.button("🔄 Jogar Novamente", use_container_width=True, key="btn_jogar_nov"):
+            reset_para_novo_jogo()
+            st.rerun()
 
-    st.stop()
+    # Auto-refresh do ranking a cada 30 segundos (mantém sessão e música)
+    import time as _t_res
+    _t_res.sleep(30)
+    st.rerun()
 
 # ------------------------------
 # ECRÃ DA PERGUNTA
