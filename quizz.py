@@ -134,6 +134,10 @@ def reset_para_novo_jogo():
     st.session_state.splash_shown   = True   # salta o splash
     st.session_state.scroll_to_top  = True   # trigger scroll no próximo render
     st.session_state.game_id = _uuid.uuid4().hex[:8]
+    st.session_state.streak = 0
+    st.session_state.max_streak = 0
+    st.session_state.show_countdown = False
+    st.session_state.pending_user_id = None
 
 
 def play_sfx(sound_type: str, key: str):
@@ -592,6 +596,14 @@ if "splash_shown" not in st.session_state:
     st.session_state.splash_shown = False
 if "scroll_to_top" not in st.session_state:
     st.session_state.scroll_to_top = False
+if "streak" not in st.session_state:
+    st.session_state.streak = 0
+if "max_streak" not in st.session_state:
+    st.session_state.max_streak = 0
+if "show_countdown" not in st.session_state:
+    st.session_state.show_countdown = False
+if "pending_user_id" not in st.session_state:
+    st.session_state.pending_user_id = None
 if "game_id" not in st.session_state:
     import uuid as _uuid
     st.session_state.game_id = _uuid.uuid4().hex[:8]
@@ -1286,11 +1298,105 @@ if st.session_state.user_id is None:
                 st.error("Este utilizador já jogou.")
                 st.info(f"Pontuação anterior: {dados['score']}/10 — {dados['data']} às {dados['hora']}")
             else:
-                st.session_state.user_id = user_id.strip()
+                st.session_state.pending_user_id = user_id.strip()
+                st.session_state.show_countdown = True
                 st.rerun()
+
+        # ── Botão oculto que o JS clica após o countdown ──────────────────────
+        st.markdown("""
+<style>
+button[data-testid="baseButton-secondary"]:has(~ [data-testid]),
+div[data-testid="stButton"] button[title="hidden_start"] { display:none!important; }
+</style>
+""", unsafe_allow_html=True)
+        if st.button("__start_quiz__", key="btn_start_quiz_hidden", help="hidden_start"):
+            st.session_state.user_id = st.session_state.pending_user_id
+            st.session_state.show_countdown = False
+            st.session_state.pending_user_id = None
+            st.rerun()
 
         # Música persistente — sobrevive a reruns via window.parent
         inject_persistent_music(is_intro=not st.session_state.quiz_completed)
+
+        # ── Countdown 3…2…1 ao começar ────────────────────────────────────────
+        if st.session_state.get('show_countdown'):
+            import streamlit.components.v1 as _comp_cd
+            _comp_cd.html("""
+<style>
+#simple-cd {
+    position:fixed; inset:0; z-index:99999;
+    background:radial-gradient(circle at 50% 50%, #0d1b3e 0%, #02050a 100%);
+    display:flex; align-items:center; justify-content:center;
+    flex-direction:column;
+}
+.scd-num {
+    font-size:180px; font-weight:900; font-family:Georgia,serif;
+    color:#fff; text-shadow:0 0 60px #1e90ff, 0 0 120px #1e90ff88;
+    animation: scdPop 0.9s ease forwards;
+    letter-spacing:-5px; line-height:1;
+}
+.scd-lbl {
+    font-size:18px; letter-spacing:5px; color:#1e90ff;
+    text-transform:uppercase; margin-top:12px;
+    text-shadow:0 0 15px #1e90ff;
+}
+.scd-go {
+    font-size:110px; font-weight:900; font-family:Georgia,serif;
+    letter-spacing:8px; color:#ffd700;
+    text-shadow:0 0 60px #ffd700, 0 0 120px #ffa50088;
+    animation: scdGo 0.6s ease forwards;
+}
+@keyframes scdPop {
+    0%   { transform:scale(2.5); opacity:0; }
+    30%  { transform:scale(1);   opacity:1; }
+    70%  { transform:scale(1);   opacity:1; }
+    100% { transform:scale(0.4); opacity:0; }
+}
+@keyframes scdGo {
+    0%   { transform:scale(0.5); opacity:0; }
+    60%  { transform:scale(1.2); opacity:1; }
+    100% { transform:scale(1);   opacity:1; }
+}
+</style>
+<div id="simple-cd">
+    <div id="scd-content" class="scd-num">3</div>
+    <div id="scd-label" class="scd-lbl">PREPARAR</div>
+</div>
+<script>
+(function(){
+    var steps = [
+        {num:'3', lbl:'PREPARAR', cls:'scd-num', delay:0},
+        {num:'2', lbl:'ATENÇÃO',  cls:'scd-num', delay:1000},
+        {num:'1', lbl:'JÁ!',      cls:'scd-num', delay:2000},
+        {num:'GO!', lbl:'',        cls:'scd-go',  delay:3000},
+    ];
+    var content = document.getElementById('scd-content');
+    var label   = document.getElementById('scd-label');
+
+    steps.forEach(function(s) {
+        setTimeout(function(){
+            content.className = s.cls;
+            content.textContent = s.num;
+            label.textContent = s.lbl;
+            // Reiniciar animação
+            content.style.animation='none';
+            void content.offsetWidth;
+            content.style.animation='';
+        }, s.delay);
+    });
+
+    // Após 3.8s clicar no botão hidden para avançar
+    setTimeout(function(){
+        var btns = window.parent.document.querySelectorAll('button');
+        for(var b of btns){
+            if(b.innerText && b.innerText.trim() === '__start_quiz__'){
+                b.click(); break;
+            }
+        }
+    }, 3800);
+})();
+</script>
+""", height=600)
 
     # Scroll to top após "Jogar Novamente" (sem reload de página)
     if st.session_state.get('scroll_to_top'):
@@ -1554,6 +1660,67 @@ if st.session_state.terminou and st.session_state.get("user_id") is not None:
   </div>
 </div>""", unsafe_allow_html=True)
 
+    # ── Desafiar Amigo ────────────────────────────────────────────────────────
+    st.markdown("<br>", unsafe_allow_html=True)
+    _max_str = st.session_state.get('max_streak', 0)
+    _streak_txt = f" | 🔥 Melhor série: {_max_str}" if _max_str >= 2 else ""
+    import streamlit.components.v1 as _comp_chal
+    _comp_chal.html(f"""
+<style>
+.challenge-box {{
+    display:flex; flex-direction:column; align-items:center;
+    background:linear-gradient(135deg,#0d1f4a 0%,#050e2a 100%);
+    border:1px solid #1e3a7a; border-radius:16px;
+    padding:20px 24px; max-width:560px; margin:0 auto;
+}}
+.challenge-title {{
+    color:#ffd700; font-size:17px; font-weight:700;
+    letter-spacing:1px; margin-bottom:12px;
+}}
+.challenge-msg {{
+    background:rgba(255,255,255,0.06); border:1px solid #2a4a8a;
+    border-radius:10px; padding:12px 18px; color:#c8d8ff;
+    font-size:14px; line-height:1.6; width:100%; text-align:center;
+    cursor:pointer; transition:background 0.2s;
+    user-select:all;
+}}
+.challenge-msg:hover {{ background:rgba(255,255,255,0.1); }}
+.copy-hint {{
+    color:#5a7ab0; font-size:12px; margin-top:8px; letter-spacing:1px;
+}}
+.copy-ok {{ color:#00e676; font-size:13px; margin-top:6px; display:none; }}
+</style>
+<div class="challenge-box">
+    <div class="challenge-title">🎯 Desafia um Amigo!</div>
+    <div class="challenge-msg" id="chal-msg" onclick="copiarDesafio()">
+        Consegues bater a minha pontuação? 🏆<br>
+        Fiz <strong>{score}/{total}</strong> ({pct}%) no quiz "Quem Quer Ser Produtivo?"{_streak_txt}<br>
+        <span id="chal-url" style="color:#7eb8ff;">A carregar link...</span>
+    </div>
+    <div class="copy-hint">👆 Clica para copiar</div>
+    <div class="copy-ok" id="copy-ok">✅ Copiado para a área de transferência!</div>
+</div>
+<script>
+(function(){{
+    var urlEl = document.getElementById('chal-url');
+    var url = window.parent.location.href.split('?')[0];
+    urlEl.textContent = url;
+}})();
+function copiarDesafio(){{
+    var url = window.parent.location.href.split('?')[0];
+    var texto = 'Consegues bater a minha pontuação? 🏆\\n'
+              + 'Fiz {score}/{total} ({pct}%) no quiz "Quem Quer Ser Produtivo?"{_streak_txt}\\n'
+              + url;
+    navigator.clipboard.writeText(texto).then(function(){{
+        document.getElementById('copy-ok').style.display = 'block';
+        setTimeout(function(){{ document.getElementById('copy-ok').style.display='none'; }}, 3000);
+    }}).catch(function(){{
+        window.prompt('Copia este texto:', texto);
+    }});
+}}
+</script>
+""", height=200)
+
     # ── Botão jogar novamente ────────────────────────────────────────────────
     st.markdown("<br>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 1, 1])
@@ -1608,8 +1775,53 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
+# ── Streak display ────────────────────────────────────────────────────────────
+_streak = st.session_state.get('streak', 0)
+if _streak >= 5:
+    _streak_html = f'<div class="streak-badge streak-fire2">🔥🔥 Em chama! {_streak} seguidas!</div>'
+elif _streak >= 3:
+    _streak_html = f'<div class="streak-badge streak-fire">🔥 {_streak} seguidas!</div>'
+elif _streak == 2:
+    _streak_html = f'<div class="streak-badge streak-warm">⚡ 2 seguidas!</div>'
+else:
+    _streak_html = '<div style="height:36px;"></div>'
+
 # Barra de progresso
 st.markdown(f"""
+<style>
+.streak-badge {{
+    display:inline-block;
+    padding:6px 20px;
+    border-radius:20px;
+    font-size:15px;
+    font-weight:700;
+    letter-spacing:1px;
+    animation: streakPop 0.4s cubic-bezier(0.175,0.885,0.32,1.275);
+}}
+.streak-fire2 {{
+    background:linear-gradient(135deg,#ff4500,#ff8c00);
+    color:#fff;
+    box-shadow:0 0 18px rgba(255,100,0,0.7);
+}}
+.streak-fire {{
+    background:linear-gradient(135deg,#ff6b00,#ffb300);
+    color:#fff;
+    box-shadow:0 0 14px rgba(255,150,0,0.6);
+}}
+.streak-warm {{
+    background:linear-gradient(135deg,#1e90ff,#00c6ff);
+    color:#fff;
+    box-shadow:0 0 10px rgba(30,144,255,0.5);
+}}
+@keyframes streakPop {{
+    0%   {{ transform:scale(0.6); opacity:0; }}
+    80%  {{ transform:scale(1.1); opacity:1; }}
+    100% {{ transform:scale(1);   opacity:1; }}
+}}
+</style>
+<div style="text-align:center; margin-bottom:4px;">
+    {_streak_html}
+</div>
 <div style="text-align:center; color:#7eb8ff; font-size:14px; margin-top:5px; letter-spacing:2px;">
     PERGUNTA {idx + 1} DE {len(perguntas)}
 </div>
@@ -1947,6 +2159,12 @@ if pendente is not None and resposta_dada is None and st.session_state.get('most
             st.session_state.resposta_dada = pendente  # mostra verde/vermelho
             st.session_state.pendente_resposta = None
             st.session_state.mostrar_resultado_ts = _time.time()
+            # Atualizar streak
+            if pendente == correta:
+                st.session_state.streak = st.session_state.get('streak', 0) + 1
+                st.session_state.max_streak = max(st.session_state.get('max_streak', 0), st.session_state.streak)
+            else:
+                st.session_state.streak = 0
             st.rerun()
 
 # ── ESCONDER BOTÃO CONFIRMAR via CSS após responder ─────────────────────────
