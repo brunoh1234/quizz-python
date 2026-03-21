@@ -1323,6 +1323,7 @@ div[data-testid="stButton"] button[title="hidden_start"] { display:none!importan
             import streamlit.components.v1 as _comp_cd
             _comp_cd.html("""
 <style>
+html, body { margin:0; padding:0; background:#02050a; overflow:hidden; }
 #simple-cd {
     position:fixed; inset:0; z-index:99999;
     background:radial-gradient(circle at 50% 50%, #0d1b3e 0%, #02050a 100%);
@@ -1364,11 +1365,23 @@ div[data-testid="stButton"] button[title="hidden_start"] { display:none!importan
 </div>
 <script>
 (function(){
+    // Esconder TODO o conteúdo da página pai — só este iframe fica visível
+    var parent = window.parent;
+    var hideStyle = parent.document.createElement('style');
+    hideStyle.id = 'cd-hide-all';
+    hideStyle.textContent = [
+        'header[data-testid="stHeader"] { display:none!important; }',
+        '[data-testid="stDecoration"] { display:none!important; }',
+        '.main .block-container > div { visibility:hidden!important; }',
+        'iframe[title="st.components.v1.html"] { visibility:visible!important; position:fixed!important; inset:0!important; width:100vw!important; height:100vh!important; border:none!important; z-index:99999!important; }'
+    ].join('');
+    parent.document.head.appendChild(hideStyle);
+
     var steps = [
         {num:'3', lbl:'PREPARAR', cls:'scd-num', delay:0},
         {num:'2', lbl:'ATENÇÃO',  cls:'scd-num', delay:1000},
         {num:'1', lbl:'JÁ!',      cls:'scd-num', delay:2000},
-        {num:'GO!', lbl:'',        cls:'scd-go',  delay:3000},
+        {num:'GO!', lbl:'',       cls:'scd-go',  delay:3000},
     ];
     var content = document.getElementById('scd-content');
     var label   = document.getElementById('scd-label');
@@ -1378,16 +1391,17 @@ div[data-testid="stButton"] button[title="hidden_start"] { display:none!importan
             content.className = s.cls;
             content.textContent = s.num;
             label.textContent = s.lbl;
-            // Reiniciar animação
             content.style.animation='none';
             void content.offsetWidth;
             content.style.animation='';
         }, s.delay);
     });
 
-    // Após 3.8s clicar no botão hidden para avançar
+    // Após 3.8s remover CSS de ocultação e clicar no botão hidden para avançar
     setTimeout(function(){
-        var btns = window.parent.document.querySelectorAll('button');
+        var hs = parent.document.getElementById('cd-hide-all');
+        if (hs) hs.remove();
+        var btns = parent.document.querySelectorAll('button');
         for(var b of btns){
             if(b.innerText && b.innerText.trim() === '__start_quiz__'){
                 b.click(); break;
@@ -1396,7 +1410,7 @@ div[data-testid="stButton"] button[title="hidden_start"] { display:none!importan
     }, 3800);
 })();
 </script>
-""", height=600)
+""", height=800)
 
     # Scroll to top após "Jogar Novamente" (sem reload de página)
     if st.session_state.get('scroll_to_top'):
