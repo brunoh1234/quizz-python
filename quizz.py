@@ -262,7 +262,7 @@ def play_confetti(key: str, mode: str = "burst"):
 
 
 def render_avatar_mascot(avatar_key: str, mood: str, speech: str = ""):
-    """Renders a mini SVG character mascot fixed in bottom-right corner."""
+    """Renders the character avatar inline as a card (visible in the iframe area)."""
     import json as _json
 
     # Mini SVG config per character: (body_color, hair_color, accessory_svg)
@@ -345,96 +345,139 @@ def render_avatar_mascot(avatar_key: str, mood: str, speech: str = ""):
     )
     _mini_svg_json = _json.dumps(_mini_svg)
 
-    _html = f"""<script>
+    import json as _json2
+    _av_key_js  = _json2.dumps(avatar_key)
+    _mood_js    = _json2.dumps(mood)
+    _speech_js  = _json2.dumps(speech)
+
+    # Animation per mood
+    _anim_map = {
+        'idle':    'avFloat   2s ease-in-out infinite',
+        'happy':   'avBounce  0.7s cubic-bezier(0.36,0.07,0.19,0.97) 3',
+        'sad':     'avShake   0.6s ease-in-out 2',
+        'fire':    'avSpin    0.9s ease-in-out infinite',
+        'nervous': 'avTremble 0.18s linear infinite',
+        'shocked': 'avShock   0.5s ease-in-out 3',
+        'pending': 'avFloat   1s ease-in-out infinite',
+    }
+    _anim = _anim_map.get(mood, _anim_map['idle'])
+
+    _inline_html = f"""<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  html, body {{
+    margin: 0; padding: 0;
+    background: transparent;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    height: 100%;
+    overflow: hidden;
+  }}
+  .av-card {{
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 4px; padding: 6px 10px;
+    background: rgba(6,14,30,0.82);
+    border: 1.5px solid rgba(30,144,255,0.35);
+    border-radius: 14px;
+    box-shadow: 0 0 18px rgba(30,144,255,0.18);
+  }}
+  .av-speech-bubble {{
+    background: rgba(10,26,74,0.96);
+    border: 1.5px solid #1e90ff;
+    border-radius: 12px 12px 0 12px;
+    padding: 3px 10px;
+    font-size: 10px;
+    color: #7eb8ff;
+    font-weight: bold;
+    white-space: nowrap;
+    font-family: Arial, sans-serif;
+    max-width: 140px;
+    text-align: center;
+    box-shadow: 0 0 8px rgba(30,144,255,0.3);
+    animation: speechPop 0.3s cubic-bezier(0.175,0.885,0.32,1.275);
+  }}
+  @keyframes speechPop  {{ 0%{{transform:scale(0.5);opacity:0}} 100%{{transform:scale(1);opacity:1}} }}
+  @keyframes avFloat    {{ 0%,100%{{transform:translateY(0)}} 50%{{transform:translateY(-7px)}} }}
+  @keyframes avBounce   {{ 0%,100%{{transform:translateY(0) scale(1)}} 30%{{transform:translateY(-18px) scale(1.12)}} 60%{{transform:translateY(-6px) scale(1.04)}} }}
+  @keyframes avShake    {{ 0%,100%{{transform:translateX(0)}} 20%{{transform:translateX(-7px) rotate(-4deg)}} 40%{{transform:translateX(7px) rotate(4deg)}} 60%{{transform:translateX(-4px) rotate(-2deg)}} 80%{{transform:translateX(4px) rotate(2deg)}} }}
+  @keyframes avSpin     {{ 0%{{transform:rotate(0) scale(1)}} 25%{{transform:rotate(-15deg) scale(1.12)}} 50%{{transform:rotate(15deg) scale(1.18)}} 75%{{transform:rotate(-8deg) scale(1.08)}} 100%{{transform:rotate(0) scale(1)}} }}
+  @keyframes avTremble  {{ 0%,100%{{transform:translateX(0) rotate(0)}} 25%{{transform:translateX(-3px) rotate(-2deg)}} 75%{{transform:translateX(3px) rotate(2deg)}} }}
+  @keyframes avShock    {{ 0%{{transform:scale(1)}} 20%{{transform:scale(1.3) rotate(-5deg)}} 40%{{transform:scale(0.9) rotate(5deg)}} 60%{{transform:scale(1.12) rotate(-3deg)}} 100%{{transform:scale(1) rotate(0)}} }}
+  .av-svg {{ animation: {_anim}; display: block; }}
+</style>
+</head>
+<body>
+<div class="av-card">
+  {'<div class="av-speech-bubble">' + speech + '</div>' if speech else ''}
+  {_mini_svg}
+</div>
+<script>
 (function() {{
-    var avatarKey = {_json.dumps(avatar_key)};
-    var mood      = {_json.dumps(mood)};
-    var speech    = {_json.dumps(speech)};
-    var miniSvg   = {_mini_svg_json};
-    var pdoc = window.parent.document;
+  // Update badge icon in parent with mini SVG
+  var pdoc = window.parent.document;
+  var badgeIcon = pdoc.getElementById('av-badge-icon');
+  if (badgeIcon) {{
+    var miniSvg = {_json2.dumps(_mini_svg)};
+    // Scale down for badge (28x28)
+    var scaled = miniSvg.replace('width="72"', 'width="22"').replace('height="83"', 'height="26"');
+    scaled = scaled.replace('style="animation', 'style="animation:none;');
+    badgeIcon.innerHTML = scaled;
+    badgeIcon.style.background = 'none';
+    badgeIcon.style.border = 'none';
+    badgeIcon.style.width = 'auto';
+    badgeIcon.style.height = 'auto';
+  }}
 
-    if (!pdoc.getElementById('av-mascot-css')) {{
-        var s = pdoc.createElement('style');
-        s.id = 'av-mascot-css';
-        s.textContent = `
-            #av-mascot {{
-                position:fixed; top:110px; right:20px;
-                z-index:10000; display:flex; flex-direction:column;
-                align-items:center; pointer-events:none;
-                filter: drop-shadow(0 4px 14px rgba(0,0,0,0.6));
-            }}
-            .av-speech {{
-                background:rgba(10,26,74,0.95);
-                border:2px solid #1e90ff;
-                border-radius:14px 14px 0 14px;
-                padding:4px 12px; font-size:11px;
-                color:#7eb8ff; font-weight:bold;
-                margin-bottom:4px; white-space:nowrap;
-                animation:speechPop 0.3s cubic-bezier(0.175,0.885,0.32,1.275);
-                box-shadow:0 0 10px rgba(30,144,255,0.4);
-            }}
-            @keyframes avFloat   {{ 0%,100%{{transform:translateY(0)}} 50%{{transform:translateY(-8px)}} }}
-            @keyframes avBounce  {{ 0%,100%{{transform:translateY(0) scale(1)}} 30%{{transform:translateY(-20px) scale(1.15)}} 60%{{transform:translateY(-8px) scale(1.05)}} }}
-            @keyframes avShake   {{ 0%,100%{{transform:translateX(0)}} 20%{{transform:translateX(-8px) rotate(-5deg)}} 40%{{transform:translateX(8px) rotate(5deg)}} 60%{{transform:translateX(-5px) rotate(-3deg)}} 80%{{transform:translateX(5px) rotate(3deg)}} }}
-            @keyframes avSpin    {{ 0%{{transform:rotate(0) scale(1)}} 25%{{transform:rotate(-15deg) scale(1.15)}} 50%{{transform:rotate(15deg) scale(1.2)}} 75%{{transform:rotate(-10deg) scale(1.1)}} 100%{{transform:rotate(0) scale(1)}} }}
-            @keyframes avTremble {{ 0%,100%{{transform:translateX(0) rotate(0)}} 25%{{transform:translateX(-3px) rotate(-2deg)}} 75%{{transform:translateX(3px) rotate(2deg)}} }}
-            @keyframes avShock   {{ 0%{{transform:scale(1)}} 20%{{transform:scale(1.35) rotate(-5deg)}} 40%{{transform:scale(0.9) rotate(5deg)}} 60%{{transform:scale(1.15) rotate(-3deg)}} 100%{{transform:scale(1) rotate(0)}} }}
-            @keyframes speechPop {{ 0%{{transform:scale(0.5);opacity:0}} 100%{{transform:scale(1);opacity:1}} }}
-            #av-mascot.av-idle    .av-svg {{ animation:avFloat   2s ease-in-out infinite }}
-            #av-mascot.av-happy   .av-svg {{ animation:avBounce  0.7s cubic-bezier(0.36,0.07,0.19,0.97) 3 }}
-            #av-mascot.av-sad     .av-svg {{ animation:avShake   0.6s ease-in-out 2 }}
-            #av-mascot.av-fire    .av-svg {{ animation:avSpin    0.9s ease-in-out infinite }}
-            #av-mascot.av-nervous .av-svg {{ animation:avTremble 0.18s linear infinite }}
-            #av-mascot.av-shocked .av-svg {{ animation:avShock   0.5s ease-in-out 3 }}
-            #av-mascot.av-pending .av-svg {{ animation:avFloat   1s ease-in-out infinite }}
-        `;
-        pdoc.head.appendChild(s);
-    }}
+  // Nervous mode watcher
+  var nervousSpeeches = {{
+    moderador: "\u26a1 Ordem! Foco!",
+    pontual: "\u26a1 O tempo conta!",
+    apresentador: "\u26a1 Pointer a tremer!",
+    silenciado: "\u26a1 *acena os bra\u00e7os*",
+    secretario: "\u26a1 Escrever mais r\u00e1pido!",
+    tecnico: "\u26a1 Buffer... buffer...",
+    executivo: "\u26a1 Board meeting!",
+    remoto: "\u26a1 Fundo a distrair!"
+  }};
+  var avatarKey = {_av_key_js};
+  var mood = {_mood_js};
+  var nervousMsg = nervousSpeeches[avatarKey] || "\u26a1 Depressa!";
 
-    var mascot = pdoc.getElementById('av-mascot');
-    if (!mascot) {{
-        mascot = pdoc.createElement('div');
-        mascot.id = 'av-mascot';
-        pdoc.body.appendChild(mascot);
-    }}
-    mascot.className = 'av-' + mood;
-    mascot.innerHTML = (speech ? '<div class="av-speech">' + speech + '</div>' : '') + miniSvg;
-
-    // Watch timer for nervous override
-    if (mood === 'idle' || mood === 'pending') {{
-        var nervousSpeeches = {{
-            moderador: "\u26a1 Ordem! Foco!",
-            pontual: "\u26a1 O tempo conta!",
-            apresentador: "\u26a1 Pointer a tremer!",
-            silenciado: "\u26a1 *acena os bra\u00e7os*",
-            secretario: "\u26a1 Escrever mais r\u00e1pido!",
-            tecnico: "\u26a1 Buffer... buffer...",
-            executivo: "\u26a1 Board meeting!",
-            remoto: "\u26a1 Fundo a distrair!"
-        }};
-        var nervousMsg = nervousSpeeches[avatarKey] || "\u26a1 Depressa!";
-        var watchTimer = setInterval(function() {{
-            var numEl = pdoc.getElementById('timer-num');
-            if (!numEl) {{ clearInterval(watchTimer); return; }}
-            var remaining = parseInt(numEl.textContent, 10);
-            var m = pdoc.getElementById('av-mascot');
-            if (!m) {{ clearInterval(watchTimer); return; }}
-            if (remaining <= 10 && remaining > 0 && (m.className === 'av-idle' || m.className === 'av-pending')) {{
-                m.className = 'av-nervous';
-                var sp = m.querySelector('.av-speech');
-                if (!sp) {{
-                    m.innerHTML = '<div class="av-speech">' + nervousMsg + '</div>' + m.innerHTML;
-                }} else {{
-                    sp.textContent = nervousMsg;
-                }}
-            }} else if (remaining > 10 && m.className === 'av-nervous') {{
-                m.className = 'av-' + mood;
-            }}
-        }}, 500);
-    }}
+  if (mood === 'idle' || mood === 'pending') {{
+    var watchTimer = setInterval(function() {{
+      var numEl = pdoc.getElementById('timer-num');
+      if (!numEl) {{ clearInterval(watchTimer); return; }}
+      var remaining = parseInt(numEl.textContent, 10);
+      var card = document.querySelector('.av-card');
+      var bubble = document.querySelector('.av-speech-bubble');
+      var svg = document.querySelector('.av-svg');
+      if (!card) {{ clearInterval(watchTimer); return; }}
+      if (remaining <= 10 && remaining > 0) {{
+        svg.style.animation = 'avTremble 0.18s linear infinite';
+        if (!bubble) {{
+          var nb = document.createElement('div');
+          nb.className = 'av-speech-bubble';
+          nb.textContent = nervousMsg;
+          card.insertBefore(nb, card.firstChild);
+        }} else {{
+          bubble.textContent = nervousMsg;
+        }}
+      }} else if (remaining > 10) {{
+        svg.style.animation = '';
+        if (bubble) bubble.textContent = {_speech_js} || '';
+      }}
+    }}, 500);
+  }}
 }})();
-</script>"""
-    components.html(_html, height=0)
+</script>
+</body>
+</html>"""
+
+    _inline_html_enc = _inline_html.encode('ascii', 'xmlcharrefreplace').decode('ascii')
+    components.html(_inline_html_enc, height=145, scrolling=False)
 
 
 def remove_avatar_mascot():
@@ -3073,8 +3116,6 @@ _av_speech = _char_speeches.get(_av_mood, '')
 if _av_mood == 'fire' and _streak_av >= 3:
     _av_speech = f'🔥 {_streak_av} seguidas!'
 
-render_avatar_mascot(_avatar_key_av, _av_mood, _av_speech)
-
 # -- Streak display ------------------------------------------------------------
 _streak = st.session_state.get('streak', 0)
 if _streak >= 5:
@@ -3274,7 +3315,11 @@ _timer_html = f"""
 
 # Limpar o timer do localStorage quando a pergunta muda (nova pergunta = novo timer)
 import streamlit.components.v1 as components
-components.html(_timer_html, height=130, scrolling=False)
+_col_timer, _col_avatar = st.columns([1, 1])
+with _col_timer:
+    components.html(_timer_html, height=145, scrolling=False)
+with _col_avatar:
+    render_avatar_mascot(_avatar_key_av, _av_mood, _av_speech)
 
 # -- TECLADO: A/B/C/D seleciona, Enter confirma -------------------------------
 _keyboard_html = f"""
