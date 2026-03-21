@@ -1354,10 +1354,10 @@ if st.session_state.user_id is None:
 </div>
 """, unsafe_allow_html=True)
 
-        # Auto-refresh silencioso a cada 30 segundos (mantém sessão)
-        import time as _t_rank
-        _t_rank.sleep(30)
-        st.rerun()
+    # Auto-refresh silencioso a cada 30 segundos (mantém sessão, fora do if)
+    import time as _t_rank
+    _t_rank.sleep(30)
+    st.rerun()
 
     st.stop()
 
