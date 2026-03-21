@@ -545,14 +545,7 @@ st.markdown("""
 # Estado inicial
 # ------------------------------
 
-# ── Detetar navegação limpa via query param ──────────────────────────────
-if st.query_params.get("action") == "reset":
-    st.query_params.clear()
-    for _k in list(st.session_state.keys()):
-        del st.session_state[_k]
-    # Manter splash já visto — vai direto para identificação, não para o intro
-    st.session_state.splash_shown = True
-    st.rerun()
+# (reset handler removido — feito diretamente no botão)
 
 if "user_id" not in st.session_state:
     st.session_state.user_id = None
@@ -1233,6 +1226,45 @@ function enterQuiz() {
 # Título principal
 st.markdown('<div class="main-title">🎯 QUEM QUER SER PRODUTIVO?</div>', unsafe_allow_html=True)
 
+# ── Scroll-to-top após "Jogar Novamente" ─────────────────────────────────
+if st.session_state.get("needs_scroll_top", False):
+    st.session_state.needs_scroll_top = False
+    import time as _t_scroll
+    _scroll_nonce = int(_t_scroll.time() * 1000)
+    components.html(f"""
+<script>
+(function(){{
+    var _n = {_scroll_nonce};  // nonce para forçar novo iframe
+    function doScroll() {{
+        try {{
+            var p = window.parent;
+            var sel = [
+                'section.main',
+                '[data-testid="stMain"]',
+                '[data-testid="stAppViewContainer"]',
+                '.main',
+                '.block-container'
+            ];
+            for (var i = 0; i < sel.length; i++) {{
+                var el = p.document.querySelector(sel[i]);
+                if (el) {{ el.scrollTop = 0; if(el.scrollTo) el.scrollTo({{top:0,behavior:'instant'}}); }}
+            }}
+            p.scrollTo(0, 0);
+            p.document.documentElement.scrollTop = 0;
+            p.document.body.scrollTop = 0;
+        }} catch(e) {{}}
+    }}
+    doScroll();
+    var count = 0;
+    var iv = setInterval(function() {{
+        doScroll();
+        count++;
+        if (count >= 30) clearInterval(iv);
+    }}, 80);
+}})();
+</script>
+""", height=50)
+
 # ------------------------------
 # BOTÃO DE RESET
 # ------------------------------
@@ -1600,29 +1632,12 @@ if st.session_state.terminou and st.session_state.get("user_id") is not None:
         if st.button("🔄 Jogar Novamente", use_container_width=True):
             # Limpar TODOS os estados para garantir página inicial limpa
             import uuid as _uuid2
-            keys_to_clear = [k for k in st.session_state.keys()
-                             if k.startswith("timer_start_ms_") or k.startswith("sfx_") or k.startswith("conf_")]
-            for k in keys_to_clear:
-                del st.session_state[k]
-            st.session_state.user_id         = None
-            st.session_state.pergunta        = 0
-            st.session_state.respostas       = []
-            st.session_state.terminou        = False
-            st.session_state.quiz_completed  = False
-            st.session_state.resposta_dada   = None
-            st.session_state.pendente_resposta = None
-            st.session_state.mostrar_resultado_ts = None
-            st.session_state.tempos_pergunta = []
-            st.session_state.historico_quiz  = []
-            st.session_state.ver_revisao     = False
-            st.session_state.game_id         = _uuid2.uuid4().hex[:8]
-            # Resetar o auto-refresh para evitar refresh imediato
-            if 'hist_last_refresh' in st.session_state:
-                del st.session_state['hist_last_refresh']
+            for _k in list(st.session_state.keys()):
+                del st.session_state[_k]
+            # Preservar: splash já visto → vai direto para identificação
+            st.session_state.splash_shown     = True
             # Flag para forçar scroll-to-top na home page
-            # Navegar para ?action=reset — força navegação real no browser
-            # que reseta o scroll automaticamente
-            st.query_params["action"] = "reset"
+            st.session_state.needs_scroll_top = True
             st.rerun()
 
     st.stop()
