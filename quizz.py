@@ -1240,6 +1240,14 @@ with col_reset:
 # ------------------------------
 
 if st.session_state.user_id is None:
+    # Forçar scroll para o topo (essencial após "Jogar Novamente")
+    components.html("""<script>
+        try {
+            var main = window.parent.document.querySelector('section.main');
+            if (main) main.scrollTo({top: 0, behavior: 'instant'});
+            window.parent.scrollTo(0, 0);
+        } catch(e) {}
+    </script>""", height=1)
     st.markdown("""
     <div class="login-box">
         <h2 style="color:#7eb8ff; margin-bottom:20px;">👤 Identificação</h2>
