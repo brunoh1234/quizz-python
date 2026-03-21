@@ -261,6 +261,106 @@ def play_confetti(key: str, mode: str = "burst"):
     _comp.html(html_code, height=0)
 
 
+def render_avatar_mascot(avatar_emoji: str, mood: str, speech: str = ""):
+    """Injeta avatar animado fixo no canto inferior direito."""
+    import json as _json
+    components.html(f"""
+<script>
+(function() {{
+    var emoji = {_json.dumps(avatar_emoji)};
+    var mood  = {_json.dumps(mood)};
+    var speech = {_json.dumps(speech)};
+    var pdoc = window.parent.document;
+
+    if (!pdoc.getElementById('av-mascot-css')) {{
+        var s = pdoc.createElement('style');
+        s.id = 'av-mascot-css';
+        s.textContent = `
+            #av-mascot {{
+                position:fixed; bottom:24px; right:24px;
+                z-index:10000; display:flex; flex-direction:column;
+                align-items:center; pointer-events:none;
+            }}
+            .av-speech {{
+                background:rgba(10,26,74,0.95);
+                border:2px solid #1e90ff;
+                border-radius:16px 16px 0 16px;
+                padding:5px 13px; font-size:12px;
+                color:#7eb8ff; font-weight:bold;
+                margin-bottom:5px; white-space:nowrap;
+                animation:speechPop 0.3s cubic-bezier(0.175,0.885,0.32,1.275);
+                box-shadow:0 0 10px rgba(30,144,255,0.4);
+            }}
+            .av-emoji {{
+                font-size:54px; display:block;
+                line-height:1;
+                filter:drop-shadow(0 4px 8px rgba(0,0,0,0.5));
+            }}
+            @keyframes avFloat  {{ 0%,100%{{transform:translateY(0)}} 50%{{transform:translateY(-8px)}} }}
+            @keyframes avBounce {{ 0%,100%{{transform:translateY(0) scale(1)}} 30%{{transform:translateY(-20px) scale(1.2)}} 60%{{transform:translateY(-8px) scale(1.05)}} }}
+            @keyframes avShake  {{ 0%,100%{{transform:translateX(0)}} 20%{{transform:translateX(-8px) rotate(-5deg)}} 40%{{transform:translateX(8px) rotate(5deg)}} 60%{{transform:translateX(-5px) rotate(-3deg)}} 80%{{transform:translateX(5px) rotate(3deg)}} }}
+            @keyframes avSpin   {{ 0%{{transform:rotate(0) scale(1)}} 25%{{transform:rotate(-15deg) scale(1.15)}} 50%{{transform:rotate(15deg) scale(1.2)}} 75%{{transform:rotate(-10deg) scale(1.1)}} 100%{{transform:rotate(0) scale(1)}} }}
+            @keyframes avTremble{{ 0%,100%{{transform:translateX(0) rotate(0)}} 25%{{transform:translateX(-3px) rotate(-2deg)}} 75%{{transform:translateX(3px) rotate(2deg)}} }}
+            @keyframes avShock  {{ 0%{{transform:scale(1)}} 20%{{transform:scale(1.35) rotate(-5deg)}} 40%{{transform:scale(0.9) rotate(5deg)}} 60%{{transform:scale(1.15) rotate(-3deg)}} 100%{{transform:scale(1) rotate(0)}} }}
+            @keyframes speechPop{{ 0%{{transform:scale(0.5);opacity:0}} 100%{{transform:scale(1);opacity:1}} }}
+            #av-mascot.av-idle    .av-emoji {{ animation:avFloat   2s ease-in-out infinite }}
+            #av-mascot.av-happy   .av-emoji {{ animation:avBounce  0.7s cubic-bezier(0.36,0.07,0.19,0.97) 3 }}
+            #av-mascot.av-sad     .av-emoji {{ animation:avShake   0.6s ease-in-out 2 }}
+            #av-mascot.av-fire    .av-emoji {{ animation:avSpin    0.9s ease-in-out infinite }}
+            #av-mascot.av-nervous .av-emoji {{ animation:avTremble 0.18s linear infinite }}
+            #av-mascot.av-shocked .av-emoji {{ animation:avShock   0.5s ease-in-out 3 }}
+            #av-mascot.av-pending .av-emoji {{ animation:avFloat   1s ease-in-out infinite }}
+        `;
+        pdoc.head.appendChild(s);
+    }}
+
+    var mascot = pdoc.getElementById('av-mascot');
+    if (!mascot) {{
+        mascot = pdoc.createElement('div');
+        mascot.id = 'av-mascot';
+        pdoc.body.appendChild(mascot);
+    }}
+    mascot.className = 'av-' + mood;
+    mascot.innerHTML = (speech ? '<div class="av-speech">' + speech + '</div>' : '') +
+                       '<span class="av-emoji">' + emoji + '</span>';
+
+    // JS also watches the timer arc for nervous state
+    if (mood === 'idle' || mood === 'pending') {{
+        var watchTimer = setInterval(function() {{
+            var numEl = pdoc.getElementById('timer-num');
+            if (!numEl) {{ clearInterval(watchTimer); return; }}
+            var remaining = parseInt(numEl.textContent, 10);
+            var m = pdoc.getElementById('av-mascot');
+            if (!m) {{ clearInterval(watchTimer); return; }}
+            // Only override if still idle/pending (not confirmed)
+            if (remaining <= 10 && remaining > 0 && (m.className === 'av-idle' || m.className === 'av-pending')) {{
+                m.className = 'av-nervous';
+                var sp = m.querySelector('.av-speech');
+                if (!sp) {{
+                    m.innerHTML = '<div class="av-speech">⚡ Depressa!</div>' + m.innerHTML;
+                }} else {{
+                    sp.textContent = '⚡ Depressa!';
+                }}
+            }} else if (remaining > 10 && (m.className === 'av-nervous')) {{
+                m.className = 'av-' + mood;
+            }}
+        }}, 500);
+    }}
+}})();
+</script>
+""", height=0)
+
+
+def remove_avatar_mascot():
+    """Remove o avatar mascote da página (para usar fora do quiz)."""
+    components.html("""<script>
+(function(){
+    var m = window.parent.document.getElementById('av-mascot');
+    if (m) m.remove();
+})();
+</script>""", height=0)
+
+
 # ------------------------------
 # Funções de armazenamento
 # ------------------------------
@@ -604,6 +704,8 @@ if "show_countdown" not in st.session_state:
     st.session_state.show_countdown = False
 if "pending_user_id" not in st.session_state:
     st.session_state.pending_user_id = None
+if "avatar" not in st.session_state:
+    st.session_state.avatar = None
 if "game_id" not in st.session_state:
     import uuid as _uuid
     st.session_state.game_id = _uuid.uuid4().hex[:8]
@@ -1366,6 +1468,10 @@ html, body { margin:0; padding:0; background:#02050a; overflow:hidden; }
 })();
 </script>
 """, height=800)
+
+    # Show avatar on countdown too
+    _av = st.session_state.get('avatar', '🧑‍💻')
+    render_avatar_mascot(_av, 'idle', '🎯 Vai!')
     st.stop()
 
 # Título principal
@@ -1387,6 +1493,7 @@ with col_reset:
 # ------------------------------
 
 if st.session_state.user_id is None:
+    remove_avatar_mascot()
     st.markdown("""
     <div class="login-box">
         <h2 style="color:#7eb8ff; margin-bottom:20px;">👤 Identificação</h2>
@@ -1394,12 +1501,71 @@ if st.session_state.user_id is None:
     </div>
     """, unsafe_allow_html=True)
 
+    # Avatar button CSS
+    st.markdown("""
+<style>
+div[data-testid="column"] button {
+    background: linear-gradient(135deg, #0d1f3c, #0a1628) !important;
+    border: 2px solid #1e3a6a !important;
+    border-radius: 12px !important;
+    color: white !important;
+    font-size: 13px !important;
+    padding: 10px 4px !important;
+    line-height: 1.3 !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
+    _AVATARS = [
+        ("🧑‍💻", "Coder"),   ("🦸", "Herói"),
+        ("🧙", "Mago"),    ("🤖", "Robô"),
+        ("🦊", "Raposa"),  ("🐼", "Panda"),
+        ("🦁", "Leão"),    ("👾", "Alien"),
+    ]
+
+    st.markdown('<p style="color:#aac8ff; text-align:center; font-size:14px; margin:14px 0 6px 0;">🎭 Escolhe o teu avatar:</p>', unsafe_allow_html=True)
+
+    _av_cols = st.columns(8)
+    for _i, (_av_emoji, _av_name) in enumerate(_AVATARS):
+        with _av_cols[_i]:
+            if st.session_state.avatar == _av_emoji:
+                _av_label = f"✅\n{_av_emoji}\n{_av_name}"
+            else:
+                _av_label = f"{_av_emoji}\n{_av_name}"
+            if st.button(_av_label, key=f"av_btn_{_i}", use_container_width=True):
+                st.session_state.avatar = _av_emoji
+                st.rerun()
+
+    # JS to highlight selected avatar button with gold border
+    import json as _json_av
+    _sel_json = _json_av.dumps(st.session_state.avatar or "")
+    components.html(f"""<script>
+(function() {{
+    var sel = {_sel_json};
+    function style() {{
+        var btns = window.parent.document.querySelectorAll('button');
+        btns.forEach(function(b) {{
+            var t = b.textContent.trim();
+            if (t.includes(sel) && sel !== '') {{
+                b.style.border = '2px solid #ffd700 !important';
+                b.style.boxShadow = '0 0 14px rgba(255,215,0,0.6)';
+                b.style.background = 'linear-gradient(135deg,#1a3a0a,#0a2010) !important';
+            }}
+        }});
+    }}
+    setTimeout(style, 80);
+    setTimeout(style, 250);
+}})();
+</script>""", height=0)
+
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         user_id = st.text_input("", placeholder="O teu nome...", label_visibility="collapsed")
         if st.button("▶️  COMEÇAR O QUIZ", use_container_width=True):
             import re as _re
-            if not user_id.strip():
+            if st.session_state.get('avatar') is None:
+                st.warning("Por favor escolhe um avatar! 🎭")
+            elif not user_id.strip():
                 st.warning("Por favor insere o teu nome.")
             elif not _re.fullmatch(r"[A-Za-zÀ-ÿ\s]+", user_id.strip()):
                 st.error("❌ Nome inválido — só são aceites letras.")
@@ -1446,6 +1612,7 @@ inject_sound_toggle()
 # ------------------------------
 
 if st.session_state.terminou and st.session_state.get("user_id") is not None:
+    remove_avatar_mascot()
     hist  = st.session_state.historico_quiz
     score = sum(1 for h in hist if h["dada"] == h["correta"])
     total = len(perguntas)
@@ -1787,10 +1954,38 @@ st.markdown(f"""
     align-items: center;
     gap: 8px;
 ">
-    <span style="font-size: 18px;">👤</span>
+    <span style="font-size: 22px;">{st.session_state.get('avatar', '👤')}</span>
     <span style="color: #7eb8ff; font-size: 15px; font-weight: bold; letter-spacing: 1px;">{st.session_state.user_id}</span>
 </div>
 """, unsafe_allow_html=True)
+
+# ── Avatar mascot animado ─────────────────────────────────────────────────────
+_avatar_emoji = st.session_state.get('avatar', '🧑‍💻')
+_resp_dada_av = st.session_state.resposta_dada
+_streak_av    = st.session_state.get('streak', 0)
+_pending_av   = st.session_state.pendente_resposta
+
+import time as _time
+_elapsed_av   = (_time.time() * 1000 - _timer_start_ms) / 1000
+_remaining_av = max(0, 60 - _elapsed_av)
+
+if _resp_dada_av == -1:
+    _av_mood = 'shocked';  _av_speech = '⏰ Tempo!'
+elif _resp_dada_av is not None:
+    if _resp_dada_av == correta:
+        _av_mood = 'happy';  _av_speech = '🎉 Certo!'
+    else:
+        _av_mood = 'sad';    _av_speech = '😅 Quase!'
+elif _streak_av >= 3:
+    _av_mood = 'fire';    _av_speech = f'🔥 {_streak_av} seguidas!'
+elif _remaining_av <= 10:
+    _av_mood = 'nervous'; _av_speech = '⚡ Depressa!'
+elif _pending_av is not None:
+    _av_mood = 'pending'; _av_speech = '🤔 Confirma?'
+else:
+    _av_mood = 'idle';    _av_speech = ''
+
+render_avatar_mascot(_avatar_emoji, _av_mood, _av_speech)
 
 # ── Streak display ────────────────────────────────────────────────────────────
 _streak = st.session_state.get('streak', 0)
