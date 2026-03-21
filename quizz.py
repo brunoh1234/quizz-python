@@ -550,6 +550,8 @@ if st.query_params.get("action") == "reset":
     st.query_params.clear()
     for _k in list(st.session_state.keys()):
         del st.session_state[_k]
+    # Manter splash já visto — vai direto para identificação, não para o intro
+    st.session_state.splash_shown = True
     st.rerun()
 
 if "user_id" not in st.session_state:
