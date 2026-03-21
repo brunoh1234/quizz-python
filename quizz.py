@@ -1310,12 +1310,13 @@ if st.session_state.user_id is None:
     if resultados_atuais:
         st.markdown("<br>", unsafe_allow_html=True)
         st.markdown("""
+<div style="display:flex; justify-content:center; width:100%;">
 <div style="
     background: linear-gradient(135deg, #0d1f4a 0%, #050e2a 100%);
     border: 1px solid #1e3a7a;
     border-radius: 16px;
     padding: 24px;
-    margin: 0 auto;
+    width: 100%;
     max-width: 700px;
 ">
     <h3 style="color:#ffd700; text-align:center; margin-bottom:18px; font-size:20px;">
@@ -1364,7 +1365,7 @@ if st.session_state.user_id is None:
 </div>
 """, unsafe_allow_html=True)
 
-        st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown("</div></div>", unsafe_allow_html=True)
 
         # Auto-refresh a cada 30 segundos
         import time as _time_home
