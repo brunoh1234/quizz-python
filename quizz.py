@@ -1361,7 +1361,7 @@ inject_sound_toggle()
 # ECRÃ FINAL
 # ------------------------------
 
-if st.session_state.terminou:
+if st.session_state.terminou and st.session_state.get("user_id") is not None:
     hist  = st.session_state.historico_quiz
     score = sum(1 for h in hist if h["dada"] == h["correta"])
     total = len(perguntas)
@@ -1585,16 +1585,24 @@ if st.session_state.terminou:
     col1, col2, col3 = st.columns([1, 1, 1])
     with col2:
         if st.button("🔄 Jogar Novamente", use_container_width=True):
-            st.session_state.user_id = None
-            st.session_state.pergunta = 0
-            st.session_state.respostas = []
-            st.session_state.terminou = False
-            st.session_state.resposta_dada = None
+            # Limpar TODOS os estados para garantir página inicial limpa
+            import uuid as _uuid2
+            keys_to_clear = [k for k in st.session_state.keys()
+                             if k.startswith("timer_start_ms_") or k.startswith("sfx_") or k.startswith("conf_")]
+            for k in keys_to_clear:
+                del st.session_state[k]
+            st.session_state.user_id         = None
+            st.session_state.pergunta        = 0
+            st.session_state.respostas       = []
+            st.session_state.terminou        = False
+            st.session_state.quiz_completed  = False
+            st.session_state.resposta_dada   = None
             st.session_state.pendente_resposta = None
+            st.session_state.mostrar_resultado_ts = None
             st.session_state.tempos_pergunta = []
-            st.session_state.historico_quiz = []
-            st.session_state.ver_revisao = False
-            import uuid as _uuid2; st.session_state.game_id = _uuid2.uuid4().hex[:8]
+            st.session_state.historico_quiz  = []
+            st.session_state.ver_revisao     = False
+            st.session_state.game_id         = _uuid2.uuid4().hex[:8]
             st.rerun()
 
     st.stop()
