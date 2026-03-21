@@ -361,462 +361,892 @@ def remove_avatar_mascot():
 </script>""", height=0)
 
 
+
 def render_3d_avatar_preview(avatar_key: str):
-    """Renders an animated 3D character preview using Three.js based on the selected avatar key."""
-    import json as _json3d
-    _key_js = _json3d.dumps(avatar_key if avatar_key else "", ensure_ascii=True)
-    _av3d_html = f"""<!DOCTYPE html>
+    """Renders an animated SVG character preview using inline SVG + CSS animations."""
+
+    # ── shared SVG snippets (plain strings, no curly braces) ─────────────────────
+    _sg = (
+        '<linearGradient id="sg" x1="0" y1="0" x2="0" y2="1">'
+        '<stop offset="0%" stop-color="#FFCC99"/>'
+        '<stop offset="100%" stop-color="#E8906A"/>'
+        '</linearGradient>'
+    )
+
+    # ── per-avatar SVG (inner elements only, no <svg> wrapper) ───────────────────
+    # Layout: viewBox 0 0 220 280
+    #   head-center (110,72), body y=118-192, legs y=191-252
+    #   left-shoulder (63,120), right-shoulder (157,120)
+    # Arm structure: <g transform="translate(SX,120)"><g class="ARM_CLASS">
+    #   <rect x="-9" y="0" width="18" height="52" rx="7"/>   ← arm
+    #   <ellipse cx="0" cy="56" rx="9" ry="9"/>              ← hand
+    # </g></g>
+    # CSS rotation: rotate(+N) tilts arm tip LEFT, rotate(-N) tilts tip RIGHT
+
+    # ── MODERADOR ─────────────────────────────────────────────────────────────────
+    _mod = (
+        '<defs>'
+        + _sg +
+        '<radialGradient id="bgl" cx="50%" cy="50%" r="50%">'
+        '<stop offset="0%" stop-color="#2255bb" stop-opacity="0.5"/>'
+        '<stop offset="100%" stop-color="#060e1e" stop-opacity="0"/>'
+        '</radialGradient>'
+        '<linearGradient id="bg2" x1="0" y1="0" x2="0" y2="1">'
+        '<stop offset="0%" stop-color="#2a5ecf"/><stop offset="100%" stop-color="#1a4a9f"/>'
+        '</linearGradient>'
+        '<linearGradient id="lg2" x1="0" y1="0" x2="0" y2="1">'
+        '<stop offset="0%" stop-color="#1a3a8a"/><stop offset="100%" stop-color="#0d2560"/>'
+        '</linearGradient>'
+        '</defs>'
+        '<circle cx="110" cy="150" r="90" fill="url(#bgl)"/>'
+        '<ellipse cx="110" cy="268" rx="65" ry="9" fill="#0a1a4a" stroke="#1166ff" stroke-width="2"/>'
+        '<g class="char-float">'
+        # legs
+        '<rect x="87" y="191" width="22" height="58" rx="7" fill="url(#lg2)"/>'
+        '<rect x="111" y="191" width="22" height="58" rx="7" fill="url(#lg2)"/>'
+        # shoes
+        '<rect x="82" y="244" width="28" height="13" rx="5" fill="#111122"/>'
+        '<rect x="108" y="244" width="28" height="13" rx="5" fill="#111122"/>'
+        # body - blue jacket
+        '<rect x="76" y="118" width="68" height="74" rx="9" fill="url(#bg2)"/>'
+        # lapels
+        '<polygon points="110,118 98,142 108,135 110,130" fill="#1a2a5a" opacity="0.8"/>'
+        '<polygon points="110,118 122,142 112,135 110,130" fill="#1a2a5a" opacity="0.8"/>'
+        # white shirt front
+        '<rect x="105" y="118" width="10" height="24" rx="3" fill="white" opacity="0.85"/>'
+        # left arm
+        '<g transform="translate(63,120)"><g class="arm-idle-l">'
+        '<rect x="-9" y="0" width="18" height="52" rx="7" fill="url(#bg2)"/>'
+        '<ellipse cx="0" cy="56" rx="9" ry="9" fill="url(#sg)"/>'
+        '</g></g>'
+        # right arm raised authoritatively
+        '<g transform="translate(157,120)"><g class="arm-wave-r">'
+        '<rect x="-9" y="0" width="18" height="52" rx="7" fill="url(#bg2)"/>'
+        '<ellipse cx="0" cy="56" rx="9" ry="9" fill="url(#sg)"/>'
+        '</g></g>'
+        # neck
+        '<rect x="104" y="105" width="12" height="16" rx="4" fill="url(#sg)"/>'
+        # ears
+        '<ellipse cx="77" cy="74" rx="7" ry="9" fill="url(#sg)"/>'
+        '<ellipse cx="143" cy="74" rx="7" ry="9" fill="url(#sg)"/>'
+        # head
+        '<ellipse cx="110" cy="72" rx="33" ry="36" fill="url(#sg)"/>'
+        # dark professional hair
+        '<ellipse cx="110" cy="47" rx="33" ry="16" fill="#2a1800"/>'
+        '<rect x="77" y="48" width="66" height="14" fill="#2a1800"/>'
+        '<ellipse cx="110" cy="57" rx="28" ry="6" fill="#3d2400"/>'
+        # cheeks
+        '<ellipse cx="92" cy="80" rx="9" ry="6" fill="#ff7777" opacity="0.22"/>'
+        '<ellipse cx="128" cy="80" rx="9" ry="6" fill="#ff7777" opacity="0.22"/>'
+        # eyes
+        '<ellipse cx="99" cy="68" rx="7.5" ry="7.5" fill="white"/>'
+        '<circle cx="100" cy="68" r="4" fill="#1a1a33"/>'
+        '<circle cx="102" cy="66" r="1.5" fill="white"/>'
+        '<ellipse cx="121" cy="68" rx="7.5" ry="7.5" fill="white"/>'
+        '<circle cx="120" cy="68" r="4" fill="#1a1a33"/>'
+        '<circle cx="122" cy="66" r="1.5" fill="white"/>'
+        # straight professional brows
+        '<path d="M93 59 Q99 57 105 59" stroke="#2a1800" stroke-width="2.5"'
+        ' fill="none" stroke-linecap="round"/>'
+        '<path d="M115 59 Q121 57 127 59" stroke="#2a1800" stroke-width="2.5"'
+        ' fill="none" stroke-linecap="round"/>'
+        # nose
+        '<ellipse cx="110" cy="77" rx="3" ry="2" fill="#cc7755"/>'
+        # confident smile
+        '<path d="M103 84 Q110 90 117 84" stroke="#cc5533" stroke-width="2"'
+        ' fill="none" stroke-linecap="round"/>'
+        # headset arc
+        '<path d="M82 62 Q110 38 138 62" stroke="#222222" stroke-width="5"'
+        ' fill="none" stroke-linecap="round"/>'
+        # earpads
+        '<rect x="74" y="57" width="13" height="17" rx="5" fill="#333333"/>'
+        '<rect x="133" y="57" width="13" height="17" rx="5" fill="#333333"/>'
+        # mic arm from right earpad
+        '<path d="M146 66 Q153 74 152 84" stroke="#333333" stroke-width="3"'
+        ' fill="none" stroke-linecap="round"/>'
+        # mic ball (red)
+        '<circle cx="152" cy="86" r="5" fill="#cc2200"/>'
+        '<circle cx="152" cy="86" r="3" fill="#ff4400"/>'
+        '</g>'
+    )
+
+    # ── PONTUAL ───────────────────────────────────────────────────────────────────
+    _pon = (
+        '<defs>'
+        + _sg +
+        '<radialGradient id="bgl" cx="50%" cy="50%" r="50%">'
+        '<stop offset="0%" stop-color="#186a32" stop-opacity="0.5"/>'
+        '<stop offset="100%" stop-color="#060e1e" stop-opacity="0"/>'
+        '</radialGradient>'
+        '<linearGradient id="bg2" x1="0" y1="0" x2="0" y2="1">'
+        '<stop offset="0%" stop-color="#22884a"/><stop offset="100%" stop-color="#186a32"/>'
+        '</linearGradient>'
+        '<linearGradient id="lg2" x1="0" y1="0" x2="0" y2="1">'
+        '<stop offset="0%" stop-color="#0d3d1a"/><stop offset="100%" stop-color="#0a2e14"/>'
+        '</linearGradient>'
+        '</defs>'
+        '<circle cx="110" cy="150" r="90" fill="url(#bgl)"/>'
+        '<ellipse cx="110" cy="268" rx="65" ry="9" fill="#0a1a4a" stroke="#1166ff" stroke-width="2"/>'
+        '<g class="char-float">'
+        '<rect x="87" y="191" width="22" height="58" rx="7" fill="url(#lg2)"/>'
+        '<rect x="111" y="191" width="22" height="58" rx="7" fill="url(#lg2)"/>'
+        '<rect x="82" y="244" width="28" height="13" rx="5" fill="#111122"/>'
+        '<rect x="108" y="244" width="28" height="13" rx="5" fill="#111122"/>'
+        '<rect x="76" y="118" width="68" height="74" rx="9" fill="url(#bg2)"/>'
+        # left arm checking watch
+        '<g transform="translate(63,120)"><g class="arm-watch-l">'
+        '<rect x="-9" y="0" width="18" height="52" rx="7" fill="url(#bg2)"/>'
+        '<ellipse cx="0" cy="56" rx="9" ry="9" fill="url(#sg)"/>'
+        # gold watch on wrist
+        '<rect x="-8" y="37" width="16" height="11" rx="4" fill="#ccaa00"/>'
+        '<rect x="-6" y="38" width="12" height="9" rx="3" fill="#ffffcc"/>'
+        '</g></g>'
+        # right arm - thumbs up
+        '<g transform="translate(157,120)"><g class="arm-thumbs-r">'
+        '<rect x="-9" y="0" width="18" height="52" rx="7" fill="url(#bg2)"/>'
+        # fist
+        '<rect x="-9" y="50" width="18" height="14" rx="6" fill="url(#sg)"/>'
+        # thumb pointing up
+        '<ellipse cx="-1" cy="44" rx="5" ry="8" fill="url(#sg)"/>'
+        '</g></g>'
+        '<rect x="104" y="105" width="12" height="16" rx="4" fill="url(#sg)"/>'
+        '<ellipse cx="77" cy="74" rx="7" ry="9" fill="url(#sg)"/>'
+        '<ellipse cx="143" cy="74" rx="7" ry="9" fill="url(#sg)"/>'
+        '<ellipse cx="110" cy="72" rx="33" ry="36" fill="url(#sg)"/>'
+        # medium brown hair
+        '<ellipse cx="110" cy="46" rx="33" ry="17" fill="#5c3010"/>'
+        '<rect x="77" y="47" width="66" height="14" fill="#5c3010"/>'
+        '<ellipse cx="110" cy="56" rx="30" ry="8" fill="#7a4420"/>'
+        '<ellipse cx="92" cy="80" rx="9" ry="6" fill="#ff7777" opacity="0.22"/>'
+        '<ellipse cx="128" cy="80" rx="9" ry="6" fill="#ff7777" opacity="0.22"/>'
+        '<ellipse cx="99" cy="68" rx="7.5" ry="7.5" fill="white"/>'
+        '<circle cx="100" cy="68" r="4" fill="#1a1a33"/>'
+        '<circle cx="102" cy="66" r="1.5" fill="white"/>'
+        '<ellipse cx="121" cy="68" rx="7.5" ry="7.5" fill="white"/>'
+        '<circle cx="120" cy="68" r="4" fill="#1a1a33"/>'
+        '<circle cx="122" cy="66" r="1.5" fill="white"/>'
+        # raised energetic brows
+        '<path d="M93 57 Q99 54 105 57" stroke="#5c3010" stroke-width="2.5"'
+        ' fill="none" stroke-linecap="round"/>'
+        '<path d="M115 57 Q121 54 127 57" stroke="#5c3010" stroke-width="2.5"'
+        ' fill="none" stroke-linecap="round"/>'
+        '<ellipse cx="110" cy="77" rx="3" ry="2" fill="#cc7755"/>'
+        # big enthusiastic smile
+        '<path d="M101 83 Q110 93 119 83" stroke="#cc5533" stroke-width="2"'
+        ' fill="none" stroke-linecap="round"/>'
+        # checkmark badge floating top-right
+        '<g class="badge-float">'
+        '<circle cx="162" cy="36" r="14" fill="#007722" opacity="0.9"/>'
+        '<circle cx="162" cy="36" r="12" fill="#00cc44"/>'
+        '<path d="M155 36 L161 43 L170 28" stroke="white" stroke-width="3"'
+        ' fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
+        '</g>'
+        '</g>'
+    )
+
+    # ── APRESENTADOR ──────────────────────────────────────────────────────────────
+    _apr = (
+        '<defs>'
+        + _sg +
+        '<radialGradient id="bgl" cx="50%" cy="50%" r="50%">'
+        '<stop offset="0%" stop-color="#6a1a9f" stop-opacity="0.5"/>'
+        '<stop offset="100%" stop-color="#060e1e" stop-opacity="0"/>'
+        '</radialGradient>'
+        '<linearGradient id="bg2" x1="0" y1="0" x2="0" y2="1">'
+        '<stop offset="0%" stop-color="#8833cc"/><stop offset="100%" stop-color="#6a1a9f"/>'
+        '</linearGradient>'
+        '<linearGradient id="lg2" x1="0" y1="0" x2="0" y2="1">'
+        '<stop offset="0%" stop-color="#4a0d70"/><stop offset="100%" stop-color="#3d0d60"/>'
+        '</linearGradient>'
+        '</defs>'
+        '<circle cx="110" cy="150" r="90" fill="url(#bgl)"/>'
+        '<ellipse cx="110" cy="268" rx="65" ry="9" fill="#0a1a4a" stroke="#1166ff" stroke-width="2"/>'
+        '<g class="char-float">'
+        '<rect x="87" y="191" width="22" height="58" rx="7" fill="url(#lg2)"/>'
+        '<rect x="111" y="191" width="22" height="58" rx="7" fill="url(#lg2)"/>'
+        '<rect x="82" y="244" width="28" height="13" rx="5" fill="#111122"/>'
+        '<rect x="108" y="244" width="28" height="13" rx="5" fill="#111122"/>'
+        # purple blazer body
+        '<rect x="76" y="118" width="68" height="74" rx="9" fill="url(#bg2)"/>'
+        # lapels
+        '<polygon points="110,118 97,145 108,138 110,130" fill="#4a0d70" opacity="0.9"/>'
+        '<polygon points="110,118 123,145 112,138 110,130" fill="#4a0d70" opacity="0.9"/>'
+        '<rect x="105" y="118" width="10" height="22" rx="3" fill="#ddbbff" opacity="0.7"/>'
+        # mini slide panel behind/left of character
+        '<rect x="14" y="100" width="52" height="38" rx="4" fill="#223366" stroke="#4466aa" stroke-width="1.5"/>'
+        '<rect x="19" y="106" width="32" height="4" rx="2" fill="#4488ff"/>'
+        '<rect x="19" y="113" width="25" height="4" rx="2" fill="#ff6644"/>'
+        '<rect x="19" y="120" width="38" height="4" rx="2" fill="#44cc88"/>'
+        '<rect x="19" y="127" width="20" height="4" rx="2" fill="#ffcc22"/>'
+        # left arm
+        '<g transform="translate(63,120)"><g class="arm-idle-l">'
+        '<rect x="-9" y="0" width="18" height="52" rx="7" fill="url(#bg2)"/>'
+        '<ellipse cx="0" cy="56" rx="9" ry="9" fill="url(#sg)"/>'
+        '</g></g>'
+        # right arm pointing at slide
+        '<g transform="translate(157,120)"><g class="arm-point-r">'
+        '<rect x="-9" y="0" width="18" height="52" rx="7" fill="url(#bg2)"/>'
+        '<ellipse cx="0" cy="56" rx="9" ry="9" fill="url(#sg)"/>'
+        # laser pointer in hand
+        '<rect x="-2" y="54" width="5" height="28" rx="2.5" fill="#dddddd"/>'
+        '<circle cx="1" cy="83" r="4" fill="#ff2200"/>'
+        '<circle cx="1" cy="83" r="2.5" fill="#ff6644"/>'
+        '</g></g>'
+        '<rect x="104" y="105" width="12" height="16" rx="4" fill="url(#sg)"/>'
+        '<ellipse cx="77" cy="74" rx="7" ry="9" fill="url(#sg)"/>'
+        '<ellipse cx="143" cy="74" rx="7" ry="9" fill="url(#sg)"/>'
+        '<ellipse cx="110" cy="72" rx="33" ry="36" fill="url(#sg)"/>'
+        # dark hair
+        '<ellipse cx="110" cy="47" rx="33" ry="16" fill="#2a1800"/>'
+        '<rect x="77" y="48" width="66" height="14" fill="#2a1800"/>'
+        '<ellipse cx="110" cy="57" rx="28" ry="6" fill="#3d2400"/>'
+        '<ellipse cx="92" cy="80" rx="9" ry="6" fill="#ff7777" opacity="0.22"/>'
+        '<ellipse cx="128" cy="80" rx="9" ry="6" fill="#ff7777" opacity="0.22"/>'
+        '<ellipse cx="99" cy="68" rx="7.5" ry="7.5" fill="white"/>'
+        '<circle cx="100" cy="68" r="4" fill="#1a1a33"/>'
+        '<circle cx="102" cy="66" r="1.5" fill="white"/>'
+        '<ellipse cx="121" cy="68" rx="7.5" ry="7.5" fill="white"/>'
+        '<circle cx="120" cy="68" r="4" fill="#1a1a33"/>'
+        '<circle cx="122" cy="66" r="1.5" fill="white"/>'
+        '<path d="M93 59 Q99 57 105 59" stroke="#2a1800" stroke-width="2.5"'
+        ' fill="none" stroke-linecap="round"/>'
+        '<path d="M115 59 Q121 57 127 59" stroke="#2a1800" stroke-width="2.5"'
+        ' fill="none" stroke-linecap="round"/>'
+        '<ellipse cx="110" cy="77" rx="3" ry="2" fill="#cc7755"/>'
+        '<path d="M103 84 Q110 90 117 84" stroke="#cc5533" stroke-width="2"'
+        ' fill="none" stroke-linecap="round"/>'
+        '</g>'
+    )
+
+    # ── SILENCIADO ────────────────────────────────────────────────────────────────
+    _sil = (
+        '<defs>'
+        + _sg +
+        '<radialGradient id="bgl" cx="50%" cy="50%" r="50%">'
+        '<stop offset="0%" stop-color="#9f3a1a" stop-opacity="0.5"/>'
+        '<stop offset="100%" stop-color="#060e1e" stop-opacity="0"/>'
+        '</radialGradient>'
+        '<linearGradient id="bg2" x1="0" y1="0" x2="0" y2="1">'
+        '<stop offset="0%" stop-color="#cc4422"/><stop offset="100%" stop-color="#9f3a1a"/>'
+        '</linearGradient>'
+        '<linearGradient id="lg2" x1="0" y1="0" x2="0" y2="1">'
+        '<stop offset="0%" stop-color="#601a0d"/><stop offset="100%" stop-color="#4a1208"/>'
+        '</linearGradient>'
+        '</defs>'
+        '<circle cx="110" cy="150" r="90" fill="url(#bgl)"/>'
+        '<ellipse cx="110" cy="268" rx="65" ry="9" fill="#0a1a4a" stroke="#1166ff" stroke-width="2"/>'
+        '<g class="char-float">'
+        '<rect x="87" y="191" width="22" height="58" rx="7" fill="url(#lg2)"/>'
+        '<rect x="111" y="191" width="22" height="58" rx="7" fill="url(#lg2)"/>'
+        '<rect x="82" y="244" width="28" height="13" rx="5" fill="#111122"/>'
+        '<rect x="108" y="244" width="28" height="13" rx="5" fill="#111122"/>'
+        '<rect x="76" y="118" width="68" height="74" rx="9" fill="url(#bg2)"/>'
+        # left arm raised
+        '<g transform="translate(63,120)"><g class="arm-raise-l">'
+        '<rect x="-9" y="0" width="18" height="52" rx="7" fill="url(#bg2)"/>'
+        '<ellipse cx="0" cy="56" rx="9" ry="9" fill="url(#sg)"/>'
+        '</g></g>'
+        # right arm raised
+        '<g transform="translate(157,120)"><g class="arm-raise-r">'
+        '<rect x="-9" y="0" width="18" height="52" rx="7" fill="url(#bg2)"/>'
+        '<ellipse cx="0" cy="56" rx="9" ry="9" fill="url(#sg)"/>'
+        '</g></g>'
+        '<rect x="104" y="105" width="12" height="16" rx="4" fill="url(#sg)"/>'
+        '<ellipse cx="77" cy="74" rx="7" ry="9" fill="url(#sg)"/>'
+        '<ellipse cx="143" cy="74" rx="7" ry="9" fill="url(#sg)"/>'
+        '<ellipse cx="110" cy="72" rx="33" ry="36" fill="url(#sg)"/>'
+        # medium dark hair - slightly messy
+        '<ellipse cx="110" cy="46" rx="33" ry="17" fill="#3a2008"/>'
+        '<rect x="77" y="47" width="66" height="14" fill="#3a2008"/>'
+        '<path d="M88 47 Q92 38 97 45" stroke="#3a2008" stroke-width="6"'
+        ' fill="none" stroke-linecap="round"/>'
+        '<path d="M115 44 Q120 35 126 43" stroke="#3a2008" stroke-width="6"'
+        ' fill="none" stroke-linecap="round"/>'
+        '<ellipse cx="92" cy="80" rx="9" ry="6" fill="#ff7777" opacity="0.22"/>'
+        '<ellipse cx="128" cy="80" rx="9" ry="6" fill="#ff7777" opacity="0.22"/>'
+        '<ellipse cx="99" cy="68" rx="7.5" ry="7.5" fill="white"/>'
+        '<circle cx="100" cy="68" r="4" fill="#1a1a33"/>'
+        '<circle cx="102" cy="66" r="1.5" fill="white"/>'
+        '<ellipse cx="121" cy="68" rx="7.5" ry="7.5" fill="white"/>'
+        '<circle cx="120" cy="68" r="4" fill="#1a1a33"/>'
+        '<circle cx="122" cy="66" r="1.5" fill="white"/>'
+        # frustrated angled brows (inner corners down)
+        '<path d="M93 61 Q99 57 105 60" stroke="#3a2008" stroke-width="2.8"'
+        ' fill="none" stroke-linecap="round"/>'
+        '<path d="M115 60 Q121 57 127 61" stroke="#3a2008" stroke-width="2.8"'
+        ' fill="none" stroke-linecap="round"/>'
+        '<ellipse cx="110" cy="77" rx="3" ry="2" fill="#cc7755"/>'
+        # open frustrated mouth
+        '<path d="M104 86 Q110 80 116 86" stroke="#cc5533" stroke-width="2"'
+        ' fill="none" stroke-linecap="round"/>'
+        '<ellipse cx="110" cy="88" rx="6" ry="4" fill="#cc5533" opacity="0.4"/>'
+        # muted mic icon floating to the right - pulsing
+        '<g class="badge-float">'
+        '<rect x="168" y="80" width="18" height="28" rx="9" fill="#888888"/>'
+        '<ellipse cx="177" cy="80" rx="9" ry="9" fill="#aaaaaa"/>'
+        '<path d="M170 114 Q177 122 184 114" stroke="#888888" stroke-width="2.5"'
+        ' fill="none" stroke-linecap="round"/>'
+        '<line x1="177" y1="108" x2="177" y2="114" stroke="#888888" stroke-width="2.5"'
+        ' stroke-linecap="round"/>'
+        # red slash over mic
+        '<line x1="164" y1="75" x2="190" y2="118" stroke="#ff2200" stroke-width="3"'
+        ' stroke-linecap="round"/>'
+        '</g>'
+        '</g>'
+    )
+
+    # ── SECRETARIO ────────────────────────────────────────────────────────────────
+    _sec = (
+        '<defs>'
+        + _sg +
+        '<radialGradient id="bgl" cx="50%" cy="50%" r="50%">'
+        '<stop offset="0%" stop-color="#0f7a6a" stop-opacity="0.5"/>'
+        '<stop offset="100%" stop-color="#060e1e" stop-opacity="0"/>'
+        '</radialGradient>'
+        '<linearGradient id="bg2" x1="0" y1="0" x2="0" y2="1">'
+        '<stop offset="0%" stop-color="#1a9a88"/><stop offset="100%" stop-color="#0f7a6a"/>'
+        '</linearGradient>'
+        '<linearGradient id="lg2" x1="0" y1="0" x2="0" y2="1">'
+        '<stop offset="0%" stop-color="#084d42"/><stop offset="100%" stop-color="#063830"/>'
+        '</linearGradient>'
+        '</defs>'
+        '<circle cx="110" cy="150" r="90" fill="url(#bgl)"/>'
+        '<ellipse cx="110" cy="268" rx="65" ry="9" fill="#0a1a4a" stroke="#1166ff" stroke-width="2"/>'
+        '<g class="char-float">'
+        '<rect x="87" y="191" width="22" height="58" rx="7" fill="url(#lg2)"/>'
+        '<rect x="111" y="191" width="22" height="58" rx="7" fill="url(#lg2)"/>'
+        '<rect x="82" y="244" width="28" height="13" rx="5" fill="#111122"/>'
+        '<rect x="108" y="244" width="28" height="13" rx="5" fill="#111122"/>'
+        '<rect x="76" y="118" width="68" height="74" rx="9" fill="url(#bg2)"/>'
+        # left arm holding notepad
+        '<g transform="translate(63,120)"><g class="arm-pad-l">'
+        '<rect x="-9" y="0" width="18" height="52" rx="7" fill="url(#bg2)"/>'
+        '<ellipse cx="0" cy="56" rx="9" ry="9" fill="url(#sg)"/>'
+        # notepad
+        '<rect x="-14" y="42" width="28" height="36" rx="3" fill="#f0f0f0"/>'
+        '<rect x="-14" y="42" width="28" height="5" rx="3" fill="#cccccc"/>'
+        '<line x1="-10" y1="52" x2="10" y2="52" stroke="#aaaacc" stroke-width="1.5"/>'
+        '<line x1="-10" y1="57" x2="10" y2="57" stroke="#aaaacc" stroke-width="1.5"/>'
+        '<line x1="-10" y1="62" x2="10" y2="62" stroke="#aaaacc" stroke-width="1.5"/>'
+        '<line x1="-10" y1="67" x2="10" y2="67" stroke="#aaaacc" stroke-width="1.5"/>'
+        '</g></g>'
+        # right arm writing
+        '<g transform="translate(157,120)"><g class="arm-write-r">'
+        '<rect x="-9" y="0" width="18" height="52" rx="7" fill="url(#bg2)"/>'
+        '<ellipse cx="0" cy="56" rx="9" ry="9" fill="url(#sg)"/>'
+        # pen in hand
+        '<rect x="-2" y="50" width="4" height="22" rx="2" fill="#1188ff"/>'
+        '<rect x="-2" y="72" width="4" height="5" rx="1" fill="#222222"/>'
+        '</g></g>'
+        '<rect x="104" y="105" width="12" height="16" rx="4" fill="url(#sg)"/>'
+        '<ellipse cx="77" cy="74" rx="7" ry="9" fill="url(#sg)"/>'
+        '<ellipse cx="143" cy="74" rx="7" ry="9" fill="url(#sg)"/>'
+        '<ellipse cx="110" cy="72" rx="33" ry="36" fill="url(#sg)"/>'
+        # tidy medium hair
+        '<ellipse cx="110" cy="46" rx="33" ry="17" fill="#4a2808"/>'
+        '<rect x="77" y="47" width="66" height="14" fill="#4a2808"/>'
+        '<path d="M77 50 Q110 38 143 50" stroke="#5a3010" stroke-width="3" fill="none"/>'
+        '<ellipse cx="92" cy="80" rx="9" ry="6" fill="#ff7777" opacity="0.22"/>'
+        '<ellipse cx="128" cy="80" rx="9" ry="6" fill="#ff7777" opacity="0.22"/>'
+        '<ellipse cx="99" cy="68" rx="7.5" ry="7.5" fill="white"/>'
+        '<circle cx="100" cy="68" r="4" fill="#1a1a33"/>'
+        '<circle cx="102" cy="66" r="1.5" fill="white"/>'
+        '<ellipse cx="121" cy="68" rx="7.5" ry="7.5" fill="white"/>'
+        '<circle cx="120" cy="68" r="4" fill="#1a1a33"/>'
+        '<circle cx="122" cy="66" r="1.5" fill="white"/>'
+        # focused neutral brows
+        '<path d="M93 59 Q99 57 105 59" stroke="#4a2808" stroke-width="2.5"'
+        ' fill="none" stroke-linecap="round"/>'
+        '<path d="M115 59 Q121 57 127 59" stroke="#4a2808" stroke-width="2.5"'
+        ' fill="none" stroke-linecap="round"/>'
+        '<ellipse cx="110" cy="77" rx="3" ry="2" fill="#cc7755"/>'
+        # focused slight smile
+        '<path d="M104 85 Q110 89 116 85" stroke="#cc5533" stroke-width="2"'
+        ' fill="none" stroke-linecap="round"/>'
+        '</g>'
+    )
+
+    # ── TECNICO ───────────────────────────────────────────────────────────────────
+    _tec = (
+        '<defs>'
+        + _sg +
+        '<radialGradient id="bgl" cx="50%" cy="50%" r="50%">'
+        '<stop offset="0%" stop-color="#4a4a5a" stop-opacity="0.5"/>'
+        '<stop offset="100%" stop-color="#060e1e" stop-opacity="0"/>'
+        '</radialGradient>'
+        '<linearGradient id="bg2" x1="0" y1="0" x2="0" y2="1">'
+        '<stop offset="0%" stop-color="#6a6a7a"/><stop offset="100%" stop-color="#4a4a5a"/>'
+        '</linearGradient>'
+        '<linearGradient id="lg2" x1="0" y1="0" x2="0" y2="1">'
+        '<stop offset="0%" stop-color="#3a3a4a"/><stop offset="100%" stop-color="#2a2a3a"/>'
+        '</linearGradient>'
+        '</defs>'
+        '<circle cx="110" cy="150" r="90" fill="url(#bgl)"/>'
+        '<ellipse cx="110" cy="268" rx="65" ry="9" fill="#0a1a4a" stroke="#1166ff" stroke-width="2"/>'
+        '<g class="char-float">'
+        '<rect x="87" y="191" width="22" height="58" rx="7" fill="url(#lg2)"/>'
+        '<rect x="111" y="191" width="22" height="58" rx="7" fill="url(#lg2)"/>'
+        '<rect x="82" y="244" width="28" height="13" rx="5" fill="#111122"/>'
+        '<rect x="108" y="244" width="28" height="13" rx="5" fill="#111122"/>'
+        # gray hoodie body
+        '<rect x="76" y="118" width="68" height="74" rx="9" fill="url(#bg2)"/>'
+        # hoodie front pocket
+        '<rect x="90" y="155" width="40" height="26" rx="6" fill="#3a3a4a"/>'
+        # hoodie drawstring
+        '<line x1="102" y1="118" x2="98" y2="140" stroke="#333344" stroke-width="2"'
+        ' stroke-linecap="round"/>'
+        '<line x1="118" y1="118" x2="122" y2="140" stroke="#333344" stroke-width="2"'
+        ' stroke-linecap="round"/>'
+        # left arm
+        '<g transform="translate(63,120)"><g class="arm-idle-l">'
+        '<rect x="-9" y="0" width="18" height="52" rx="7" fill="url(#bg2)"/>'
+        '<ellipse cx="0" cy="56" rx="9" ry="9" fill="url(#sg)"/>'
+        '</g></g>'
+        # right arm scratching head
+        '<g transform="translate(157,120)"><g class="arm-scratch-r">'
+        '<rect x="-9" y="0" width="18" height="52" rx="7" fill="url(#bg2)"/>'
+        '<ellipse cx="0" cy="56" rx="9" ry="9" fill="url(#sg)"/>'
+        # wrench in hand
+        '<rect x="-3" y="52" width="6" height="20" rx="3" fill="#888888"/>'
+        '<ellipse cx="0" cy="50" rx="7" ry="5" fill="#777777"/>'
+        '</g></g>'
+        '<rect x="104" y="105" width="12" height="16" rx="4" fill="url(#sg)"/>'
+        '<ellipse cx="77" cy="74" rx="7" ry="9" fill="url(#sg)"/>'
+        '<ellipse cx="143" cy="74" rx="7" ry="9" fill="url(#sg)"/>'
+        '<ellipse cx="110" cy="72" rx="33" ry="36" fill="url(#sg)"/>'
+        # hoodie hood over hair
+        '<ellipse cx="110" cy="48" rx="32" ry="14" fill="#4a4a5a"/>'
+        '<rect x="78" y="48" width="64" height="14" fill="#4a4a5a"/>'
+        '<path d="M78 52 Q76 70 77 98" stroke="#5a5a6a" stroke-width="9"'
+        ' fill="none" stroke-linecap="round"/>'
+        '<path d="M142 52 Q144 70 143 98" stroke="#5a5a6a" stroke-width="9"'
+        ' fill="none" stroke-linecap="round"/>'
+        # small dark hair visible below hood
+        '<ellipse cx="110" cy="54" rx="24" ry="8" fill="#3a2808"/>'
+        '<ellipse cx="92" cy="80" rx="9" ry="6" fill="#ff7777" opacity="0.22"/>'
+        '<ellipse cx="128" cy="80" rx="9" ry="6" fill="#ff7777" opacity="0.22"/>'
+        '<ellipse cx="99" cy="68" rx="7.5" ry="7.5" fill="white"/>'
+        '<circle cx="100" cy="68" r="4" fill="#1a1a33"/>'
+        '<circle cx="102" cy="66" r="1.5" fill="white"/>'
+        '<ellipse cx="121" cy="68" rx="7.5" ry="7.5" fill="white"/>'
+        '<circle cx="120" cy="68" r="4" fill="#1a1a33"/>'
+        '<circle cx="122" cy="66" r="1.5" fill="white"/>'
+        # one raised brow (confused) - left raised, right normal
+        '<path d="M93 58 Q99 53 105 57" stroke="#3a2808" stroke-width="2.8"'
+        ' fill="none" stroke-linecap="round"/>'
+        '<path d="M115 59 Q121 57 127 59" stroke="#3a2808" stroke-width="2.5"'
+        ' fill="none" stroke-linecap="round"/>'
+        # round glasses
+        '<circle cx="99" cy="69" r="11" fill="none" stroke="#222222" stroke-width="2.5"/>'
+        '<circle cx="121" cy="69" r="11" fill="none" stroke="#222222" stroke-width="2.5"/>'
+        '<line x1="110" y1="69" x2="112" y2="69" stroke="#222222" stroke-width="2"/>'
+        # glass lens tint
+        '<circle cx="99" cy="69" r="10" fill="#aaddff" opacity="0.15"/>'
+        '<circle cx="121" cy="69" r="10" fill="#aaddff" opacity="0.15"/>'
+        '<ellipse cx="110" cy="78" rx="3" ry="2" fill="#cc7755"/>'
+        # confused half-smile
+        '<path d="M104 86 Q107 89 112 87 Q116 86 117 88" stroke="#cc5533" stroke-width="2"'
+        ' fill="none" stroke-linecap="round"/>'
+        # WiFi arcs above head - pulsing
+        '<g class="wifi-pulse">'
+        '<path d="M97 31 Q110 19 123 31" stroke="#00aaff" stroke-width="2.5"'
+        ' fill="none" stroke-linecap="round" opacity="0.5"/>'
+        '<path d="M102 37 Q110 28 118 37" stroke="#00ccff" stroke-width="2.5"'
+        ' fill="none" stroke-linecap="round" opacity="0.7"/>'
+        '<path d="M106 43 Q110 38 114 43" stroke="#44ddff" stroke-width="2.5"'
+        ' fill="none" stroke-linecap="round"/>'
+        '<circle cx="110" cy="47" r="3" fill="#00aaff"/>'
+        '</g>'
+        '</g>'
+    )
+
+    # ── EXECUTIVO ─────────────────────────────────────────────────────────────────
+    _exe = (
+        '<defs>'
+        + _sg +
+        '<radialGradient id="bgl" cx="50%" cy="50%" r="50%">'
+        '<stop offset="0%" stop-color="#1a1a2e" stop-opacity="0.6"/>'
+        '<stop offset="100%" stop-color="#060e1e" stop-opacity="0"/>'
+        '</radialGradient>'
+        '<linearGradient id="bg2" x1="0" y1="0" x2="0" y2="1">'
+        '<stop offset="0%" stop-color="#2a2a40"/><stop offset="100%" stop-color="#1a1a2e"/>'
+        '</linearGradient>'
+        # pajama leg gradients (colorful stripes)
+        '<linearGradient id="lg2" x1="0" y1="0" x2="0" y2="1">'
+        '<stop offset="0%" stop-color="#aabbcc"/><stop offset="100%" stop-color="#8899aa"/>'
+        '</linearGradient>'
+        '</defs>'
+        '<circle cx="110" cy="150" r="90" fill="url(#bgl)"/>'
+        '<ellipse cx="110" cy="268" rx="65" ry="9" fill="#0a1a4a" stroke="#1166ff" stroke-width="2"/>'
+        '<g class="char-float">'
+        # pajama pants - colorful stripes
+        '<rect x="87" y="191" width="22" height="58" rx="7" fill="#aabbcc"/>'
+        '<rect x="111" y="191" width="22" height="58" rx="7" fill="#aabbcc"/>'
+        # stripe layers on legs
+        '<rect x="87" y="197" width="22" height="8" rx="2" fill="#ffcc22" opacity="0.9"/>'
+        '<rect x="111" y="197" width="22" height="8" rx="2" fill="#ffcc22" opacity="0.9"/>'
+        '<rect x="87" y="211" width="22" height="8" rx="2" fill="#ff6699" opacity="0.9"/>'
+        '<rect x="111" y="211" width="22" height="8" rx="2" fill="#ff6699" opacity="0.9"/>'
+        '<rect x="87" y="225" width="22" height="8" rx="2" fill="#44aaff" opacity="0.9"/>'
+        '<rect x="111" y="225" width="22" height="8" rx="2" fill="#44aaff" opacity="0.9"/>'
+        '<rect x="87" y="239" width="22" height="8" rx="2" fill="#66dd88" opacity="0.9"/>'
+        '<rect x="111" y="239" width="22" height="8" rx="2" fill="#66dd88" opacity="0.9"/>'
+        # shoes
+        '<rect x="82" y="244" width="28" height="13" rx="5" fill="#111122"/>'
+        '<rect x="108" y="244" width="28" height="13" rx="5" fill="#111122"/>'
+        # dark suit jacket
+        '<rect x="76" y="118" width="68" height="74" rx="9" fill="url(#bg2)"/>'
+        # lapels (suit)
+        '<polygon points="110,118 97,146 108,139 110,128" fill="#111122" opacity="0.95"/>'
+        '<polygon points="110,118 123,146 112,139 110,128" fill="#111122" opacity="0.95"/>'
+        # white shirt
+        '<rect x="105" y="118" width="10" height="22" rx="3" fill="white" opacity="0.9"/>'
+        # red tie
+        '<polygon points="107,122 113,122 115,148 110,154 105,148" fill="#cc1122"/>'
+        '<polygon points="108,122 112,122 110,127" fill="#880011"/>'
+        # left arm
+        '<g transform="translate(63,120)"><g class="arm-idle-l">'
+        '<rect x="-9" y="0" width="18" height="52" rx="7" fill="url(#bg2)"/>'
+        '<ellipse cx="0" cy="56" rx="9" ry="9" fill="url(#sg)"/>'
+        '</g></g>'
+        # right arm - professional wave
+        '<g transform="translate(157,120)"><g class="arm-wave-r">'
+        '<rect x="-9" y="0" width="18" height="52" rx="7" fill="url(#bg2)"/>'
+        '<ellipse cx="0" cy="56" rx="9" ry="9" fill="url(#sg)"/>'
+        '</g></g>'
+        '<rect x="104" y="105" width="12" height="16" rx="4" fill="url(#sg)"/>'
+        '<ellipse cx="77" cy="74" rx="7" ry="9" fill="url(#sg)"/>'
+        '<ellipse cx="143" cy="74" rx="7" ry="9" fill="url(#sg)"/>'
+        '<ellipse cx="110" cy="72" rx="33" ry="36" fill="url(#sg)"/>'
+        # slicked back dark hair
+        '<ellipse cx="110" cy="45" rx="33" ry="15" fill="#111111"/>'
+        '<rect x="77" y="46" width="66" height="14" fill="#111111"/>'
+        '<path d="M77 50 Q100 40 143 50" stroke="#222222" stroke-width="3" fill="none"/>'
+        '<path d="M82 55 Q110 44 138 55" stroke="#333333" stroke-width="2" fill="none"/>'
+        '<ellipse cx="92" cy="80" rx="9" ry="6" fill="#ff7777" opacity="0.22"/>'
+        '<ellipse cx="128" cy="80" rx="9" ry="6" fill="#ff7777" opacity="0.22"/>'
+        '<ellipse cx="99" cy="68" rx="7.5" ry="7.5" fill="white"/>'
+        '<circle cx="100" cy="68" r="4" fill="#1a1a33"/>'
+        '<circle cx="102" cy="66" r="1.5" fill="white"/>'
+        '<ellipse cx="121" cy="68" rx="7.5" ry="7.5" fill="white"/>'
+        '<circle cx="120" cy="68" r="4" fill="#1a1a33"/>'
+        '<circle cx="122" cy="66" r="1.5" fill="white"/>'
+        # smug raised brow (right slightly higher)
+        '<path d="M93 59 Q99 57 105 59" stroke="#111111" stroke-width="2.5"'
+        ' fill="none" stroke-linecap="round"/>'
+        '<path d="M115 57 Q121 55 127 58" stroke="#111111" stroke-width="2.5"'
+        ' fill="none" stroke-linecap="round"/>'
+        '<ellipse cx="110" cy="77" rx="3" ry="2" fill="#cc7755"/>'
+        # smug slight smirk (asymmetric)
+        '<path d="M104 85 Q109 89 116 84" stroke="#cc5533" stroke-width="2"'
+        ' fill="none" stroke-linecap="round"/>'
+        '</g>'
+    )
+
+    # ── REMOTO ────────────────────────────────────────────────────────────────────
+    _rem = (
+        '<defs>'
+        + _sg +
+        '<radialGradient id="bgl" cx="50%" cy="50%" r="50%">'
+        '<stop offset="0%" stop-color="#3a1a6a" stop-opacity="0.5"/>'
+        '<stop offset="100%" stop-color="#060e1e" stop-opacity="0"/>'
+        '</radialGradient>'
+        '<linearGradient id="bg2" x1="0" y1="0" x2="0" y2="1">'
+        '<stop offset="0%" stop-color="#5a2a8a"/><stop offset="100%" stop-color="#3a1a6a"/>'
+        '</linearGradient>'
+        '<linearGradient id="lg2" x1="0" y1="0" x2="0" y2="1">'
+        '<stop offset="0%" stop-color="#666688"/><stop offset="100%" stop-color="#555577"/>'
+        '</linearGradient>'
+        '</defs>'
+        '<circle cx="110" cy="150" r="90" fill="url(#bgl)"/>'
+        '<ellipse cx="110" cy="268" rx="65" ry="9" fill="#0a1a4a" stroke="#1166ff" stroke-width="2"/>'
+        '<g class="char-float">'
+        '<rect x="87" y="191" width="22" height="58" rx="7" fill="url(#lg2)"/>'
+        '<rect x="111" y="191" width="22" height="58" rx="7" fill="url(#lg2)"/>'
+        '<rect x="82" y="244" width="28" height="13" rx="5" fill="#111122"/>'
+        '<rect x="108" y="244" width="28" height="13" rx="5" fill="#111122"/>'
+        # purple hoodie body
+        '<rect x="76" y="118" width="68" height="74" rx="9" fill="url(#bg2)"/>'
+        # hoodie front pocket
+        '<rect x="88" y="158" width="44" height="26" rx="7" fill="#2a0a5a"/>'
+        # hoodie drawstrings
+        '<line x1="104" y1="118" x2="101" y2="143" stroke="#2a0a5a" stroke-width="2.5"'
+        ' stroke-linecap="round"/>'
+        '<line x1="116" y1="118" x2="119" y2="143" stroke="#2a0a5a" stroke-width="2.5"'
+        ' stroke-linecap="round"/>'
+        # left arm holding coffee mug
+        '<g transform="translate(63,120)"><g class="arm-mug-l">'
+        '<rect x="-9" y="0" width="18" height="52" rx="7" fill="url(#bg2)"/>'
+        '<ellipse cx="0" cy="56" rx="9" ry="9" fill="url(#sg)"/>'
+        # orange coffee mug
+        '<rect x="-10" y="50" width="20" height="22" rx="5" fill="#cc4400"/>'
+        '<ellipse cx="0" cy="50" rx="10" ry="4" fill="#dd5500"/>'
+        '<ellipse cx="0" cy="72" rx="10" ry="4" fill="#aa3300"/>'
+        # mug handle
+        '<path d="M10 54 Q17 62 10 70" stroke="#cc4400" stroke-width="3"'
+        ' fill="none" stroke-linecap="round"/>'
+        # steam lines (animated)
+        '<g class="steam-rise">'
+        '<path d="M-4 46 Q-2 40 -4 34" stroke="white" stroke-width="1.5"'
+        ' fill="none" stroke-linecap="round" opacity="0.6"/>'
+        '<path d="M1 44 Q3 37 1 31" stroke="white" stroke-width="1.5"'
+        ' fill="none" stroke-linecap="round" opacity="0.5"/>'
+        '<path d="M6 46 Q8 39 6 33" stroke="white" stroke-width="1.5"'
+        ' fill="none" stroke-linecap="round" opacity="0.6"/>'
+        '</g>'
+        '</g></g>'
+        # right arm casual wave
+        '<g transform="translate(157,120)"><g class="arm-wave-r">'
+        '<rect x="-9" y="0" width="18" height="52" rx="7" fill="url(#bg2)"/>'
+        '<ellipse cx="0" cy="56" rx="9" ry="9" fill="url(#sg)"/>'
+        '</g></g>'
+        '<rect x="104" y="105" width="12" height="16" rx="4" fill="url(#sg)"/>'
+        '<ellipse cx="77" cy="74" rx="7" ry="9" fill="url(#sg)"/>'
+        '<ellipse cx="143" cy="74" rx="7" ry="9" fill="url(#sg)"/>'
+        '<ellipse cx="110" cy="72" rx="33" ry="36" fill="url(#sg)"/>'
+        # purple hoodie hood
+        '<ellipse cx="110" cy="48" rx="32" ry="14" fill="#3a1a6a"/>'
+        '<rect x="78" y="48" width="64" height="14" fill="#3a1a6a"/>'
+        '<path d="M78 52 Q76 70 77 100" stroke="#4a2a7a" stroke-width="9"'
+        ' fill="none" stroke-linecap="round"/>'
+        '<path d="M142 52 Q144 70 143 100" stroke="#4a2a7a" stroke-width="9"'
+        ' fill="none" stroke-linecap="round"/>'
+        # dark hair under hood
+        '<ellipse cx="110" cy="54" rx="24" ry="8" fill="#2a1808"/>'
+        '<ellipse cx="92" cy="80" rx="9" ry="6" fill="#ff7777" opacity="0.22"/>'
+        '<ellipse cx="128" cy="80" rx="9" ry="6" fill="#ff7777" opacity="0.22"/>'
+        '<ellipse cx="99" cy="68" rx="7.5" ry="7.5" fill="white"/>'
+        '<circle cx="100" cy="68" r="4" fill="#1a1a33"/>'
+        '<circle cx="102" cy="66" r="1.5" fill="white"/>'
+        '<ellipse cx="121" cy="68" rx="7.5" ry="7.5" fill="white"/>'
+        '<circle cx="120" cy="68" r="4" fill="#1a1a33"/>'
+        '<circle cx="122" cy="66" r="1.5" fill="white"/>'
+        '<path d="M93 59 Q99 57 105 59" stroke="#2a1808" stroke-width="2.5"'
+        ' fill="none" stroke-linecap="round"/>'
+        '<path d="M115 59 Q121 57 127 59" stroke="#2a1808" stroke-width="2.5"'
+        ' fill="none" stroke-linecap="round"/>'
+        '<ellipse cx="110" cy="77" rx="3" ry="2" fill="#cc7755"/>'
+        # relaxed smile
+        '<path d="M104 85 Q110 91 116 85" stroke="#cc5533" stroke-width="2"'
+        ' fill="none" stroke-linecap="round"/>'
+        # headphones
+        '<path d="M80 62 Q110 38 140 62" stroke="#222233" stroke-width="6"'
+        ' fill="none" stroke-linecap="round"/>'
+        # headphone cups
+        '<ellipse cx="80" cy="68" rx="11" ry="12" fill="#222233"/>'
+        '<ellipse cx="140" cy="68" rx="11" ry="12" fill="#222233"/>'
+        '<ellipse cx="80" cy="68" rx="8" ry="9" fill="#4444bb"/>'
+        '<ellipse cx="140" cy="68" rx="8" ry="9" fill="#4444bb"/>'
+        '</g>'
+    )
+
+    # ── AVATAR_DATA ───────────────────────────────────────────────────────────────
+    AVATAR_DATA = {
+        "moderador":    {"name": "O Moderador",    "svg": _mod},
+        "pontual":      {"name": "O Pontual",       "svg": _pon},
+        "apresentador": {"name": "O Apresentador",  "svg": _apr},
+        "silenciado":   {"name": "O Silenciado",    "svg": _sil},
+        "secretario":   {"name": "O Secret&#225;rio", "svg": _sec},
+        "tecnico":      {"name": "O T&#233;cnico",  "svg": _tec},
+        "executivo":    {"name": "O Executivo",     "svg": _exe},
+        "remoto":       {"name": "O Remoto",        "svg": _rem},
+    }
+
+    # ── PLACEHOLDER ───────────────────────────────────────────────────────────────
+    if not avatar_key or avatar_key not in AVATAR_DATA:
+        _placeholder_html = """<!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
 <style>
-  html,body{{margin:0;padding:0;background:transparent;overflow:hidden;display:flex;flex-direction:column;align-items:center;}}
-  canvas{{display:block;border-radius:16px;box-shadow:0 0 30px rgba(30,100,255,0.35);}}
-  #av3d-name{{text-align:center;color:#7eb8ff;font-size:15px;font-family:'Segoe UI',sans-serif;
-    margin-top:8px;letter-spacing:2px;text-transform:uppercase;
-    text-shadow:0 0 12px rgba(100,180,255,0.7);font-weight:600;}}
-  #av3d-hint{{text-align:center;color:#446688;font-size:11px;font-family:'Segoe UI',sans-serif;margin-top:3px;}}
+  html, body {
+    margin: 0; padding: 0;
+    background: #060e1e;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 360px;
+    overflow: hidden;
+    font-family: 'Segoe UI', sans-serif;
+  }
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
+  .ring { animation: spin 2s linear infinite; transform-origin: center; }
+  .av-name { color: #446688; font-size: 14px; letter-spacing: 2px;
+    text-transform: uppercase; margin-top: 12px; }
 </style>
 </head>
 <body>
-<canvas id="c" width="260" height="260"></canvas>
-<div id="av3d-name">Seleciona um avatar</div>
-<div id="av3d-hint">&#x270B; acena contigo!</div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script>
-(function(){{
-var AVATAR_KEY = {_key_js};
-
-// -- Scene ----------------------------------------------------------------------
-var W=260, H=260;
-var scene = new THREE.Scene();
-scene.background = new THREE.Color(0x060e1e);
-var camera = new THREE.PerspectiveCamera(38, W/H, 0.1, 100);
-camera.position.set(0, 0.25, 4.2);
-var renderer = new THREE.WebGLRenderer({{canvas:document.getElementById('c'), antialias:true}});
-renderer.setSize(W,H);
-renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
-
-// -- Lights ---------------------------------------------------------------------
-scene.add(new THREE.AmbientLight(0x304070, 0.9));
-var dl = new THREE.DirectionalLight(0x88aaff, 1.6);
-dl.position.set(2,3,3); scene.add(dl);
-var rl = new THREE.DirectionalLight(0x003388, 0.6);
-rl.position.set(-2,0,-1); scene.add(rl);
-var pl = new THREE.PointLight(0x0066ff, 0.8, 8);
-pl.position.set(0,2,2); scene.add(pl);
-
-// -- Platform ------------------------------------------------------------------
-var platMesh = new THREE.Mesh(
-  new THREE.CylinderGeometry(0.9,0.9,0.06,48),
-  new THREE.MeshPhongMaterial({{color:0x0a1a4a,emissive:0x002288,emissiveIntensity:0.4,shininess:120}})
-);
-platMesh.position.y = -1.42; scene.add(platMesh);
-var ringMesh = new THREE.Mesh(
-  new THREE.TorusGeometry(0.92,0.025,8,60),
-  new THREE.MeshPhongMaterial({{color:0x1166ff,emissive:0x0088ff,emissiveIntensity:1.0}})
-);
-ringMesh.rotation.x=Math.PI/2; ringMesh.position.y=-1.39; scene.add(ringMesh);
-
-// -- Particle stars -------------------------------------------------------------
-var starGeo = new THREE.BufferGeometry();
-var starsPos = [];
-for(var i=0;i<80;i++){{
-  starsPos.push((Math.random()-0.5)*8,(Math.random()-0.5)*6,(Math.random()*-4)-1);
-}}
-starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starsPos,3));
-var stars = new THREE.Points(starGeo, new THREE.PointsMaterial({{color:0x88aaff,size:0.04}}));
-scene.add(stars);
-
-// -- Avatar config -------------------------------------------------------------
-var CONFIGS = {{
-  'moderador': {{
-    name:'O Moderador', bodyCol:0x1a4a9f, legsCol:0x0d2560, skinCol:0xffcc99,
-    extras:function(p){{
-      // Headset arc
-      var hsMat=new THREE.MeshPhongMaterial({{color:0x222222}});
-      var hs=new THREE.Mesh(new THREE.TorusGeometry(0.3,0.04,8,24,Math.PI),hsMat);
-      hs.position.set(0,0.82,0); hs.rotation.x=Math.PI; p.group.add(hs);
-      // Earpads
-      [-0.3,0.3].forEach(function(x){{
-        var ep=new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.07,0.04,12),hsMat);
-        ep.position.set(x,0.82,0); ep.rotation.z=Math.PI/2; p.group.add(ep);
-      }});
-      // Mic arm
-      var micArm=new THREE.Mesh(new THREE.CylinderGeometry(0.02,0.02,0.22,8),hsMat);
-      micArm.position.set(0.28,0.68,0.1); micArm.rotation.z=-Math.PI/4; p.group.add(micArm);
-      var micBall=new THREE.Mesh(new THREE.SphereGeometry(0.04,8,8),
-        new THREE.MeshPhongMaterial({{color:0x111111,emissive:0xff3300,emissiveIntensity:0.8}}));
-      micBall.position.set(0.38,0.58,0.14); p.group.add(micBall);
-    }},
-    animFn:function(p,t){{
-      // Wave right arm
-      p.armR.rotation.z = -0.7 + Math.sin(t*2.5)*0.55;
-      p.armR.rotation.x = Math.sin(t*2.5)*0.15;
-      p.armL.rotation.z = 0.15 + Math.sin(t*1.2)*0.08;
-    }}
-  }},
-  'pontual': {{
-    name:'O Pontual', bodyCol:0x186a32, legsCol:0x0d3d1a, skinCol:0xffbb88,
-    extras:function(p){{
-      // Watch on left wrist
-      var watchMat=new THREE.MeshPhongMaterial({{color:0xccaa00,emissive:0x886600,emissiveIntensity:0.4}});
-      var watch=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.06,0.04,12),watchMat);
-      // Position on left arm (lower)
-      var wg=new THREE.Group(); wg.position.set(0,-0.52,0); wg.add(watch); p.armL.add(wg);
-      // Watch face details
-      var face=new THREE.Mesh(new THREE.CylinderGeometry(0.055,0.055,0.01,12),
-        new THREE.MeshPhongMaterial({{color:0xffffff,emissive:0x88ffff,emissiveIntensity:0.5}}));
-      face.position.y=0.025; wg.add(face);
-      // Checkmark badge above head
-      var badgeMat=new THREE.MeshPhongMaterial({{color:0x00cc44,emissive:0x00aa33,emissiveIntensity:0.6}});
-      var badge=new THREE.Mesh(new THREE.SphereGeometry(0.12,12,12),badgeMat);
-      badge.position.set(0.4,1.15,0); p.group.add(badge);
-      p._badge=badge;
-    }},
-    animFn:function(p,t){{
-      // Left arm check watch
-      p.armL.rotation.z = 0.2 + Math.sin(t*0.8)*0.15;
-      p.armL.rotation.x = 0.4 + Math.sin(t*0.8)*0.1;
-      // Right arm wave enthusiastically
-      p.armR.rotation.z = -0.9 + Math.sin(t*3.0)*0.6;
-      p.armR.rotation.x = Math.sin(t*3.0)*0.2;
-      if(p._badge) p._badge.position.y = 1.15 + Math.sin(t*2)*0.05;
-    }}
-  }},
-  'apresentador': {{
-    name:'O Apresentador', bodyCol:0x6a1a9f, legsCol:0x3d0d60, skinCol:0xffcc99,
-    extras:function(p){{
-      // Pointer stick in right hand
-      var pMat=new THREE.MeshPhongMaterial({{color:0xdddddd}});
-      var pointer=new THREE.Mesh(new THREE.CylinderGeometry(0.018,0.018,0.55,8),pMat);
-      pointer.position.set(0,-0.85,0); pointer.rotation.z=-0.3; p.armR.add(pointer);
-      var pTip=new THREE.Mesh(new THREE.SphereGeometry(0.035,8,8),
-        new THREE.MeshPhongMaterial({{color:0xff2200,emissive:0xff0000,emissiveIntensity:1.0}}));
-      pTip.position.set(0,-1.13,0); p.armR.add(pTip);
-      // Mini slide board
-      var board=new THREE.Mesh(new THREE.BoxGeometry(0.45,0.3,0.02),
-        new THREE.MeshPhongMaterial({{color:0xffffff,emissive:0x8888ff,emissiveIntensity:0.2}}));
-      board.position.set(-0.6,0.7,0.2); p.group.add(board);
-      // Slide lines
-      var lineMat=new THREE.MeshPhongMaterial({{color:0x0044ff,emissive:0x0022ff,emissiveIntensity:0.5}});
-      [0.06,0,-.06].forEach(function(y,i){{
-        var line=new THREE.Mesh(new THREE.BoxGeometry(0.3+i*0.05,0.025,0.025),lineMat);
-        line.position.set(-0.6,0.7+y,0.22); p.group.add(line);
-      }});
-    }},
-    animFn:function(p,t){{
-      // Right arm points / gestures
-      p.armR.rotation.z = -0.5 + Math.sin(t*1.5)*0.35;
-      p.armR.rotation.x = -0.3 + Math.sin(t*1.5)*0.2;
-      p.armL.rotation.z = 0.2+Math.sin(t*0.7)*0.1;
-    }}
-  }},
-  'silenciado': {{
-    name:'O Silenciado', bodyCol:0x9f3a1a, legsCol:0x601a0d, skinCol:0xffcc99,
-    extras:function(p){{
-      // Floating muted mic
-      var micGroup=new THREE.Group();
-      micGroup.position.set(0.5,0.4,0.3);
-      var micBody=new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.07,0.18,10),
-        new THREE.MeshPhongMaterial({{color:0xaaaaaa}}));
-      var micTop=new THREE.Mesh(new THREE.SphereGeometry(0.07,10,10),
-        new THREE.MeshPhongMaterial({{color:0xaaaaaa}}));
-      micTop.position.y=0.09; micGroup.add(micBody,micTop);
-      // Red X / slash over mic
-      var slashMat=new THREE.MeshPhongMaterial({{color:0xff2200,emissive:0xff0000,emissiveIntensity:0.8}});
-      var slash=new THREE.Mesh(new THREE.BoxGeometry(0.04,0.35,0.04),slashMat);
-      slash.rotation.z=Math.PI/4; micGroup.add(slash);
-      p.group.add(micGroup);
-      p._micGroup=micGroup;
-      // Speech bubble hint
-      var bubbleMat=new THREE.MeshPhongMaterial({{color:0xff8800,emissive:0xff6600,emissiveIntensity:0.3}});
-      var bubble=new THREE.Mesh(new THREE.SphereGeometry(0.1,10,10),bubbleMat);
-      bubble.position.set(-0.5,0.7,0.3); bubble.scale.set(1.5,0.8,0.5); p.group.add(bubble);
-    }},
-    animFn:function(p,t){{
-      // Both arms gesturing "I'm talking!"
-      p.armR.rotation.z = -0.4 + Math.sin(t*2.2)*0.5;
-      p.armL.rotation.z = 0.4 + Math.sin(t*2.2+1)*0.4;
-      p.armR.rotation.x = Math.sin(t*2.2)*0.2;
-      // Mic floats
-      if(p._micGroup) p._micGroup.position.y = 0.4 + Math.sin(t*1.5)*0.1;
-      // Head "talking" nod
-      p.head.rotation.x = Math.sin(t*3)*0.1;
-    }}
-  }},
-  'secretario': {{
-    name:'O Secret\u00e1rio', bodyCol:0x0f7a6a, legsCol:0x084d42, skinCol:0xffbb88,
-    extras:function(p){{
-      // Notepad in left hand
-      var padMat=new THREE.MeshPhongMaterial({{color:0xffffff,emissive:0xaaaaff,emissiveIntensity:0.15}});
-      var pad=new THREE.Mesh(new THREE.BoxGeometry(0.22,0.3,0.03),padMat);
-      pad.position.set(0,-0.7,0.1); p.armL.add(pad);
-      // Lines on notepad
-      var lMat=new THREE.MeshPhongMaterial({{color:0x8888cc}});
-      [-0.08,-0.02,0.04,0.1].forEach(function(y){{
-        var l=new THREE.Mesh(new THREE.BoxGeometry(0.16,0.015,0.04),lMat);
-        l.position.set(0,y+(-0.7),0.12); p.armL.add(l);
-      }});
-      // Pen in right hand
-      var pen=new THREE.Mesh(new THREE.CylinderGeometry(0.015,0.015,0.3,8),
-        new THREE.MeshPhongMaterial({{color:0x1188ff}}));
-      pen.position.set(0,-0.75,0.1); pen.rotation.z=0.3; p.armR.add(pen);
-    }},
-    animFn:function(p,t){{
-      // Writing motion
-      p.armR.rotation.z = -0.15 + Math.sin(t*4)*0.25;
-      p.armR.rotation.x = 0.4 + Math.sin(t*4)*0.15;
-      // Left arm holds pad steady
-      p.armL.rotation.z = 0.3;
-      p.armL.rotation.x = 0.35;
-    }}
-  }},
-  'tecnico': {{
-    name:'O T\u00e9cnico', bodyCol:0x4a4a5a, legsCol:0x2a2a3a, skinCol:0xffcc99,
-    extras:function(p){{
-      // Glasses
-      var gMat=new THREE.MeshPhongMaterial({{color:0x111111}});
-      var glassFrame=new THREE.Mesh(new THREE.TorusGeometry(0.09,0.015,8,20),gMat);
-      glassFrame.position.set(0.1,0.84,0.27); p.group.add(glassFrame);
-      var glassFrame2=new THREE.Mesh(new THREE.TorusGeometry(0.09,0.015,8,20),gMat);
-      glassFrame2.position.set(-0.1,0.84,0.27); p.group.add(glassFrame2);
-      var bridge=new THREE.Mesh(new THREE.BoxGeometry(0.04,0.015,0.015),gMat);
-      bridge.position.set(0,0.84,0.27); p.group.add(bridge);
-      // WiFi arcs above head
-      var wMat=new THREE.MeshPhongMaterial({{color:0x00aaff,emissive:0x0088ff,emissiveIntensity:0.8}});
-      [0.18,0.28,0.38].forEach(function(r,i){{
-        var arc=new THREE.Mesh(new THREE.TorusGeometry(r,0.02,8,20,Math.PI),wMat.clone());
-        arc.position.set(0,1.1+i*0.05,0); p.group.add(arc);
-        arc._idx=i;
-        if(!p._wifiArcs) p._wifiArcs=[];
-        p._wifiArcs.push(arc);
-      }});
-      // Tool/wrench prop
-      var toolMat=new THREE.MeshPhongMaterial({{color:0x888888}});
-      var tool=new THREE.Mesh(new THREE.CylinderGeometry(0.025,0.025,0.35,8),toolMat);
-      tool.position.set(0,-0.7,0); tool.rotation.z=0.3; p.armR.add(tool);
-    }},
-    animFn:function(p,t){{
-      // Jitter / glitch effect
-      var jitter = Math.random() < 0.03 ? (Math.random()-0.5)*0.15 : 0;
-      p.group.position.x = jitter;
-      // Right arm scratches head
-      p.armR.rotation.z = -1.2 + Math.sin(t*3)*0.2;
-      p.armR.rotation.x = -0.6 + Math.sin(t*3)*0.1;
-      p.armL.rotation.z = 0.1 + Math.sin(t*1.1)*0.1;
-      // WiFi arcs pulse
-      if(p._wifiArcs) p._wifiArcs.forEach(function(arc,i){{
-        arc.material.emissiveIntensity = 0.3 + Math.abs(Math.sin(t*2 - i*0.5))*1.0;
-      }});
-    }}
-  }},
-  'executivo': {{
-    name:'O Executivo', bodyCol:0x1a1a2e, legsCol:0x8899aa, skinCol:0xffcc99,
-    extras:function(p){{
-      // Tie
-      var tieMat=new THREE.MeshPhongMaterial({{color:0xcc1122,emissive:0x880011,emissiveIntensity:0.3}});
-      var tie=new THREE.Mesh(new THREE.BoxGeometry(0.08,0.35,0.035),tieMat);
-      tie.position.set(0,0.18,0.16); p.group.add(tie);
-      var tieTop=new THREE.Mesh(new THREE.BoxGeometry(0.1,0.07,0.04),tieMat);
-      tieTop.position.set(0,0.38,0.16); p.group.add(tieTop);
-      // Jacket lapels
-      var lapelMat=new THREE.MeshPhongMaterial({{color:0x282838}});
-      var lapelR=new THREE.Mesh(new THREE.BoxGeometry(0.12,0.25,0.035),lapelMat);
-      lapelR.position.set(0.15,0.32,0.16); lapelR.rotation.z=-0.3; p.group.add(lapelR);
-      var lapelL=new THREE.Mesh(new THREE.BoxGeometry(0.12,0.25,0.035),lapelMat);
-      lapelL.position.set(-0.15,0.32,0.16); lapelL.rotation.z=0.3; p.group.add(lapelL);
-      // Pajama stripes on legs (colorful)
-      var stMat=new THREE.MeshPhongMaterial({{color:0xffcc00}});
-      [-0.08,0,0.08].forEach(function(y){{
-        var stripe=new THREE.Mesh(new THREE.BoxGeometry(0.42,0.04,0.2),stMat);
-        stripe.position.set(0,-0.58+y,0); p.group.add(stripe);
-      }});
-    }},
-    animFn:function(p,t){{
-      // Professional wave + tie adjustment
-      p.armR.rotation.z = -0.6 + Math.sin(t*2.0)*0.5;
-      p.armR.rotation.x = Math.sin(t*2.0)*0.1;
-      // Left arm adjusts tie occasionally
-      var tiePhase = Math.sin(t*0.5);
-      p.armL.rotation.z = 0.1 + (tiePhase > 0.7 ? 0.4 : 0.0);
-      p.armL.rotation.x = tiePhase > 0.7 ? 0.35 : 0.0;
-    }}
-  }},
-  'remoto': {{
-    name:'O Remoto', bodyCol:0x3a1a6a, legsCol:0x888888, skinCol:0xffd0a0,
-    extras:function(p){{
-      // Hoodie pocket
-      var pocketMat=new THREE.MeshPhongMaterial({{color:0x2a0a5a}});
-      var pocket=new THREE.Mesh(new THREE.BoxGeometry(0.2,0.12,0.035),pocketMat);
-      pocket.position.set(0,-0.08,0.15); p.group.add(pocket);
-      // Headphones
-      var hpMat=new THREE.MeshPhongMaterial({{color:0x222233}});
-      var hpArc=new THREE.Mesh(new THREE.TorusGeometry(0.32,0.035,8,24,Math.PI),hpMat);
-      hpArc.position.set(0,0.82,0); hpArc.rotation.x=Math.PI; p.group.add(hpArc);
-      [-0.32,0.32].forEach(function(x){{
-        var cup=new THREE.Mesh(new THREE.CylinderGeometry(0.09,0.09,0.05,12),hpMat);
-        cup.position.set(x,0.82,0); cup.rotation.z=Math.PI/2; p.group.add(cup);
-        var cushion=new THREE.Mesh(new THREE.CylinderGeometry(0.08,0.08,0.04,12),
-          new THREE.MeshPhongMaterial({{color:0x4444ff,emissive:0x2222ff,emissiveIntensity:0.3}}));
-        cushion.position.set(x+(x>0?0.04:-0.04),0.82,0); cushion.rotation.z=Math.PI/2; p.group.add(cushion);
-      }});
-      // Coffee mug in left hand
-      var mugMat=new THREE.MeshPhongMaterial({{color:0xcc4400}});
-      var mug=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.055,0.12,12),mugMat);
-      mug.position.set(0,-0.68,0.05); p.armL.add(mug);
-      var mugTop=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.06,0.01,12),
-        new THREE.MeshPhongMaterial({{color:0x331100}}));
-      mugTop.position.set(0,-0.62,0.05); p.armL.add(mugTop);
-      // Steam particles (small spheres)
-      for(var i=0;i<3;i++){{
-        var steam=new THREE.Mesh(new THREE.SphereGeometry(0.02,6,6),
-          new THREE.MeshPhongMaterial({{color:0xffffff,emissive:0xffffff,emissiveIntensity:0.5,transparent:true,opacity:0.6}}));
-        steam.position.set(i*0.03-0.03,-0.55+i*0.06,0.05); p.armL.add(steam);
-        steam._steamIdx=i;
-        if(!p._steamParts) p._steamParts=[];
-        p._steamParts.push(steam);
-      }}
-    }},
-    animFn:function(p,t){{
-      // Casual wave
-      p.armR.rotation.z = -0.5 + Math.sin(t*2.0)*0.5;
-      p.armR.rotation.x = Math.sin(t*2.0)*0.15;
-      // Left arm holds coffee steady
-      p.armL.rotation.z = 0.25;
-      p.armL.rotation.x = 0.25;
-      // Steam rises
-      if(p._steamParts) p._steamParts.forEach(function(s){{
-        s.position.y = -0.55 + s._steamIdx*0.06 + ((t*0.5+s._steamIdx*0.3) % 0.3);
-        s.material.opacity = 0.6 - ((t*0.5+s._steamIdx*0.3) % 0.3)*2;
-      }});
-    }}
-  }}
-}};
-
-// AVATAR_KEY is now a simple ASCII string
-
-var config = CONFIGS[AVATAR_KEY];
-if(!config) {{
-  document.getElementById('av3d-name').textContent = 'Seleciona um avatar';
-  document.getElementById('av3d-hint').textContent = '\u2b06\ufe0f Escolhe acima';
-  // Show a simple rotating question mark placeholder
-  var qMat = new THREE.MeshPhongMaterial({{color:0x1155aa,emissive:0x0033aa,emissiveIntensity:0.5}});
-  var qMesh = new THREE.Mesh(new THREE.TorusGeometry(0.5,0.12,12,40),qMat);
-  qMesh.position.y=0; scene.add(qMesh);
-  var animate0=function(){{
-    requestAnimationFrame(animate0);
-    qMesh.rotation.y+=0.02; qMesh.rotation.x+=0.01;
-    ringMesh.material.emissiveIntensity=0.4+Math.sin(Date.now()*0.002)*0.3;
-    renderer.render(scene,camera);
-  }}; animate0(); return;
-}}
-
-document.getElementById('av3d-name').textContent = config.name;
-document.getElementById('av3d-hint').textContent = '\u2728 clica e vai jogar!';
-
-// -- Build base character -------------------------------------------------------
-function buildCharacter(cfg){{
-  var g=new THREE.Group();
-  var skinMat=new THREE.MeshPhongMaterial({{color:cfg.skinCol,shininess:40}});
-  var bodyMat=new THREE.MeshPhongMaterial({{color:cfg.bodyCol,shininess:80}});
-  var legsMat=new THREE.MeshPhongMaterial({{color:cfg.legsCol,shininess:60}});
-  var shoesMat=new THREE.MeshPhongMaterial({{color:0x111111,shininess:120}});
-
-  // HEAD
-  var head=new THREE.Mesh(new THREE.SphereGeometry(0.28,16,16),skinMat);
-  head.position.y=0.82; g.add(head);
-
-  // Eyes (whites + pupils)
-  [-0.1,0.1].forEach(function(x){{
-    var ew=new THREE.Mesh(new THREE.SphereGeometry(0.075,10,10),
-      new THREE.MeshPhongMaterial({{color:0xffffff}}));
-    ew.position.set(x,0.84,0.23); g.add(ew);
-    var ep=new THREE.Mesh(new THREE.SphereGeometry(0.04,10,10),
-      new THREE.MeshPhongMaterial({{color:0x111111}}));
-    ep.position.set(x,0.84,0.29); g.add(ep);
-  }});
-
-  // Smile
-  var smileMat=new THREE.MeshPhongMaterial({{color:0x552200}});
-  var smile=new THREE.Mesh(new THREE.TorusGeometry(0.09,0.018,8,16,Math.PI),smileMat);
-  smile.position.set(0,0.72,0.26); smile.rotation.z=Math.PI; g.add(smile);
-
-  // NECK
-  var neck=new THREE.Mesh(new THREE.CylinderGeometry(0.1,0.12,0.14,10),skinMat);
-  neck.position.y=0.57; g.add(neck);
-
-  // BODY
-  var body=new THREE.Mesh(new THREE.BoxGeometry(0.55,0.65,0.28),bodyMat);
-  body.position.y=0.18; g.add(body);
-
-  // ARM RIGHT (wave arm) - pivot at shoulder
-  var armR=new THREE.Group(); armR.position.set(0.38,0.44,0);
-  var armRM=new THREE.Mesh(new THREE.BoxGeometry(0.14,0.52,0.14),bodyMat);
-  armRM.position.y=-0.26; armR.add(armRM);
-  var handR=new THREE.Mesh(new THREE.SphereGeometry(0.09,10,10),skinMat);
-  handR.position.y=-0.56; armR.add(handR);
-  g.add(armR);
-
-  // ARM LEFT - pivot at shoulder
-  var armL=new THREE.Group(); armL.position.set(-0.38,0.44,0);
-  var armLM=new THREE.Mesh(new THREE.BoxGeometry(0.14,0.52,0.14),bodyMat);
-  armLM.position.y=-0.26; armL.add(armLM);
-  var handL=new THREE.Mesh(new THREE.SphereGeometry(0.09,10,10),skinMat);
-  handL.position.y=-0.56; armL.add(handL);
-  g.add(armL);
-
-  // LEGS
-  var legR=new THREE.Mesh(new THREE.BoxGeometry(0.18,0.5,0.18),legsMat);
-  legR.position.set(0.14,-0.56,0); g.add(legR);
-  var legL=new THREE.Mesh(new THREE.BoxGeometry(0.18,0.5,0.18),legsMat);
-  legL.position.set(-0.14,-0.56,0); g.add(legL);
-
-  // FEET
-  var footR=new THREE.Mesh(new THREE.BoxGeometry(0.2,0.09,0.28),shoesMat);
-  footR.position.set(0.14,-0.84,0.05); g.add(footR);
-  var footL=new THREE.Mesh(new THREE.BoxGeometry(0.2,0.09,0.28),shoesMat);
-  footL.position.set(-0.14,-0.84,0.05); g.add(footL);
-
-  return {{group:g, head:head, armR:armR, armL:armL, legR:legR, legL:legL}};
-}}
-
-var parts = buildCharacter(config);
-config.extras(parts);
-scene.add(parts.group);
-
-// -- Animation loop -------------------------------------------------------------
-var t=0;
-function animate(){{
-  requestAnimationFrame(animate);
-  t += 0.016;
-
-  // Float
-  parts.group.position.y = Math.sin(t*1.1)*0.07;
-  // Slow Y-axis sway for 3D showcase
-  parts.group.rotation.y = Math.sin(t*0.38)*0.4;
-  // Head sway
-  parts.head.rotation.z = Math.sin(t*0.85)*0.07;
-  parts.head.rotation.y = Math.sin(t*0.6)*0.1;
-
-  // Ring glow pulse
-  ringMesh.material.emissiveIntensity = 0.5+Math.sin(t*1.8)*0.5;
-
-  // Star field slow rotation
-  stars.rotation.y += 0.001;
-
-  // Character-specific
-  config.animFn(parts, t);
-
-  renderer.render(scene, camera);
-}}
-animate();
-}})();
-</script>
+<svg width="120" height="120" viewBox="0 0 120 120">
+  <circle cx="60" cy="60" r="44" fill="none" stroke="#0a1a4a" stroke-width="8"/>
+  <circle cx="60" cy="60" r="44" fill="none" stroke="#1166ff" stroke-width="8"
+    stroke-dasharray="80 196" stroke-linecap="round" class="ring"/>
+  <circle cx="60" cy="60" r="28" fill="none" stroke="#0a2a5a" stroke-width="5"/>
+  <circle cx="60" cy="60" r="28" fill="none" stroke="#0044cc" stroke-width="5"
+    stroke-dasharray="50 126" stroke-linecap="round" class="ring"
+    style="animation-duration:1.3s; animation-direction:reverse"/>
+  <circle cx="60" cy="60" r="8" fill="#1166ff" opacity="0.6"/>
+</svg>
+<div class="av-name">Seleciona um avatar</div>
 </body>
 </html>"""
-    # Encode to ASCII-safe HTML entities to avoid UnicodeEncodeError in Streamlit protobuf
-    components.html(_av3d_html.encode('ascii', 'xmlcharrefreplace').decode('ascii'), height=340)
+        components.html(
+            _placeholder_html.encode('ascii', 'xmlcharrefreplace').decode('ascii'),
+            height=360
+        )
+        return
+
+    # ── RENDER SELECTED AVATAR ────────────────────────────────────────────────────
+    av = AVATAR_DATA[avatar_key]
+    _av_svg = av["svg"]
+    _av_name = av["name"]
+
+    _av_html = f"""<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  html, body {{
+    margin: 0; padding: 0;
+    background: #060e1e;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 360px;
+    overflow: hidden;
+    font-family: 'Segoe UI', sans-serif;
+  }}
+  /* ── baseline float ── */
+  @keyframes float {{
+    0%, 100% {{ transform: translateY(0px); }}
+    50%       {{ transform: translateY(-8px); }}
+  }}
+  .char-float {{ animation: float 2.5s ease-in-out infinite; }}
+  /* ── arm keyframes ── */
+  @keyframes armIdleL {{
+    0%, 100% {{ transform: rotate(8deg); }}
+    50%       {{ transform: rotate(14deg); }}
+  }}
+  @keyframes armIdleR {{
+    0%, 100% {{ transform: rotate(-8deg); }}
+    50%       {{ transform: rotate(-14deg); }}
+  }}
+  @keyframes armWaveR {{
+    0%, 100% {{ transform: rotate(-65deg); }}
+    50%       {{ transform: rotate(-30deg); }}
+  }}
+  @keyframes armWatchL {{
+    0%, 100% {{ transform: rotate(40deg); }}
+    50%       {{ transform: rotate(55deg); }}
+  }}
+  @keyframes armThumbsR {{
+    0%, 100% {{ transform: rotate(-80deg); }}
+    50%       {{ transform: rotate(-60deg); }}
+  }}
+  @keyframes armPointR {{
+    0%, 100% {{ transform: rotate(-55deg); }}
+    50%       {{ transform: rotate(-40deg); }}
+  }}
+  @keyframes armRaiseL {{
+    0%, 100% {{ transform: rotate(125deg); }}
+    50%       {{ transform: rotate(110deg); }}
+  }}
+  @keyframes armRaiseR {{
+    0%, 100% {{ transform: rotate(-125deg); }}
+    50%       {{ transform: rotate(-110deg); }}
+  }}
+  @keyframes armWriteR {{
+    0%, 100% {{ transform: rotate(-15deg); }}
+    50%       {{ transform: rotate(-5deg) translateX(3px); }}
+  }}
+  @keyframes armPadL {{
+    0%, 100% {{ transform: rotate(30deg); }}
+    50%       {{ transform: rotate(35deg); }}
+  }}
+  @keyframes armScratchR {{
+    0%, 100% {{ transform: rotate(-120deg); }}
+    50%       {{ transform: rotate(-105deg); }}
+  }}
+  @keyframes armMugL {{
+    0%, 100% {{ transform: rotate(30deg); }}
+    50%       {{ transform: rotate(40deg); }}
+  }}
+  /* ── prop / badge animations ── */
+  @keyframes badgeFloat {{
+    0%, 100% {{ transform: translateY(0px); }}
+    50%       {{ transform: translateY(-5px); }}
+  }}
+  @keyframes wifiPulse {{
+    0%, 100% {{ opacity: 1; }}
+    50%       {{ opacity: 0.35; }}
+  }}
+  @keyframes steamRise {{
+    0%   {{ transform: translateY(0px); opacity: 0.7; }}
+    100% {{ transform: translateY(-14px); opacity: 0; }}
+  }}
+  /* ── apply animations ── */
+  .arm-idle-l  {{ transform-box: fill-box; transform-origin: top center;
+                  animation: armIdleL  2.5s ease-in-out infinite; }}
+  .arm-idle-r  {{ transform-box: fill-box; transform-origin: top center;
+                  animation: armIdleR  2.5s ease-in-out infinite; }}
+  .arm-wave-r  {{ transform-box: fill-box; transform-origin: top center;
+                  animation: armWaveR  1.5s ease-in-out infinite; }}
+  .arm-watch-l {{ transform-box: fill-box; transform-origin: top center;
+                  animation: armWatchL 2.0s ease-in-out infinite; }}
+  .arm-thumbs-r {{ transform-box: fill-box; transform-origin: top center;
+                   animation: armThumbsR 1.8s ease-in-out infinite; }}
+  .arm-point-r {{ transform-box: fill-box; transform-origin: top center;
+                  animation: armPointR 2.0s ease-in-out infinite; }}
+  .arm-raise-l {{ transform-box: fill-box; transform-origin: top center;
+                  animation: armRaiseL 1.2s ease-in-out infinite; }}
+  .arm-raise-r {{ transform-box: fill-box; transform-origin: top center;
+                  animation: armRaiseR 1.2s ease-in-out infinite; }}
+  .arm-write-r {{ transform-box: fill-box; transform-origin: top center;
+                  animation: armWriteR 0.7s ease-in-out infinite; }}
+  .arm-pad-l   {{ transform-box: fill-box; transform-origin: top center;
+                  animation: armPadL   2.5s ease-in-out infinite; }}
+  .arm-scratch-r {{ transform-box: fill-box; transform-origin: top center;
+                    animation: armScratchR 1.0s ease-in-out infinite; }}
+  .arm-mug-l   {{ transform-box: fill-box; transform-origin: top center;
+                  animation: armMugL   2.5s ease-in-out infinite; }}
+  .badge-float {{ animation: badgeFloat 2.0s ease-in-out infinite; }}
+  .wifi-pulse  {{ animation: wifiPulse  1.5s ease-in-out infinite; }}
+  .steam-rise  {{ animation: steamRise  1.8s ease-in-out infinite; }}
+  /* ── labels ── */
+  .av-name {{
+    color: #7eb8ff;
+    font-size: 15px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    text-shadow: 0 0 12px rgba(100,180,255,0.7);
+    font-weight: 600;
+    margin-top: 8px;
+  }}
+  .av-hint {{
+    color: #446688;
+    font-size: 11px;
+    margin-top: 3px;
+  }}
+</style>
+</head>
+<body>
+<svg width="220" height="280" viewBox="0 0 220 280">
+{_av_svg}
+</svg>
+<div class="av-name">{_av_name}</div>
+<div class="av-hint">&#10024; clica e vai jogar!</div>
+</body>
+</html>"""
+
+    components.html(
+        _av_html.encode('ascii', 'xmlcharrefreplace').decode('ascii'),
+        height=360
+    )
+
 
 
 # ------------------------------
