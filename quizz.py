@@ -1355,21 +1355,15 @@ if st.session_state.user_id is None:
 </div>
 """, unsafe_allow_html=True)
 
-        # Auto-refresh a cada 30 segundos
+        # Auto-refresh silencioso a cada 30 segundos
         now_ts = int(_time_home.time())
         if "home_ranking_last_refresh" not in st.session_state:
             st.session_state.home_ranking_last_refresh = now_ts
         elapsed = now_ts - st.session_state.home_ranking_last_refresh
-        remaining = max(0, 30 - elapsed)
-        if remaining == 0:
+        if elapsed >= 30:
             st.session_state.home_ranking_last_refresh = now_ts
             st.rerun()
         else:
-            st.markdown(
-                f"<p style='text-align:center; color:#3a5a8a; font-size:12px; margin-top:8px;'>"
-                f"🔄 Atualiza em {remaining}s</p>",
-                unsafe_allow_html=True
-            )
             _time_home.sleep(1)
             st.rerun()
 
