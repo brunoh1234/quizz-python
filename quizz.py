@@ -364,8 +364,8 @@ def remove_avatar_mascot():
 def render_3d_avatar_preview(avatar_key: str):
     """Renders an animated 3D character preview using Three.js based on the selected avatar key."""
     import json as _json3d
-    _key_js = _json3d.dumps(avatar_key if avatar_key else "")
-    components.html(f"""<!DOCTYPE html>
+    _key_js = _json3d.dumps(avatar_key if avatar_key else "", ensure_ascii=True)
+    _av3d_html = f"""<!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
@@ -826,7 +826,9 @@ animate();
 }})();
 </script>
 </body>
-</html>""", height=340)
+</html>"""
+    # Encode to ASCII-safe HTML entities to avoid UnicodeEncodeError in Streamlit protobuf
+    components.html(_av3d_html.encode('ascii', 'xmlcharrefreplace').decode('ascii'), height=340)
 
 
 # ------------------------------
