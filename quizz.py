@@ -1256,72 +1256,24 @@ function enterQuiz() {
 
 
 
-# Título principal
-st.markdown('<div class="main-title">🎯 QUEM QUER SER PRODUTIVO?</div>', unsafe_allow_html=True)
-
-
-
-# ------------------------------
-# BOTÃO DE RESET
-# ------------------------------
-
-col_reset, _, _ = st.columns([1, 3, 1])
-with col_reset:
-    if st.button("🔄 Reset Histórico"):
-        resetar_historico()
-        st.success("Histórico apagado com sucesso.")
-        st.rerun()
-
-# ------------------------------
-# LOGIN
-# ------------------------------
-
-if st.session_state.user_id is None:
+# ── Countdown de entrada — página exclusiva, sem título nem formulário ────────
+if st.session_state.get('show_countdown'):
+    # Botão oculto que o JS clica após o countdown
     st.markdown("""
-    <div class="login-box">
-        <h2 style="color:#7eb8ff; margin-bottom:20px;">👤 Identificação</h2>
-        <p style="color:#aac8ff; font-size:16px;">Insere o teu nome para começar o quiz</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        user_id = st.text_input("", placeholder="O teu nome...", label_visibility="collapsed")
-        if st.button("▶️  COMEÇAR O QUIZ", use_container_width=True):
-            import re as _re
-            if not user_id.strip():
-                st.warning("Por favor insere o teu nome.")
-            elif not _re.fullmatch(r"[A-Za-zÀ-ÿ\s]+", user_id.strip()):
-                st.error("❌ Nome inválido — só são aceites letras.")
-            elif ja_jogou(user_id.strip(), resultados):
-                dados = resultados[user_id.strip()]
-                st.error("Este utilizador já jogou.")
-                st.info(f"Pontuação anterior: {dados['score']}/10 — {dados['data']} às {dados['hora']}")
-            else:
-                st.session_state.pending_user_id = user_id.strip()
-                st.session_state.show_countdown = True
-                st.rerun()
-
-        # ── Botão oculto que o JS clica após o countdown ──────────────────────
-        st.markdown("""
 <style>
-button[data-testid="baseButton-secondary"]:has(~ [data-testid]),
 div[data-testid="stButton"] button[title="hidden_start"] { display:none!important; }
 </style>
 """, unsafe_allow_html=True)
-        if st.button("__start_quiz__", key="btn_start_quiz_hidden", help="hidden_start"):
-            st.session_state.user_id = st.session_state.pending_user_id
-            st.session_state.show_countdown = False
-            st.session_state.pending_user_id = None
-            st.rerun()
+    if st.button("__start_quiz__", key="btn_start_quiz_hidden", help="hidden_start"):
+        st.session_state.user_id = st.session_state.pending_user_id
+        st.session_state.show_countdown = False
+        st.session_state.pending_user_id = None
+        st.rerun()
 
-        # Música persistente — sobrevive a reruns via window.parent
-        inject_persistent_music(is_intro=not st.session_state.quiz_completed)
+    inject_persistent_music(is_intro=not st.session_state.quiz_completed)
 
-        # ── Countdown 3…2…1 ao começar ────────────────────────────────────────
-        if st.session_state.get('show_countdown'):
-            import streamlit.components.v1 as _comp_cd
-            _comp_cd.html("""
+    import streamlit.components.v1 as _comp_cd
+    _comp_cd.html("""
 <style>
 html, body { margin:0; padding:0; background:#02050a; overflow:hidden; }
 #simple-cd {
@@ -1365,9 +1317,9 @@ html, body { margin:0; padding:0; background:#02050a; overflow:hidden; }
 </div>
 <script>
 (function(){
+    var par = window.parent;
     // Esconder TODO o conteúdo da página pai — só este iframe fica visível
-    var parent = window.parent;
-    var hideStyle = parent.document.createElement('style');
+    var hideStyle = par.document.createElement('style');
     hideStyle.id = 'cd-hide-all';
     hideStyle.textContent = [
         'header[data-testid="stHeader"] { display:none!important; }',
@@ -1375,7 +1327,7 @@ html, body { margin:0; padding:0; background:#02050a; overflow:hidden; }
         '.main .block-container > div { visibility:hidden!important; }',
         'iframe[title="st.components.v1.html"] { visibility:visible!important; position:fixed!important; inset:0!important; width:100vw!important; height:100vh!important; border:none!important; z-index:99999!important; }'
     ].join('');
-    parent.document.head.appendChild(hideStyle);
+    par.document.head.appendChild(hideStyle);
 
     var steps = [
         {num:'3', lbl:'PREPARAR', cls:'scd-num', delay:0},
@@ -1399,9 +1351,9 @@ html, body { margin:0; padding:0; background:#02050a; overflow:hidden; }
 
     // Após 3.8s remover CSS de ocultação e clicar no botão hidden para avançar
     setTimeout(function(){
-        var hs = parent.document.getElementById('cd-hide-all');
+        var hs = par.document.getElementById('cd-hide-all');
         if (hs) hs.remove();
-        var btns = parent.document.querySelectorAll('button');
+        var btns = par.document.querySelectorAll('button');
         for(var b of btns){
             if(b.innerText && b.innerText.trim() === '__start_quiz__'){
                 b.click(); break;
@@ -1411,6 +1363,54 @@ html, body { margin:0; padding:0; background:#02050a; overflow:hidden; }
 })();
 </script>
 """, height=800)
+    st.stop()
+
+# Título principal
+st.markdown('<div class="main-title">🎯 QUEM QUER SER PRODUTIVO?</div>', unsafe_allow_html=True)
+
+# ------------------------------
+# BOTÃO DE RESET
+# ------------------------------
+
+col_reset, _, _ = st.columns([1, 3, 1])
+with col_reset:
+    if st.button("🔄 Reset Histórico"):
+        resetar_historico()
+        st.success("Histórico apagado com sucesso.")
+        st.rerun()
+
+# ------------------------------
+# LOGIN
+# ------------------------------
+
+if st.session_state.user_id is None:
+    st.markdown("""
+    <div class="login-box">
+        <h2 style="color:#7eb8ff; margin-bottom:20px;">👤 Identificação</h2>
+        <p style="color:#aac8ff; font-size:16px;">Insere o teu nome para começar o quiz</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        user_id = st.text_input("", placeholder="O teu nome...", label_visibility="collapsed")
+        if st.button("▶️  COMEÇAR O QUIZ", use_container_width=True):
+            import re as _re
+            if not user_id.strip():
+                st.warning("Por favor insere o teu nome.")
+            elif not _re.fullmatch(r"[A-Za-zÀ-ÿ\s]+", user_id.strip()):
+                st.error("❌ Nome inválido — só são aceites letras.")
+            elif ja_jogou(user_id.strip(), resultados):
+                dados = resultados[user_id.strip()]
+                st.error("Este utilizador já jogou.")
+                st.info(f"Pontuação anterior: {dados['score']}/10 — {dados['data']} às {dados['hora']}")
+            else:
+                st.session_state.pending_user_id = user_id.strip()
+                st.session_state.show_countdown = True
+                st.rerun()
+
+    # Música persistente — sobrevive a reruns via window.parent
+    inject_persistent_music(is_intro=not st.session_state.quiz_completed)
 
     # Scroll to top após "Jogar Novamente" (sem reload de página)
     if st.session_state.get('scroll_to_top'):
