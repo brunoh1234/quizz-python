@@ -430,7 +430,7 @@ scene.add(stars);
 
 // -- Avatar config -------------------------------------------------------------
 var CONFIGS = {{
-  '\uD83C\uDF99\uFE0F': {{
+  'moderador': {{
     name:'O Moderador', bodyCol:0x1a4a9f, legsCol:0x0d2560, skinCol:0xffcc99,
     extras:function(p){{
       // Headset arc
@@ -456,7 +456,7 @@ var CONFIGS = {{
       p.armL.rotation.z = 0.15 + Math.sin(t*1.2)*0.08;
     }}
   }},
-  '\u23F0': {{
+  'pontual': {{
     name:'O Pontual', bodyCol:0x186a32, legsCol:0x0d3d1a, skinCol:0xffbb88,
     extras:function(p){{
       // Watch on left wrist
@@ -484,7 +484,7 @@ var CONFIGS = {{
       if(p._badge) p._badge.position.y = 1.15 + Math.sin(t*2)*0.05;
     }}
   }},
-  '\uD83D\uDCCA': {{
+  'apresentador': {{
     name:'O Apresentador', bodyCol:0x6a1a9f, legsCol:0x3d0d60, skinCol:0xffcc99,
     extras:function(p){{
       // Pointer stick in right hand
@@ -512,7 +512,7 @@ var CONFIGS = {{
       p.armL.rotation.z = 0.2+Math.sin(t*0.7)*0.1;
     }}
   }},
-  '\uD83D\uDD07': {{
+  'silenciado': {{
     name:'O Silenciado', bodyCol:0x9f3a1a, legsCol:0x601a0d, skinCol:0xffcc99,
     extras:function(p){{
       // Floating muted mic
@@ -545,7 +545,7 @@ var CONFIGS = {{
       p.head.rotation.x = Math.sin(t*3)*0.1;
     }}
   }},
-  '\uD83D\uDCDD': {{
+  'secretario': {{
     name:'O Secret\u00e1rio', bodyCol:0x0f7a6a, legsCol:0x084d42, skinCol:0xffbb88,
     extras:function(p){{
       // Notepad in left hand
@@ -572,7 +572,7 @@ var CONFIGS = {{
       p.armL.rotation.x = 0.35;
     }}
   }},
-  '\uD83D\uDCF6': {{
+  'tecnico': {{
     name:'O T\u00e9cnico', bodyCol:0x4a4a5a, legsCol:0x2a2a3a, skinCol:0xffcc99,
     extras:function(p){{
       // Glasses
@@ -611,7 +611,7 @@ var CONFIGS = {{
       }});
     }}
   }},
-  '\uD83D\uDC54': {{
+  'executivo': {{
     name:'O Executivo', bodyCol:0x1a1a2e, legsCol:0x8899aa, skinCol:0xffcc99,
     extras:function(p){{
       // Tie
@@ -643,7 +643,7 @@ var CONFIGS = {{
       p.armL.rotation.x = tiePhase > 0.7 ? 0.35 : 0.0;
     }}
   }},
-  '\uD83C\uDFE0': {{
+  'remoto': {{
     name:'O Remoto', bodyCol:0x3a1a6a, legsCol:0x888888, skinCol:0xffd0a0,
     extras:function(p){{
       // Hoodie pocket
@@ -694,19 +694,7 @@ var CONFIGS = {{
   }}
 }};
 
-// Emoji key normalization map (session_state stores these)
-var KEY_MAP = {{
-  '\uD83C\uDF99\uFE0F':'\uD83C\uDF99\uFE0F',
-  '\uD83C\uDF99':'\uD83C\uDF99\uFE0F',
-  '\u23F0':'\u23F0',
-  '\uD83D\uDCCA':'\uD83D\uDCCA',
-  '\uD83D\uDD07':'\uD83D\uDD07',
-  '\uD83D\uDCDD':'\uD83D\uDCDD',
-  '\uD83D\uDCF6':'\uD83D\uDCF6',
-  '\uD83D\uDC54':'\uD83D\uDC54',
-  '\uD83C\uDFE0':'\uD83C\uDFE0'
-}};
-AVATAR_KEY = KEY_MAP[AVATAR_KEY] || AVATAR_KEY;
+// AVATAR_KEY is now a simple ASCII string
 
 var config = CONFIGS[AVATAR_KEY];
 if(!config) {{
@@ -1986,24 +1974,29 @@ div[data-testid="column"] button {
 </style>
 """, unsafe_allow_html=True)
 
+    # (emoji, ascii_key, display_name)
     _AVATARS = [
-        ("🎙️", "Moderador"),   ("⏰", "Pontual"),
-        ("📊", "Apresentador"), ("🔇", "Silenciado"),
-        ("📝", "Secretário"),   ("📶", "Técnico"),
-        ("👔", "Executivo"),    ("🏠", "Remoto"),
+        ("\U0001f399\ufe0f", "moderador",    "Moderador"),
+        ("\u23f0",           "pontual",      "Pontual"),
+        ("\U0001f4ca",       "apresentador", "Apresentador"),
+        ("\U0001f507",       "silenciado",   "Silenciado"),
+        ("\U0001f4dd",       "secretario",   "Secret\u00e1rio"),
+        ("\U0001f4f6",       "tecnico",      "T\u00e9cnico"),
+        ("\U0001f454",       "executivo",    "Executivo"),
+        ("\U0001f3e0",       "remoto",       "Remoto"),
     ]
 
-    st.markdown('<p style="color:#aac8ff; text-align:center; font-size:14px; margin:14px 0 6px 0;">🎭 Escolhe o teu avatar de reunião:</p>', unsafe_allow_html=True)
+    st.markdown('<p style="color:#aac8ff; text-align:center; font-size:14px; margin:14px 0 6px 0;">Escolhe o teu avatar de reuniao:</p>', unsafe_allow_html=True)
 
     _av_cols = st.columns(8)
-    for _i, (_av_emoji, _av_name) in enumerate(_AVATARS):
+    for _i, (_av_emoji, _av_key, _av_name) in enumerate(_AVATARS):
         with _av_cols[_i]:
-            if st.session_state.avatar == _av_emoji:
-                _av_label = f"✅\n{_av_emoji}\n{_av_name}"
+            if st.session_state.avatar == _av_key:
+                _av_label = f"OK {_av_emoji}\n{_av_name}"
             else:
                 _av_label = f"{_av_emoji}\n{_av_name}"
             if st.button(_av_label, key=f"av_btn_{_i}", use_container_width=True):
-                st.session_state.avatar = _av_emoji
+                st.session_state.avatar = _av_key
                 st.rerun()
 
     # 3D avatar preview - shows animated 3D character for the selected avatar
