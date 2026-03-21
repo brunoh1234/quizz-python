@@ -345,8 +345,7 @@ def render_avatar_mascot(avatar_key: str, mood: str, speech: str = ""):
     )
     _mini_svg_json = _json.dumps(_mini_svg)
 
-    import html as _html_mod
-    _script_content = f"""
+    _html = f"""<script>
 (function() {{
     var avatarKey = {_json.dumps(avatar_key)};
     var mood      = {_json.dumps(mood)};
@@ -404,16 +403,16 @@ def render_avatar_mascot(avatar_key: str, mood: str, speech: str = ""):
     // Watch timer for nervous override
     if (mood === 'idle' || mood === 'pending') {{
         var nervousSpeeches = {{
-            moderador: "⚡ Ordem! Foco!",
-            pontual: "⚡ O tempo conta!",
-            apresentador: "⚡ Pointer a tremer!",
-            silenciado: "⚡ *acena os braços*",
-            secretario: "⚡ Escrever mais rápido!",
-            tecnico: "⚡ Buffer... buffer...",
-            executivo: "⚡ Board meeting!",
-            remoto: "⚡ Fundo a distrair!"
+            moderador: "\u26a1 Ordem! Foco!",
+            pontual: "\u26a1 O tempo conta!",
+            apresentador: "\u26a1 Pointer a tremer!",
+            silenciado: "\u26a1 *acena os bra\u00e7os*",
+            secretario: "\u26a1 Escrever mais r\u00e1pido!",
+            tecnico: "\u26a1 Buffer... buffer...",
+            executivo: "\u26a1 Board meeting!",
+            remoto: "\u26a1 Fundo a distrair!"
         }};
-        var nervousMsg = nervousSpeeches[avatarKey] || "⚡ Depressa!";
+        var nervousMsg = nervousSpeeches[avatarKey] || "\u26a1 Depressa!";
         var watchTimer = setInterval(function() {{
             var numEl = pdoc.getElementById('timer-num');
             if (!numEl) {{ clearInterval(watchTimer); return; }}
@@ -434,16 +433,8 @@ def render_avatar_mascot(avatar_key: str, mood: str, speech: str = ""):
         }}, 500);
     }}
 }})();
-"""
-    _esc = _html_mod.escape(_script_content)
-    st.markdown(
-        '<iframe srcdoc="<!DOCTYPE html><html><body>'
-        '<script>' + _esc + '</script>'
-        '</body></html>" '
-        'style="display:none;position:absolute;width:0;height:0;" '
-        'width="0" height="0"></iframe>',
-        unsafe_allow_html=True,
-    )
+</script>"""
+    components.html(_html, height=0)
 
 
 def remove_avatar_mascot():
@@ -1720,6 +1711,13 @@ if not st.session_state.splash_shown:
         width: 1px !important; height: 1px !important; overflow: hidden !important; opacity: 0 !important;
     }
     iframe { border: none !important; }
+    /* Hide zero-height component iframes (used for JS injection) */
+    iframe[width="0"], iframe[height="0"] {
+        display: none !important;
+        position: absolute !important;
+        visibility: hidden !important;
+    }
+
     /* Hide the JS-triggered hidden buttons */
     button[data-testid="baseButton-secondary"] { }
 
