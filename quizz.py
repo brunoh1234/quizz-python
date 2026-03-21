@@ -261,6 +261,76 @@ def play_confetti(key: str, mode: str = "burst"):
     _comp.html(html_code, height=0)
 
 
+def _build_avatar_svg(avatar_key: str, mood: str, width: int = 90, height: int = 104) -> str:
+    """Returns a standalone SVG string for the given avatar key and mood."""
+    _MINI_CFG = {
+        'moderador':    ('#2a5ecf', '#2a1800',
+            '<path d="M28 22 Q50 10 72 22" stroke="#333" stroke-width="3" fill="none"/>'
+            '<rect x="21" y="19" width="9" height="12" rx="3" fill="#333"/>'
+            '<rect x="70" y="19" width="9" height="12" rx="3" fill="#333"/>'),
+        'pontual':      ('#22884a', '#5c3010',
+            '<circle cx="80" cy="16" r="11" fill="#ccaa00" opacity="0.9"/>'
+            '<circle cx="80" cy="16" r="9" fill="#ffffcc"/>'
+            '<line x1="80" y1="10" x2="80" y2="16" stroke="#333" stroke-width="1.5"/>'
+            '<line x1="80" y1="16" x2="86" y2="16" stroke="#333" stroke-width="1.5"/>'),
+        'apresentador': ('#8833cc', '#2a1800',
+            '<circle cx="18" cy="60" r="6" fill="#ff2200"/>'
+            '<circle cx="18" cy="60" r="3.5" fill="#ff6644"/>'),
+        'silenciado':   ('#cc4422', '#3a2008',
+            '<rect x="74" y="32" width="11" height="18" rx="5" fill="#888"/>'
+            '<ellipse cx="79" cy="28" rx="5" ry="5" fill="#aaa"/>'
+            '<line x1="70" y1="26" x2="90" y2="54" stroke="#ff2200" stroke-width="2.5" stroke-linecap="round"/>'),
+        'secretario':   ('#1a9a88', '#4a2808',
+            '<rect x="72" y="50" width="21" height="28" rx="2" fill="#f0f0f0"/>'
+            '<rect x="72" y="50" width="21" height="5" rx="2" fill="#ccc"/>'
+            '<line x1="75" y1="60" x2="90" y2="60" stroke="#aaa" stroke-width="1.5"/>'
+            '<line x1="75" y1="65" x2="90" y2="65" stroke="#aaa" stroke-width="1.5"/>'
+            '<line x1="75" y1="70" x2="90" y2="70" stroke="#aaa" stroke-width="1.5"/>'),
+        'tecnico':      ('#6a6a7a', '#3a2808',
+            '<text x="72" y="28" font-size="18" fill="#6af">&#x1F4F6;</text>'),
+        'executivo':    ('#1a1a2a', '#2a1800',
+            '<polygon points="50,55 46,72 50,78 54,72" fill="#cc2200"/>'
+            '<polygon points="47,55 53,55 52,63 48,63" fill="#aa1800"/>'),
+        'remoto':       ('#cc7722', '#5c3010',
+            '<polygon points="50,96 38,107 62,107" fill="#996611" opacity="0.8"/>'
+            '<rect x="42" y="107" width="16" height="8" rx="2" fill="#774400"/>'),
+    }
+    _mouths = {
+        'idle':    '<path d="M44 38 Q50 42 56 38" stroke="#cc5533" stroke-width="1.5" fill="none" stroke-linecap="round"/>',
+        'happy':   '<path d="M43 36 Q50 44 57 36" stroke="#cc5533" stroke-width="2" fill="none" stroke-linecap="round"/>',
+        'fire':    '<path d="M43 36 Q50 44 57 36" stroke="#cc5533" stroke-width="2" fill="none" stroke-linecap="round"/>',
+        'sad':     '<path d="M44 42 Q50 37 56 42" stroke="#cc5533" stroke-width="1.5" fill="none" stroke-linecap="round"/>',
+        'nervous': '<path d="M44 39 Q47 37 50 39 Q53 41 56 39" stroke="#cc5533" stroke-width="1.5" fill="none" stroke-linecap="round"/>',
+        'shocked': '<ellipse cx="50" cy="41" rx="5" ry="5" fill="#cc5533" opacity="0.6"/>',
+        'pending': '<path d="M44 39 Q50 42 56 39" stroke="#cc5533" stroke-width="1.5" fill="none" stroke-linecap="round"/>',
+    }
+    _cfg = _MINI_CFG.get(avatar_key, _MINI_CFG['moderador'])
+    _body_color, _hair_color, _accessory = _cfg
+    _mouth = _mouths.get(mood, _mouths['idle'])
+    return (
+        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 115" width="{width}" height="{height}">'
+        f'<defs><linearGradient id="sg_fin" x1="0" y1="0" x2="0" y2="1">'
+        f'<stop offset="0%" stop-color="#FFCC99"/><stop offset="100%" stop-color="#E8906A"/></linearGradient></defs>'
+        f'<rect x="28" y="55" width="44" height="42" rx="8" fill="{_body_color}"/>'
+        f'<rect x="44" y="48" width="12" height="10" rx="4" fill="url(#sg_fin)"/>'
+        f'<ellipse cx="28" cy="33" rx="5" ry="7" fill="url(#sg_fin)"/>'
+        f'<ellipse cx="72" cy="33" rx="5" ry="7" fill="url(#sg_fin)"/>'
+        f'<ellipse cx="50" cy="30" rx="22" ry="24" fill="url(#sg_fin)"/>'
+        f'<ellipse cx="50" cy="13" rx="22" ry="11" fill="{_hair_color}"/>'
+        f'<rect x="28" y="13" width="44" height="11" fill="{_hair_color}"/>'
+        f'<ellipse cx="34" cy="36" rx="7" ry="5" fill="#ff7777" opacity="0.2"/>'
+        f'<ellipse cx="66" cy="36" rx="7" ry="5" fill="#ff7777" opacity="0.2"/>'
+        f'<ellipse cx="41" cy="28" rx="5" ry="5" fill="white"/>'
+        f'<circle cx="41" cy="28" r="3" fill="#1a1a33"/>'
+        f'<circle cx="42" cy="27" r="1" fill="white"/>'
+        f'<ellipse cx="59" cy="28" rx="5" ry="5" fill="white"/>'
+        f'<circle cx="59" cy="28" r="3" fill="#1a1a33"/>'
+        f'<circle cx="60" cy="27" r="1" fill="white"/>'
+        + _mouth + _accessory
+        + '</svg>'
+    )
+
+
 def render_avatar_mascot(avatar_key: str, mood: str, speech: str = ""):
     """Renders the character avatar inline as a card (visible in the iframe area)."""
     import json as _json
@@ -2742,18 +2812,27 @@ if st.session_state.terminou and st.session_state.get("user_id") is not None:
     """, unsafe_allow_html=True)
 
     # -- Caixa principal ------------------------------------------------------
+    _av_fin_key = st.session_state.get('avatar', 'moderador')
+    _av_fin_svg = _build_avatar_svg(_av_fin_key, 'happy', width=110, height=127)
     st.markdown(f"""
 <div class="final-box">
-    <h2 style="color:#ffd700; font-size:32px; text-shadow: 0 0 20px rgba(255,215,0,0.8);">
-        🎉 Quiz Concluído!
-    </h2>
-    <p style="font-size:22px; color:{cor}; font-weight:bold; margin:15px 0;">
-        {st.session_state.user_id}
-    </p>
-    <p style="font-size:52px; font-weight:900; color:#ffffff; text-shadow: 0 0 20px gold; margin:10px 0;">
-        {score} / {total}
-    </p>
-    <p style="font-size:20px; color:#aac8ff;">{msg}</p>
+  <div style="display:flex;align-items:center;justify-content:center;gap:24px;flex-wrap:wrap;">
+    <div style="animation:avBounce 0.8s cubic-bezier(0.36,0.07,0.19,0.97) 3;filter:drop-shadow(0 0 14px gold);">
+      {_av_fin_svg}
+    </div>
+    <div style="text-align:center;">
+      <h2 style="color:#ffd700; font-size:30px; text-shadow: 0 0 20px rgba(255,215,0,0.8); margin:0 0 8px 0;">
+          🎉 Quiz Concluído!
+      </h2>
+      <p style="font-size:20px; color:{cor}; font-weight:bold; margin:8px 0;">
+          {st.session_state.user_id}
+      </p>
+      <p style="font-size:48px; font-weight:900; color:#ffffff; text-shadow: 0 0 20px gold; margin:6px 0;">
+          {score} / {total}
+      </p>
+      <p style="font-size:18px; color:#aac8ff;">{msg}</p>
+    </div>
+  </div>
 </div>
     """, unsafe_allow_html=True)
 
@@ -2881,17 +2960,51 @@ if st.session_state.terminou and st.session_state.get("user_id") is not None:
   <span style="color:{_cs};font-weight:bold;font-size:16px;">{_sv}/10</span>
   <span style="color:#5a7ab0;font-size:12px;margin-left:14px;">{_dados['data']} {_dados['hora']}</span>
 </div>"""
-        st.markdown(f"""
-<div style="display:flex;justify-content:center;width:100%;">
-  <div style="background:linear-gradient(135deg,#0d1f4a 0%,#050e2a 100%);
-      border:1px solid #1e3a7a;border-radius:16px;
-      padding:20px 24px;width:100%;max-width:560px;">
-    <h3 style="color:#ffd700;text-align:center;margin:0 0 14px 0;font-size:18px;">
-        🏆 Ranking dos Participantes
-    </h3>
+        import streamlit.components.v1 as _comp_rank
+        _rank_count = len(_ranking)
+        _comp_rank.html(f"""<!DOCTYPE html>
+<html><head><meta charset="utf-8">
+<style>
+  html,body{{margin:0;padding:0;background:transparent;font-family:Arial,sans-serif;}}
+  .rk-wrap{{display:flex;justify-content:center;width:100%;}}
+  .rk-box{{background:linear-gradient(135deg,#0d1f4a 0%,#050e2a 100%);
+    border:1px solid #1e3a7a;border-radius:16px;padding:20px 24px;width:100%;max-width:560px;}}
+  .rk-title{{color:#ffd700;text-align:center;margin:0 0 14px 0;font-size:18px;font-weight:700;}}
+  .rk-footer{{display:flex;justify-content:center;align-items:center;gap:8px;
+    margin-top:12px;font-size:12px;color:#5a7ab0;}}
+  .rk-countdown{{color:#1e90ff;font-weight:bold;min-width:18px;text-align:center;}}
+  @keyframes spin{{from{{transform:rotate(0deg)}}to{{transform:rotate(360deg)}}}}
+  .rk-spin{{display:inline-block;animation:spin 1s linear infinite;}}
+</style>
+</head>
+<body>
+<div class="rk-wrap">
+  <div class="rk-box">
+    <div class="rk-title">&#127942; Ranking dos Participantes</div>
     {_rows_html}
+    <div class="rk-footer">
+      <span class="rk-spin">&#8635;</span>
+      <span>A atualizar em</span>
+      <span class="rk-countdown" id="cd">15</span>
+      <span>segundos</span>
+    </div>
   </div>
-</div>""", unsafe_allow_html=True)
+</div>
+<script>
+(function(){{
+  var t = 15;
+  var el = document.getElementById('cd');
+  var iv = setInterval(function(){{
+    t--;
+    if(el) el.textContent = t;
+    if(t <= 0){{
+      clearInterval(iv);
+      window.parent.location.reload();
+    }}
+  }}, 1000);
+}})();
+</script>
+</body></html>""", height={max(180, 54 + _rank_count * 46)}, scrolling=False)
 
     # -- Desafiar Amigo --------------------------------------------------------
     st.markdown("<br>", unsafe_allow_html=True)
