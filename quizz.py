@@ -1274,10 +1274,13 @@ if st.session_state.user_id is None:
 
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        user_id = st.text_input("", placeholder="O teu nome ou ID...", label_visibility="collapsed")
+        user_id = st.text_input("", placeholder="O teu nome...", label_visibility="collapsed")
         if st.button("▶️  COMEÇAR O QUIZ", use_container_width=True):
+            import re as _re
             if not user_id.strip():
-                st.warning("Por favor insere um nome ou ID.")
+                st.warning("Por favor insere o teu nome.")
+            elif not _re.fullmatch(r"[A-Za-zÀ-ÿ\s]+", user_id.strip()):
+                st.error("❌ Nome inválido — só são aceites letras.")
             elif ja_jogou(user_id.strip(), resultados):
                 dados = resultados[user_id.strip()]
                 st.error("Este utilizador já jogou.")
