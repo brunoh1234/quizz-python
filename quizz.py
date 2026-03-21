@@ -261,359 +261,572 @@ def play_confetti(key: str, mode: str = "burst"):
     _comp.html(html_code, height=0)
 
 
-def render_avatar_3d(mood: str, speech: str = ""):
-    """Injeta robô 3D animado (Three.js) no canto inferior direito."""
+def render_avatar_mascot(avatar_emoji: str, mood: str, speech: str = ""):
+    """Injeta avatar animado fixo no canto inferior direito."""
     import json as _json
-    components.html(f"""<script>
+    components.html(f"""
+<script>
 (function() {{
-    var mood   = {_json.dumps(mood)};
+    var emoji = {_json.dumps(avatar_emoji)};
+    var mood  = {_json.dumps(mood)};
     var speech = {_json.dumps(speech)};
-    var p    = window.parent;
-    var pdoc = p.document;
+    var pdoc = window.parent.document;
 
-    // Se já inicializado, apenas atualiza o mood
-    if (typeof p._setRobotMood === 'function') {{
-        p._setRobotMood(mood, speech);
-        return;
-    }}
-
-    // Se canvas já existe mas Three.js ainda está a carregar
-    if (pdoc.getElementById('av-robot-canvas')) {{
-        var waitId = setInterval(function() {{
-            if (typeof p._setRobotMood === 'function') {{
-                clearInterval(waitId);
-                p._setRobotMood(mood, speech);
+    if (!pdoc.getElementById('av-mascot-css')) {{
+        var s = pdoc.createElement('style');
+        s.id = 'av-mascot-css';
+        s.textContent = `
+            #av-mascot {{
+                position:fixed; bottom:24px; right:24px;
+                z-index:10000; display:flex; flex-direction:column;
+                align-items:center; pointer-events:none;
             }}
-        }}, 50);
-        return;
-    }}
-
-    // === PRIMEIRA INICIALIZAÇÃO ===
-
-    // Canvas 3D
-    var canvas = pdoc.createElement('canvas');
-    canvas.id = 'av-robot-canvas';
-    canvas.width  = 170;
-    canvas.height = 240;
-    canvas.style.cssText = 'position:fixed;bottom:16px;right:16px;z-index:10000;pointer-events:none;border-radius:10px;';
-    pdoc.body.appendChild(canvas);
-
-    // Speech bubble
-    var bubble = pdoc.createElement('div');
-    bubble.id = 'av-robot-bubble';
-    bubble.style.cssText =
-        'position:fixed;bottom:264px;right:12px;z-index:10001;' +
-        'background:rgba(10,26,74,0.96);border:2px solid #1e90ff;' +
-        'border-radius:14px 14px 0 14px;padding:6px 13px;' +
-        'font-size:12px;color:#7eb8ff;font-weight:bold;white-space:nowrap;' +
-        'display:none;pointer-events:none;' +
-        'box-shadow:0 0 12px rgba(30,144,255,0.5);' +
-        'font-family:Arial,sans-serif;letter-spacing:0.5px;';
-    pdoc.body.appendChild(bubble);
-
-    // Carregar Three.js (verifica se já está carregado)
-    function startBuild() {{
-        buildRobot(mood, speech);
-    }}
-
-    if (p.THREE) {{
-        startBuild();
-    }} else if (pdoc.getElementById('av-three-js')) {{
-        var chk = setInterval(function() {{
-            if (p.THREE) {{ clearInterval(chk); startBuild(); }}
-        }}, 40);
-    }} else {{
-        var tag = pdoc.createElement('script');
-        tag.id  = 'av-three-js';
-        tag.src = 'https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js';
-        tag.onload = startBuild;
-        pdoc.head.appendChild(tag);
-    }}
-
-    function buildRobot(initMood, initSpeech) {{
-        var THREE = p.THREE;
-
-        // Cena, câmara, renderer
-        var scene    = new THREE.Scene();
-        var camera   = new THREE.PerspectiveCamera(42, 170/240, 0.1, 100);
-        camera.position.set(0, 0.4, 9.2);
-        camera.lookAt(0, 0.4, 0);
-
-        var renderer = new THREE.WebGLRenderer({{ canvas: canvas, alpha: true, antialias: true }});
-        renderer.setSize(170, 240);
-        renderer.setPixelRatio(Math.min(p.devicePixelRatio || 1, 2));
-        renderer.setClearColor(0x000000, 0);
-
-        // Luzes
-        var ambLight  = new THREE.AmbientLight(0x334466, 1.0);
-        scene.add(ambLight);
-        var keyLight  = new THREE.PointLight(0x1e90ff, 2.2, 28);
-        keyLight.position.set(4, 6, 7);
-        scene.add(keyLight);
-        var fillLight = new THREE.PointLight(0x4488ff, 0.8, 22);
-        fillLight.position.set(-4, 2, -2);
-        scene.add(fillLight);
-
-        // Materiais
-        var matBody    = new THREE.MeshPhongMaterial({{ color: 0x0d1f3c, shininess: 110, specular: 0x2255aa }});
-        var matAccent  = new THREE.MeshPhongMaterial({{ color: 0x1a3a7a, shininess: 130, specular: 0x3366cc }});
-        var matEye     = new THREE.MeshBasicMaterial({{ color: 0x00aaff }});
-        var matEyeGlow = new THREE.MeshBasicMaterial({{ color: 0x00aaff, transparent: true, opacity: 0.25 }});
-        var matAntenna = new THREE.MeshBasicMaterial({{ color: 0x00aaff, transparent: true, opacity: 1.0 }});
-        var matScreen  = new THREE.MeshBasicMaterial({{ color: 0x1e90ff, transparent: true, opacity: 0.55 }});
-        var matMouth   = new THREE.MeshBasicMaterial({{ color: 0x1e90ff, transparent: true, opacity: 0.72 }});
-
-        // Grupo principal
-        var rg = new THREE.Group();
-        scene.add(rg);
-
-        // Pernas
-        var legGeo = new THREE.BoxGeometry(0.55, 1.3, 0.5);
-        var legL = new THREE.Mesh(legGeo, matBody); legL.position.set(-0.42, -2.05, 0); rg.add(legL);
-        var legR = new THREE.Mesh(legGeo, matBody); legR.position.set( 0.42, -2.05, 0); rg.add(legR);
-
-        // Pés
-        var footGeo = new THREE.BoxGeometry(0.7, 0.28, 0.72);
-        var footL = new THREE.Mesh(footGeo, matAccent); footL.position.set(-0.42, -2.72, 0.1); rg.add(footL);
-        var footR = new THREE.Mesh(footGeo, matAccent); footR.position.set( 0.42, -2.72, 0.1); rg.add(footR);
-
-        // Corpo
-        var bodyMesh = new THREE.Mesh(new THREE.BoxGeometry(2.0, 1.9, 0.9), matBody);
-        bodyMesh.position.set(0, -0.55, 0); rg.add(bodyMesh);
-
-        // Ecrã do peito
-        var screenMesh = new THREE.Mesh(new THREE.PlaneGeometry(1.15, 0.75), matScreen);
-        screenMesh.position.set(0, -0.45, 0.46); rg.add(screenMesh);
-
-        // Ombros
-        var sGeo = new THREE.BoxGeometry(0.38, 0.32, 1.0);
-        rg.add(Object.assign(new THREE.Mesh(sGeo, matAccent), {{ position: new THREE.Vector3(-1.18, 0.42, 0) }}));
-        rg.add(Object.assign(new THREE.Mesh(sGeo, matAccent), {{ position: new THREE.Vector3( 1.18, 0.42, 0) }}));
-
-        // Braços (grupos para rodar)
-        var armGeo = new THREE.BoxGeometry(0.44, 1.5, 0.44);
-        var agL = new THREE.Group(); agL.position.set(-1.24, 0.1, 0); rg.add(agL);
-        agL.add(Object.assign(new THREE.Mesh(armGeo, matBody), {{ position: new THREE.Vector3(0,-0.75,0) }}));
-        var agR = new THREE.Group(); agR.position.set( 1.24, 0.1, 0); rg.add(agR);
-        agR.add(Object.assign(new THREE.Mesh(armGeo, matBody), {{ position: new THREE.Vector3(0,-0.75,0) }}));
-        agL.rotation.z =  0.15;
-        agR.rotation.z = -0.15;
-
-        // Pescoço
-        var neck = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.3, 0.38, 8), matAccent);
-        neck.position.set(0, 0.5, 0); rg.add(neck);
-
-        // Grupo da cabeça
-        var hg = new THREE.Group(); hg.position.set(0, 1.22, 0); rg.add(hg);
-
-        // Cabeça
-        hg.add(new THREE.Mesh(new THREE.BoxGeometry(1.82, 1.7, 1.1), matBody));
-
-        // Topo da cabeça (accent)
-        var headTop = new THREE.Mesh(new THREE.BoxGeometry(1.82, 0.22, 1.15), matAccent);
-        headTop.position.set(0, 0.86, 0); hg.add(headTop);
-
-        // Olhos
-        var eyeGeo = new THREE.BoxGeometry(0.44, 0.28, 0.05);
-        var eyeL = new THREE.Mesh(eyeGeo, matEye); eyeL.position.set(-0.44, 0.15, 0.575); hg.add(eyeL);
-        var eyeR = new THREE.Mesh(eyeGeo, matEye); eyeR.position.set( 0.44, 0.15, 0.575); hg.add(eyeR);
-
-        // Brilho dos olhos
-        var egGeo = new THREE.BoxGeometry(0.58, 0.40, 0.04);
-        var egL = new THREE.Mesh(egGeo, matEyeGlow); egL.position.set(-0.44, 0.15, 0.568); hg.add(egL);
-        var egR = new THREE.Mesh(egGeo, matEyeGlow); egR.position.set( 0.44, 0.15, 0.568); hg.add(egR);
-
-        // Boca (LED strip)
-        var mouthMesh = new THREE.Mesh(new THREE.BoxGeometry(0.82, 0.13, 0.05), matMouth);
-        mouthMesh.position.set(0, -0.26, 0.575); hg.add(mouthMesh);
-
-        // Antena (poste)
-        var pole = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.065, 0.82, 6), matAccent);
-        pole.position.set(0, 1.26, 0); hg.add(pole);
-
-        // Ponta da antena
-        var antTip = new THREE.Mesh(new THREE.SphereGeometry(0.15, 10, 10), matAntenna);
-        antTip.position.set(0, 1.73, 0); hg.add(antTip);
-
-        // === Mapa de cores dos olhos por mood ===
-        var eyeColorMap = {{
-            idle:    0x00aaff,
-            happy:   0x00ff88,
-            sad:     0xff2244,
-            fire:    0xff6600,
-            nervous: 0xffee00,
-            shocked: 0xffffff,
-            pending: 0xffcc00
-        }};
-
-        var curMood    = 'idle';
-        var curSpeech  = '';
-
-        p._setRobotMood = function(m, s) {{
-            curMood   = m || 'idle';
-            curSpeech = s || '';
-            var col = eyeColorMap[curMood] || 0x00aaff;
-            matEye.color.setHex(col);
-            matEyeGlow.color.setHex(col);
-            matAntenna.color.setHex(col);
-            // Boca
-            if (curMood === 'happy') {{
-                mouthMesh.scale.x = 1.3;
-                matMouth.color.setHex(0x00ff88);
-            }} else if (curMood === 'sad') {{
-                mouthMesh.scale.x = 0.7;
-                matMouth.color.setHex(0xff2244);
-            }} else {{
-                mouthMesh.scale.x = 1.0;
-                matMouth.color.setHex(0x1e90ff);
+            .av-speech {{
+                background:rgba(10,26,74,0.95);
+                border:2px solid #1e90ff;
+                border-radius:16px 16px 0 16px;
+                padding:5px 13px; font-size:12px;
+                color:#7eb8ff; font-weight:bold;
+                margin-bottom:5px; white-space:nowrap;
+                animation:speechPop 0.3s cubic-bezier(0.175,0.885,0.32,1.275);
+                box-shadow:0 0 10px rgba(30,144,255,0.4);
             }}
-            // Speech bubble
-            var bbl = pdoc.getElementById('av-robot-bubble');
-            if (bbl) {{
-                if (curSpeech) {{
-                    bbl.textContent = curSpeech;
-                    bbl.style.display = 'block';
+            .av-emoji {{
+                font-size:54px; display:block;
+                line-height:1;
+                filter:drop-shadow(0 4px 8px rgba(0,0,0,0.5));
+            }}
+            @keyframes avFloat  {{ 0%,100%{{transform:translateY(0)}} 50%{{transform:translateY(-8px)}} }}
+            @keyframes avBounce {{ 0%,100%{{transform:translateY(0) scale(1)}} 30%{{transform:translateY(-20px) scale(1.2)}} 60%{{transform:translateY(-8px) scale(1.05)}} }}
+            @keyframes avShake  {{ 0%,100%{{transform:translateX(0)}} 20%{{transform:translateX(-8px) rotate(-5deg)}} 40%{{transform:translateX(8px) rotate(5deg)}} 60%{{transform:translateX(-5px) rotate(-3deg)}} 80%{{transform:translateX(5px) rotate(3deg)}} }}
+            @keyframes avSpin   {{ 0%{{transform:rotate(0) scale(1)}} 25%{{transform:rotate(-15deg) scale(1.15)}} 50%{{transform:rotate(15deg) scale(1.2)}} 75%{{transform:rotate(-10deg) scale(1.1)}} 100%{{transform:rotate(0) scale(1)}} }}
+            @keyframes avTremble{{ 0%,100%{{transform:translateX(0) rotate(0)}} 25%{{transform:translateX(-3px) rotate(-2deg)}} 75%{{transform:translateX(3px) rotate(2deg)}} }}
+            @keyframes avShock  {{ 0%{{transform:scale(1)}} 20%{{transform:scale(1.35) rotate(-5deg)}} 40%{{transform:scale(0.9) rotate(5deg)}} 60%{{transform:scale(1.15) rotate(-3deg)}} 100%{{transform:scale(1) rotate(0)}} }}
+            @keyframes speechPop{{ 0%{{transform:scale(0.5);opacity:0}} 100%{{transform:scale(1);opacity:1}} }}
+            #av-mascot.av-idle    .av-emoji {{ animation:avFloat   2s ease-in-out infinite }}
+            #av-mascot.av-happy   .av-emoji {{ animation:avBounce  0.7s cubic-bezier(0.36,0.07,0.19,0.97) 3 }}
+            #av-mascot.av-sad     .av-emoji {{ animation:avShake   0.6s ease-in-out 2 }}
+            #av-mascot.av-fire    .av-emoji {{ animation:avSpin    0.9s ease-in-out infinite }}
+            #av-mascot.av-nervous .av-emoji {{ animation:avTremble 0.18s linear infinite }}
+            #av-mascot.av-shocked .av-emoji {{ animation:avShock   0.5s ease-in-out 3 }}
+            #av-mascot.av-pending .av-emoji {{ animation:avFloat   1s ease-in-out infinite }}
+        `;
+        pdoc.head.appendChild(s);
+    }}
+
+    var mascot = pdoc.getElementById('av-mascot');
+    if (!mascot) {{
+        mascot = pdoc.createElement('div');
+        mascot.id = 'av-mascot';
+        pdoc.body.appendChild(mascot);
+    }}
+    mascot.className = 'av-' + mood;
+    mascot.innerHTML = (speech ? '<div class="av-speech">' + speech + '</div>' : '') +
+                       '<span class="av-emoji">' + emoji + '</span>';
+
+    // JS also watches the timer arc for nervous state
+    if (mood === 'idle' || mood === 'pending') {{
+        var watchTimer = setInterval(function() {{
+            var numEl = pdoc.getElementById('timer-num');
+            if (!numEl) {{ clearInterval(watchTimer); return; }}
+            var remaining = parseInt(numEl.textContent, 10);
+            var m = pdoc.getElementById('av-mascot');
+            if (!m) {{ clearInterval(watchTimer); return; }}
+            // Only override if still idle/pending (not confirmed)
+            if (remaining <= 10 && remaining > 0 && (m.className === 'av-idle' || m.className === 'av-pending')) {{
+                m.className = 'av-nervous';
+                var sp = m.querySelector('.av-speech');
+                if (!sp) {{
+                    m.innerHTML = '<div class="av-speech">⚡ Depressa!</div>' + m.innerHTML;
                 }} else {{
-                    bbl.style.display = 'none';
+                    sp.textContent = '⚡ Depressa!';
                 }}
+            }} else if (remaining > 10 && (m.className === 'av-nervous')) {{
+                m.className = 'av-' + mood;
             }}
-        }};
-
-        p._setRobotMood(initMood, initSpeech);
-
-        // === LOOP DE ANIMAÇÃO ===
-        function animate() {{
-            p._robotRafId = p.requestAnimationFrame(animate);
-            var t = p.performance.now() / 1000;
-
-            // Reset base
-            rg.rotation.set(0, 0, 0);
-            rg.position.set(0, 0, 0);
-            rg.scale.set(1, 1, 1);
-            hg.rotation.set(0, 0, 0);
-            agL.rotation.set(0, 0,  0.15);
-            agR.rotation.set(0, 0, -0.15);
-            keyLight.color.setHex(0x1e90ff);
-            matScreen.color.setHex(0x1e90ff);
-            matScreen.opacity = 0.55;
-            matEyeGlow.opacity = 0.25;
-
-            // Timer watch automático
-            var timerEl = pdoc.getElementById('timer-num');
-            if (timerEl) {{
-                var rem = parseInt(timerEl.textContent, 10);
-                if (!isNaN(rem) && rem <= 10 && rem > 0 &&
-                    (curMood === 'idle' || curMood === 'pending')) {{
-                    p._setRobotMood('nervous', '⚡ Depressa!');
-                }} else if (!isNaN(rem) && rem > 10 && curMood === 'nervous') {{
-                    p._setRobotMood('idle', '');
-                }}
-            }}
-
-            // ── IDLE ──────────────────────────────────────────────────────────
-            if (curMood === 'idle') {{
-                rg.position.y = Math.sin(t * 1.6) * 0.13;
-                rg.rotation.y = Math.sin(t * 0.65) * 0.09;
-                hg.rotation.z = Math.sin(t * 0.85) * 0.045;
-                matEyeGlow.opacity = 0.12 + Math.abs(Math.sin(t * 2.2)) * 0.18;
-                matAntenna.opacity = 0.55 + Math.abs(Math.sin(t * 3.5)) * 0.45;
-
-            // ── HAPPY ─────────────────────────────────────────────────────────
-            }} else if (curMood === 'happy') {{
-                var b = Math.abs(Math.sin(t * 5.5));
-                rg.position.y = b * 0.55;
-                agL.rotation.z =  0.15 - b * 1.4;
-                agR.rotation.z = -0.15 + b * 1.4;
-                rg.rotation.z  = Math.sin(t * 5)   * 0.08;
-                hg.rotation.z  = Math.sin(t * 6)   * 0.10;
-                matEye.color.setHex(Math.floor(t * 4) % 2 === 0 ? 0x00ff88 : 0xffffff);
-                matAntenna.color.setHex(0x00ff88);
-                matEyeGlow.opacity = 0.25 + b * 0.45;
-                matScreen.color.setHex(Math.floor(t * 3.5) % 2 === 0 ? 0x00ff88 : 0x1e90ff);
-                matScreen.opacity = 0.75;
-
-            // ── SAD ───────────────────────────────────────────────────────────
-            }} else if (curMood === 'sad') {{
-                hg.rotation.x = 0.28 + Math.sin(t * 1.2) * 0.04;
-                agL.rotation.set(0.28, 0,  0.38);
-                agR.rotation.set(0.28, 0, -0.38);
-                rg.position.y = -0.12;
-                matEyeGlow.opacity = 0.1;
-                matScreen.color.setHex(0xff1111);
-                matScreen.opacity = 0.28;
-
-            // ── FIRE ──────────────────────────────────────────────────────────
-            }} else if (curMood === 'fire') {{
-                rg.rotation.y = t * 4.2;
-                agL.rotation.z =  0.15 - Math.abs(Math.sin(t * 7))   * 1.6;
-                agR.rotation.z = -0.15 + Math.abs(Math.sin(t * 7.3)) * 1.6;
-                rg.position.y = Math.abs(Math.sin(t * 4.5)) * 0.28;
-                matEye.color.setHex(Math.floor(t * 8) % 2 === 0 ? 0xff6600 : 0xffaa00);
-                matAntenna.color.setHex(0xff4400);
-                matEyeGlow.color.setHex(0xff6600);
-                matEyeGlow.opacity = 0.5;
-                matScreen.color.setHex(0xff5500);
-                matScreen.opacity = 0.85;
-                keyLight.color.setHex(0xff4400);
-
-            // ── NERVOUS ───────────────────────────────────────────────────────
-            }} else if (curMood === 'nervous') {{
-                rg.position.set(
-                    (Math.random() - 0.5) * 0.10,
-                    (Math.random() - 0.5) * 0.08,
-                    0
-                );
-                rg.rotation.z = (Math.random() - 0.5) * 0.08;
-                hg.rotation.z = Math.sin(t * 18) * 0.10;
-                agL.rotation.z =  0.15 + Math.sin(t * 14)     * 0.18;
-                agR.rotation.z = -0.15 + Math.sin(t * 14 + 1) * 0.18;
-                matEye.color.setHex(Math.floor(t * 14) % 2 === 0 ? 0xffee00 : 0xffaa00);
-                matAntenna.color.setHex(0xffee00);
-                matEyeGlow.color.setHex(0xffee00);
-                matEyeGlow.opacity = 0.35 + Math.abs(Math.sin(t * 18)) * 0.38;
-                matScreen.color.setHex(0xffcc00);
-                matScreen.opacity = 0.55;
-
-            // ── SHOCKED ───────────────────────────────────────────────────────
-            }} else if (curMood === 'shocked') {{
-                var sh = 1 + Math.sin(t * 9) * 0.14;
-                rg.scale.set(sh, sh, sh);
-                hg.rotation.z = Math.sin(t * 11) * 0.22;
-                agL.rotation.z = -0.7 + Math.sin(t * 9) * 0.28;
-                agR.rotation.z =  0.7 + Math.sin(t * 9) * 0.28;
-                matEyeGlow.opacity = 0.6;
-                matScreen.color.setHex(0xffffff);
-                matScreen.opacity = 0.85;
-
-            // ── PENDING ───────────────────────────────────────────────────────
-            }} else if (curMood === 'pending') {{
-                hg.rotation.z = Math.sin(t * 1.4) * 0.13;
-                rg.position.y = Math.sin(t * 1.9) * 0.09;
-                matEyeGlow.color.setHex(0xffcc00);
-                matEyeGlow.opacity = 0.20 + Math.abs(Math.sin(t * 3.2)) * 0.22;
-            }}
-
-            renderer.render(scene, camera);
-        }}
-
-        animate();
+        }}, 500);
     }}
 }})();
-</script>""", height=0)
+</script>
+""", height=0)
 
 
-def remove_avatar_3d():
-    """Remove o robô 3D e cancela o animation loop."""
+def remove_avatar_mascot():
+    """Remove o avatar mascote da página (para usar fora do quiz)."""
     components.html("""<script>
 (function(){
-    var p    = window.parent;
-    var pdoc = p.document;
-    if (p._robotRafId) { p.cancelAnimationFrame(p._robotRafId); p._robotRafId = null; }
-    p._setRobotMood = null;
-    var c = pdoc.getElementById('av-robot-canvas'); if (c) c.remove();
-    var b = pdoc.getElementById('av-robot-bubble'); if (b) b.remove();
+    var m = window.parent.document.getElementById('av-mascot');
+    if (m) m.remove();
 })();
 </script>""", height=0)
+
+
+def render_3d_avatar_preview(avatar_key: str):
+    """Renders an animated 3D character preview using Three.js based on the selected avatar key."""
+    import json as _json3d
+    _key_js = _json3d.dumps(avatar_key if avatar_key else "")
+    components.html(f"""<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  html,body{{margin:0;padding:0;background:transparent;overflow:hidden;display:flex;flex-direction:column;align-items:center;}}
+  canvas{{display:block;border-radius:16px;box-shadow:0 0 30px rgba(30,100,255,0.35);}}
+  #av3d-name{{text-align:center;color:#7eb8ff;font-size:15px;font-family:'Segoe UI',sans-serif;
+    margin-top:8px;letter-spacing:2px;text-transform:uppercase;
+    text-shadow:0 0 12px rgba(100,180,255,0.7);font-weight:600;}}
+  #av3d-hint{{text-align:center;color:#446688;font-size:11px;font-family:'Segoe UI',sans-serif;margin-top:3px;}}
+</style>
+</head>
+<body>
+<canvas id="c" width="260" height="260"></canvas>
+<div id="av3d-name">Seleciona um avatar</div>
+<div id="av3d-hint">✋ acena contigo!</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){{
+var AVATAR_KEY = {_key_js};
+
+// ── Scene ──────────────────────────────────────────────────────────────────────
+var W=260, H=260;
+var scene = new THREE.Scene();
+scene.background = new THREE.Color(0x060e1e);
+var camera = new THREE.PerspectiveCamera(38, W/H, 0.1, 100);
+camera.position.set(0, 0.25, 4.2);
+var renderer = new THREE.WebGLRenderer({{canvas:document.getElementById('c'), antialias:true}});
+renderer.setSize(W,H);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+
+// ── Lights ─────────────────────────────────────────────────────────────────────
+scene.add(new THREE.AmbientLight(0x304070, 0.9));
+var dl = new THREE.DirectionalLight(0x88aaff, 1.6);
+dl.position.set(2,3,3); scene.add(dl);
+var rl = new THREE.DirectionalLight(0x003388, 0.6);
+rl.position.set(-2,0,-1); scene.add(rl);
+var pl = new THREE.PointLight(0x0066ff, 0.8, 8);
+pl.position.set(0,2,2); scene.add(pl);
+
+// ── Platform ──────────────────────────────────────────────────────────────────
+var platMesh = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.9,0.9,0.06,48),
+  new THREE.MeshPhongMaterial({{color:0x0a1a4a,emissive:0x002288,emissiveIntensity:0.4,shininess:120}})
+);
+platMesh.position.y = -1.42; scene.add(platMesh);
+var ringMesh = new THREE.Mesh(
+  new THREE.TorusGeometry(0.92,0.025,8,60),
+  new THREE.MeshPhongMaterial({{color:0x1166ff,emissive:0x0088ff,emissiveIntensity:1.0}})
+);
+ringMesh.rotation.x=Math.PI/2; ringMesh.position.y=-1.39; scene.add(ringMesh);
+
+// ── Particle stars ─────────────────────────────────────────────────────────────
+var starGeo = new THREE.BufferGeometry();
+var starsPos = [];
+for(var i=0;i<80;i++){{
+  starsPos.push((Math.random()-0.5)*8,(Math.random()-0.5)*6,(Math.random()*-4)-1);
+}}
+starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starsPos,3));
+var stars = new THREE.Points(starGeo, new THREE.PointsMaterial({{color:0x88aaff,size:0.04}}));
+scene.add(stars);
+
+// ── Avatar config ─────────────────────────────────────────────────────────────
+var CONFIGS = {{
+  '\uD83C\uDF99\uFE0F': {{
+    name:'O Moderador', bodyCol:0x1a4a9f, legsCol:0x0d2560, skinCol:0xffcc99,
+    extras:function(p){{
+      // Headset arc
+      var hsMat=new THREE.MeshPhongMaterial({{color:0x222222}});
+      var hs=new THREE.Mesh(new THREE.TorusGeometry(0.3,0.04,8,24,Math.PI),hsMat);
+      hs.position.set(0,0.82,0); hs.rotation.x=Math.PI; p.group.add(hs);
+      // Earpads
+      [-0.3,0.3].forEach(function(x){{
+        var ep=new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.07,0.04,12),hsMat);
+        ep.position.set(x,0.82,0); ep.rotation.z=Math.PI/2; p.group.add(ep);
+      }});
+      // Mic arm
+      var micArm=new THREE.Mesh(new THREE.CylinderGeometry(0.02,0.02,0.22,8),hsMat);
+      micArm.position.set(0.28,0.68,0.1); micArm.rotation.z=-Math.PI/4; p.group.add(micArm);
+      var micBall=new THREE.Mesh(new THREE.SphereGeometry(0.04,8,8),
+        new THREE.MeshPhongMaterial({{color:0x111111,emissive:0xff3300,emissiveIntensity:0.8}}));
+      micBall.position.set(0.38,0.58,0.14); p.group.add(micBall);
+    }},
+    animFn:function(p,t){{
+      // Wave right arm
+      p.armR.rotation.z = -0.7 + Math.sin(t*2.5)*0.55;
+      p.armR.rotation.x = Math.sin(t*2.5)*0.15;
+      p.armL.rotation.z = 0.15 + Math.sin(t*1.2)*0.08;
+    }}
+  }},
+  '\u23F0': {{
+    name:'O Pontual', bodyCol:0x186a32, legsCol:0x0d3d1a, skinCol:0xffbb88,
+    extras:function(p){{
+      // Watch on left wrist
+      var watchMat=new THREE.MeshPhongMaterial({{color:0xccaa00,emissive:0x886600,emissiveIntensity:0.4}});
+      var watch=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.06,0.04,12),watchMat);
+      // Position on left arm (lower)
+      var wg=new THREE.Group(); wg.position.set(0,-0.52,0); wg.add(watch); p.armL.add(wg);
+      // Watch face details
+      var face=new THREE.Mesh(new THREE.CylinderGeometry(0.055,0.055,0.01,12),
+        new THREE.MeshPhongMaterial({{color:0xffffff,emissive:0x88ffff,emissiveIntensity:0.5}}));
+      face.position.y=0.025; wg.add(face);
+      // Checkmark badge above head
+      var badgeMat=new THREE.MeshPhongMaterial({{color:0x00cc44,emissive:0x00aa33,emissiveIntensity:0.6}});
+      var badge=new THREE.Mesh(new THREE.SphereGeometry(0.12,12,12),badgeMat);
+      badge.position.set(0.4,1.15,0); p.group.add(badge);
+      p._badge=badge;
+    }},
+    animFn:function(p,t){{
+      // Left arm check watch
+      p.armL.rotation.z = 0.2 + Math.sin(t*0.8)*0.15;
+      p.armL.rotation.x = 0.4 + Math.sin(t*0.8)*0.1;
+      // Right arm wave enthusiastically
+      p.armR.rotation.z = -0.9 + Math.sin(t*3.0)*0.6;
+      p.armR.rotation.x = Math.sin(t*3.0)*0.2;
+      if(p._badge) p._badge.position.y = 1.15 + Math.sin(t*2)*0.05;
+    }}
+  }},
+  '\uD83D\uDCCA': {{
+    name:'O Apresentador', bodyCol:0x6a1a9f, legsCol:0x3d0d60, skinCol:0xffcc99,
+    extras:function(p){{
+      // Pointer stick in right hand
+      var pMat=new THREE.MeshPhongMaterial({{color:0xdddddd}});
+      var pointer=new THREE.Mesh(new THREE.CylinderGeometry(0.018,0.018,0.55,8),pMat);
+      pointer.position.set(0,-0.85,0); pointer.rotation.z=-0.3; p.armR.add(pointer);
+      var pTip=new THREE.Mesh(new THREE.SphereGeometry(0.035,8,8),
+        new THREE.MeshPhongMaterial({{color:0xff2200,emissive:0xff0000,emissiveIntensity:1.0}}));
+      pTip.position.set(0,-1.13,0); p.armR.add(pTip);
+      // Mini slide board
+      var board=new THREE.Mesh(new THREE.BoxGeometry(0.45,0.3,0.02),
+        new THREE.MeshPhongMaterial({{color:0xffffff,emissive:0x8888ff,emissiveIntensity:0.2}}));
+      board.position.set(-0.6,0.7,0.2); p.group.add(board);
+      // Slide lines
+      var lineMat=new THREE.MeshPhongMaterial({{color:0x0044ff,emissive:0x0022ff,emissiveIntensity:0.5}});
+      [0.06,0,-.06].forEach(function(y,i){{
+        var line=new THREE.Mesh(new THREE.BoxGeometry(0.3+i*0.05,0.025,0.025),lineMat);
+        line.position.set(-0.6,0.7+y,0.22); p.group.add(line);
+      }});
+    }},
+    animFn:function(p,t){{
+      // Right arm points / gestures
+      p.armR.rotation.z = -0.5 + Math.sin(t*1.5)*0.35;
+      p.armR.rotation.x = -0.3 + Math.sin(t*1.5)*0.2;
+      p.armL.rotation.z = 0.2+Math.sin(t*0.7)*0.1;
+    }}
+  }},
+  '\uD83D\uDD07': {{
+    name:'O Silenciado', bodyCol:0x9f3a1a, legsCol:0x601a0d, skinCol:0xffcc99,
+    extras:function(p){{
+      // Floating muted mic
+      var micGroup=new THREE.Group();
+      micGroup.position.set(0.5,0.4,0.3);
+      var micBody=new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.07,0.18,10),
+        new THREE.MeshPhongMaterial({{color:0xaaaaaa}}));
+      var micTop=new THREE.Mesh(new THREE.SphereGeometry(0.07,10,10),
+        new THREE.MeshPhongMaterial({{color:0xaaaaaa}}));
+      micTop.position.y=0.09; micGroup.add(micBody,micTop);
+      // Red X / slash over mic
+      var slashMat=new THREE.MeshPhongMaterial({{color:0xff2200,emissive:0xff0000,emissiveIntensity:0.8}});
+      var slash=new THREE.Mesh(new THREE.BoxGeometry(0.04,0.35,0.04),slashMat);
+      slash.rotation.z=Math.PI/4; micGroup.add(slash);
+      p.group.add(micGroup);
+      p._micGroup=micGroup;
+      // Speech bubble hint
+      var bubbleMat=new THREE.MeshPhongMaterial({{color:0xff8800,emissive:0xff6600,emissiveIntensity:0.3}});
+      var bubble=new THREE.Mesh(new THREE.SphereGeometry(0.1,10,10),bubbleMat);
+      bubble.position.set(-0.5,0.7,0.3); bubble.scale.set(1.5,0.8,0.5); p.group.add(bubble);
+    }},
+    animFn:function(p,t){{
+      // Both arms gesturing "I'm talking!"
+      p.armR.rotation.z = -0.4 + Math.sin(t*2.2)*0.5;
+      p.armL.rotation.z = 0.4 + Math.sin(t*2.2+1)*0.4;
+      p.armR.rotation.x = Math.sin(t*2.2)*0.2;
+      // Mic floats
+      if(p._micGroup) p._micGroup.position.y = 0.4 + Math.sin(t*1.5)*0.1;
+      // Head "talking" nod
+      p.head.rotation.x = Math.sin(t*3)*0.1;
+    }}
+  }},
+  '\uD83D\uDCDD': {{
+    name:'O Secret\u00e1rio', bodyCol:0x0f7a6a, legsCol:0x084d42, skinCol:0xffbb88,
+    extras:function(p){{
+      // Notepad in left hand
+      var padMat=new THREE.MeshPhongMaterial({{color:0xffffff,emissive:0xaaaaff,emissiveIntensity:0.15}});
+      var pad=new THREE.Mesh(new THREE.BoxGeometry(0.22,0.3,0.03),padMat);
+      pad.position.set(0,-0.7,0.1); p.armL.add(pad);
+      // Lines on notepad
+      var lMat=new THREE.MeshPhongMaterial({{color:0x8888cc}});
+      [-0.08,-0.02,0.04,0.1].forEach(function(y){{
+        var l=new THREE.Mesh(new THREE.BoxGeometry(0.16,0.015,0.04),lMat);
+        l.position.set(0,y+(-0.7),0.12); p.armL.add(l);
+      }});
+      // Pen in right hand
+      var pen=new THREE.Mesh(new THREE.CylinderGeometry(0.015,0.015,0.3,8),
+        new THREE.MeshPhongMaterial({{color:0x1188ff}}));
+      pen.position.set(0,-0.75,0.1); pen.rotation.z=0.3; p.armR.add(pen);
+    }},
+    animFn:function(p,t){{
+      // Writing motion
+      p.armR.rotation.z = -0.15 + Math.sin(t*4)*0.25;
+      p.armR.rotation.x = 0.4 + Math.sin(t*4)*0.15;
+      // Left arm holds pad steady
+      p.armL.rotation.z = 0.3;
+      p.armL.rotation.x = 0.35;
+    }}
+  }},
+  '\uD83D\uDCF6': {{
+    name:'O T\u00e9cnico', bodyCol:0x4a4a5a, legsCol:0x2a2a3a, skinCol:0xffcc99,
+    extras:function(p){{
+      // Glasses
+      var gMat=new THREE.MeshPhongMaterial({{color:0x111111}});
+      var glassFrame=new THREE.Mesh(new THREE.TorusGeometry(0.09,0.015,8,20),gMat);
+      glassFrame.position.set(0.1,0.84,0.27); p.group.add(glassFrame);
+      var glassFrame2=new THREE.Mesh(new THREE.TorusGeometry(0.09,0.015,8,20),gMat);
+      glassFrame2.position.set(-0.1,0.84,0.27); p.group.add(glassFrame2);
+      var bridge=new THREE.Mesh(new THREE.BoxGeometry(0.04,0.015,0.015),gMat);
+      bridge.position.set(0,0.84,0.27); p.group.add(bridge);
+      // WiFi arcs above head
+      var wMat=new THREE.MeshPhongMaterial({{color:0x00aaff,emissive:0x0088ff,emissiveIntensity:0.8}});
+      [0.18,0.28,0.38].forEach(function(r,i){{
+        var arc=new THREE.Mesh(new THREE.TorusGeometry(r,0.02,8,20,Math.PI),wMat.clone());
+        arc.position.set(0,1.1+i*0.05,0); p.group.add(arc);
+        arc._idx=i;
+        if(!p._wifiArcs) p._wifiArcs=[];
+        p._wifiArcs.push(arc);
+      }});
+      // Tool/wrench prop
+      var toolMat=new THREE.MeshPhongMaterial({{color:0x888888}});
+      var tool=new THREE.Mesh(new THREE.CylinderGeometry(0.025,0.025,0.35,8),toolMat);
+      tool.position.set(0,-0.7,0); tool.rotation.z=0.3; p.armR.add(tool);
+    }},
+    animFn:function(p,t){{
+      // Jitter / glitch effect
+      var jitter = Math.random() < 0.03 ? (Math.random()-0.5)*0.15 : 0;
+      p.group.position.x = jitter;
+      // Right arm scratches head
+      p.armR.rotation.z = -1.2 + Math.sin(t*3)*0.2;
+      p.armR.rotation.x = -0.6 + Math.sin(t*3)*0.1;
+      p.armL.rotation.z = 0.1 + Math.sin(t*1.1)*0.1;
+      // WiFi arcs pulse
+      if(p._wifiArcs) p._wifiArcs.forEach(function(arc,i){{
+        arc.material.emissiveIntensity = 0.3 + Math.abs(Math.sin(t*2 - i*0.5))*1.0;
+      }});
+    }}
+  }},
+  '\uD83D\uDC54': {{
+    name:'O Executivo', bodyCol:0x1a1a2e, legsCol:0x8899aa, skinCol:0xffcc99,
+    extras:function(p){{
+      // Tie
+      var tieMat=new THREE.MeshPhongMaterial({{color:0xcc1122,emissive:0x880011,emissiveIntensity:0.3}});
+      var tie=new THREE.Mesh(new THREE.BoxGeometry(0.08,0.35,0.035),tieMat);
+      tie.position.set(0,0.18,0.16); p.group.add(tie);
+      var tieTop=new THREE.Mesh(new THREE.BoxGeometry(0.1,0.07,0.04),tieMat);
+      tieTop.position.set(0,0.38,0.16); p.group.add(tieTop);
+      // Jacket lapels
+      var lapelMat=new THREE.MeshPhongMaterial({{color:0x282838}});
+      var lapelR=new THREE.Mesh(new THREE.BoxGeometry(0.12,0.25,0.035),lapelMat);
+      lapelR.position.set(0.15,0.32,0.16); lapelR.rotation.z=-0.3; p.group.add(lapelR);
+      var lapelL=new THREE.Mesh(new THREE.BoxGeometry(0.12,0.25,0.035),lapelMat);
+      lapelL.position.set(-0.15,0.32,0.16); lapelL.rotation.z=0.3; p.group.add(lapelL);
+      // Pajama stripes on legs (colorful)
+      var stMat=new THREE.MeshPhongMaterial({{color:0xffcc00}});
+      [-0.08,0,0.08].forEach(function(y){{
+        var stripe=new THREE.Mesh(new THREE.BoxGeometry(0.42,0.04,0.2),stMat);
+        stripe.position.set(0,-0.58+y,0); p.group.add(stripe);
+      }});
+    }},
+    animFn:function(p,t){{
+      // Professional wave + tie adjustment
+      p.armR.rotation.z = -0.6 + Math.sin(t*2.0)*0.5;
+      p.armR.rotation.x = Math.sin(t*2.0)*0.1;
+      // Left arm adjusts tie occasionally
+      var tiePhase = Math.sin(t*0.5);
+      p.armL.rotation.z = 0.1 + (tiePhase > 0.7 ? 0.4 : 0.0);
+      p.armL.rotation.x = tiePhase > 0.7 ? 0.35 : 0.0;
+    }}
+  }},
+  '\uD83C\uDFE0': {{
+    name:'O Remoto', bodyCol:0x3a1a6a, legsCol:0x888888, skinCol:0xffd0a0,
+    extras:function(p){{
+      // Hoodie pocket
+      var pocketMat=new THREE.MeshPhongMaterial({{color:0x2a0a5a}});
+      var pocket=new THREE.Mesh(new THREE.BoxGeometry(0.2,0.12,0.035),pocketMat);
+      pocket.position.set(0,-0.08,0.15); p.group.add(pocket);
+      // Headphones
+      var hpMat=new THREE.MeshPhongMaterial({{color:0x222233}});
+      var hpArc=new THREE.Mesh(new THREE.TorusGeometry(0.32,0.035,8,24,Math.PI),hpMat);
+      hpArc.position.set(0,0.82,0); hpArc.rotation.x=Math.PI; p.group.add(hpArc);
+      [-0.32,0.32].forEach(function(x){{
+        var cup=new THREE.Mesh(new THREE.CylinderGeometry(0.09,0.09,0.05,12),hpMat);
+        cup.position.set(x,0.82,0); cup.rotation.z=Math.PI/2; p.group.add(cup);
+        var cushion=new THREE.Mesh(new THREE.CylinderGeometry(0.08,0.08,0.04,12),
+          new THREE.MeshPhongMaterial({{color:0x4444ff,emissive:0x2222ff,emissiveIntensity:0.3}}));
+        cushion.position.set(x+(x>0?0.04:-0.04),0.82,0); cushion.rotation.z=Math.PI/2; p.group.add(cushion);
+      }});
+      // Coffee mug in left hand
+      var mugMat=new THREE.MeshPhongMaterial({{color:0xcc4400}});
+      var mug=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.055,0.12,12),mugMat);
+      mug.position.set(0,-0.68,0.05); p.armL.add(mug);
+      var mugTop=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.06,0.01,12),
+        new THREE.MeshPhongMaterial({{color:0x331100}}));
+      mugTop.position.set(0,-0.62,0.05); p.armL.add(mugTop);
+      // Steam particles (small spheres)
+      for(var i=0;i<3;i++){{
+        var steam=new THREE.Mesh(new THREE.SphereGeometry(0.02,6,6),
+          new THREE.MeshPhongMaterial({{color:0xffffff,emissive:0xffffff,emissiveIntensity:0.5,transparent:true,opacity:0.6}}));
+        steam.position.set(i*0.03-0.03,-0.55+i*0.06,0.05); p.armL.add(steam);
+        steam._steamIdx=i;
+        if(!p._steamParts) p._steamParts=[];
+        p._steamParts.push(steam);
+      }}
+    }},
+    animFn:function(p,t){{
+      // Casual wave
+      p.armR.rotation.z = -0.5 + Math.sin(t*2.0)*0.5;
+      p.armR.rotation.x = Math.sin(t*2.0)*0.15;
+      // Left arm holds coffee steady
+      p.armL.rotation.z = 0.25;
+      p.armL.rotation.x = 0.25;
+      // Steam rises
+      if(p._steamParts) p._steamParts.forEach(function(s){{
+        s.position.y = -0.55 + s._steamIdx*0.06 + ((t*0.5+s._steamIdx*0.3) % 0.3);
+        s.material.opacity = 0.6 - ((t*0.5+s._steamIdx*0.3) % 0.3)*2;
+      }});
+    }}
+  }}
+}};
+
+// Emoji key normalization map (session_state stores these)
+var KEY_MAP = {{
+  '\uD83C\uDF99\uFE0F':'\uD83C\uDF99\uFE0F',
+  '\uD83C\uDF99':'\uD83C\uDF99\uFE0F',
+  '\u23F0':'\u23F0',
+  '\uD83D\uDCCA':'\uD83D\uDCCA',
+  '\uD83D\uDD07':'\uD83D\uDD07',
+  '\uD83D\uDCDD':'\uD83D\uDCDD',
+  '\uD83D\uDCF6':'\uD83D\uDCF6',
+  '\uD83D\uDC54':'\uD83D\uDC54',
+  '\uD83C\uDFE0':'\uD83C\uDFE0'
+}};
+AVATAR_KEY = KEY_MAP[AVATAR_KEY] || AVATAR_KEY;
+
+var config = CONFIGS[AVATAR_KEY];
+if(!config) {{
+  document.getElementById('av3d-name').textContent = 'Seleciona um avatar';
+  document.getElementById('av3d-hint').textContent = '\u2b06\ufe0f Escolhe acima';
+  // Show a simple rotating question mark placeholder
+  var qMat = new THREE.MeshPhongMaterial({{color:0x1155aa,emissive:0x0033aa,emissiveIntensity:0.5}});
+  var qMesh = new THREE.Mesh(new THREE.TorusGeometry(0.5,0.12,12,40),qMat);
+  qMesh.position.y=0; scene.add(qMesh);
+  var animate0=function(){{
+    requestAnimationFrame(animate0);
+    qMesh.rotation.y+=0.02; qMesh.rotation.x+=0.01;
+    ringMesh.material.emissiveIntensity=0.4+Math.sin(Date.now()*0.002)*0.3;
+    renderer.render(scene,camera);
+  }}; animate0(); return;
+}}
+
+document.getElementById('av3d-name').textContent = config.name;
+document.getElementById('av3d-hint').textContent = '\u2728 clica e vai jogar!';
+
+// ── Build base character ───────────────────────────────────────────────────────
+function buildCharacter(cfg){{
+  var g=new THREE.Group();
+  var skinMat=new THREE.MeshPhongMaterial({{color:cfg.skinCol,shininess:40}});
+  var bodyMat=new THREE.MeshPhongMaterial({{color:cfg.bodyCol,shininess:80}});
+  var legsMat=new THREE.MeshPhongMaterial({{color:cfg.legsCol,shininess:60}});
+  var shoesMat=new THREE.MeshPhongMaterial({{color:0x111111,shininess:120}});
+
+  // HEAD
+  var head=new THREE.Mesh(new THREE.SphereGeometry(0.28,16,16),skinMat);
+  head.position.y=0.82; g.add(head);
+
+  // Eyes (whites + pupils)
+  [-0.1,0.1].forEach(function(x){{
+    var ew=new THREE.Mesh(new THREE.SphereGeometry(0.075,10,10),
+      new THREE.MeshPhongMaterial({{color:0xffffff}}));
+    ew.position.set(x,0.84,0.23); g.add(ew);
+    var ep=new THREE.Mesh(new THREE.SphereGeometry(0.04,10,10),
+      new THREE.MeshPhongMaterial({{color:0x111111}}));
+    ep.position.set(x,0.84,0.29); g.add(ep);
+  }});
+
+  // Smile
+  var smileMat=new THREE.MeshPhongMaterial({{color:0x552200}});
+  var smile=new THREE.Mesh(new THREE.TorusGeometry(0.09,0.018,8,16,Math.PI),smileMat);
+  smile.position.set(0,0.72,0.26); smile.rotation.z=Math.PI; g.add(smile);
+
+  // NECK
+  var neck=new THREE.Mesh(new THREE.CylinderGeometry(0.1,0.12,0.14,10),skinMat);
+  neck.position.y=0.57; g.add(neck);
+
+  // BODY
+  var body=new THREE.Mesh(new THREE.BoxGeometry(0.55,0.65,0.28),bodyMat);
+  body.position.y=0.18; g.add(body);
+
+  // ARM RIGHT (wave arm) — pivot at shoulder
+  var armR=new THREE.Group(); armR.position.set(0.38,0.44,0);
+  var armRM=new THREE.Mesh(new THREE.BoxGeometry(0.14,0.52,0.14),bodyMat);
+  armRM.position.y=-0.26; armR.add(armRM);
+  var handR=new THREE.Mesh(new THREE.SphereGeometry(0.09,10,10),skinMat);
+  handR.position.y=-0.56; armR.add(handR);
+  g.add(armR);
+
+  // ARM LEFT — pivot at shoulder
+  var armL=new THREE.Group(); armL.position.set(-0.38,0.44,0);
+  var armLM=new THREE.Mesh(new THREE.BoxGeometry(0.14,0.52,0.14),bodyMat);
+  armLM.position.y=-0.26; armL.add(armLM);
+  var handL=new THREE.Mesh(new THREE.SphereGeometry(0.09,10,10),skinMat);
+  handL.position.y=-0.56; armL.add(handL);
+  g.add(armL);
+
+  // LEGS
+  var legR=new THREE.Mesh(new THREE.BoxGeometry(0.18,0.5,0.18),legsMat);
+  legR.position.set(0.14,-0.56,0); g.add(legR);
+  var legL=new THREE.Mesh(new THREE.BoxGeometry(0.18,0.5,0.18),legsMat);
+  legL.position.set(-0.14,-0.56,0); g.add(legL);
+
+  // FEET
+  var footR=new THREE.Mesh(new THREE.BoxGeometry(0.2,0.09,0.28),shoesMat);
+  footR.position.set(0.14,-0.84,0.05); g.add(footR);
+  var footL=new THREE.Mesh(new THREE.BoxGeometry(0.2,0.09,0.28),shoesMat);
+  footL.position.set(-0.14,-0.84,0.05); g.add(footL);
+
+  return {{group:g, head:head, armR:armR, armL:armL, legR:legR, legL:legL}};
+}}
+
+var parts = buildCharacter(config);
+config.extras(parts);
+scene.add(parts.group);
+
+// ── Animation loop ─────────────────────────────────────────────────────────────
+var t=0;
+function animate(){{
+  requestAnimationFrame(animate);
+  t += 0.016;
+
+  // Float
+  parts.group.position.y = Math.sin(t*1.1)*0.07;
+  // Slow Y-axis sway for 3D showcase
+  parts.group.rotation.y = Math.sin(t*0.38)*0.4;
+  // Head sway
+  parts.head.rotation.z = Math.sin(t*0.85)*0.07;
+  parts.head.rotation.y = Math.sin(t*0.6)*0.1;
+
+  // Ring glow pulse
+  ringMesh.material.emissiveIntensity = 0.5+Math.sin(t*1.8)*0.5;
+
+  // Star field slow rotation
+  stars.rotation.y += 0.001;
+
+  // Character-specific
+  config.animFn(parts, t);
+
+  renderer.render(scene, camera);
+}}
+animate();
+}})();
+</script>
+</body>
+</html>""", height=340)
 
 
 # ------------------------------
@@ -1726,7 +1939,7 @@ html, body { margin:0; padding:0; background:#02050a; overflow:hidden; }
 
     # Show avatar on countdown too
     _av = st.session_state.get('avatar', '🧑‍💻')
-    render_avatar_3d('idle', '🎯 Vai!')
+    render_avatar_mascot(_av, 'idle', '🎯 Vai!')
     st.stop()
 
 # Título principal
@@ -1748,7 +1961,7 @@ with col_reset:
 # ------------------------------
 
 if st.session_state.user_id is None:
-    remove_avatar_3d()
+    remove_avatar_mascot()
     st.markdown("""
     <div class="login-box">
         <h2 style="color:#7eb8ff; margin-bottom:20px;">👤 Identificação</h2>
@@ -1772,13 +1985,13 @@ div[data-testid="column"] button {
 """, unsafe_allow_html=True)
 
     _AVATARS = [
-        ("🧑‍💻", "Coder"),   ("🦸", "Herói"),
-        ("🧙", "Mago"),    ("🤖", "Robô"),
-        ("🦊", "Raposa"),  ("🐼", "Panda"),
-        ("🦁", "Leão"),    ("👾", "Alien"),
+        ("🎙️", "Moderador"),   ("⏰", "Pontual"),
+        ("📊", "Apresentador"), ("🔇", "Silenciado"),
+        ("📝", "Secretário"),   ("📶", "Técnico"),
+        ("👔", "Executivo"),    ("🏠", "Remoto"),
     ]
 
-    st.markdown('<p style="color:#aac8ff; text-align:center; font-size:14px; margin:14px 0 6px 0;">🎭 Escolhe o teu avatar:</p>', unsafe_allow_html=True)
+    st.markdown('<p style="color:#aac8ff; text-align:center; font-size:14px; margin:14px 0 6px 0;">🎭 Escolhe o teu avatar de reunião:</p>', unsafe_allow_html=True)
 
     _av_cols = st.columns(8)
     for _i, (_av_emoji, _av_name) in enumerate(_AVATARS):
@@ -1790,6 +2003,9 @@ div[data-testid="column"] button {
             if st.button(_av_label, key=f"av_btn_{_i}", use_container_width=True):
                 st.session_state.avatar = _av_emoji
                 st.rerun()
+
+    # 3D avatar preview — shows animated 3D character for the selected avatar
+    render_3d_avatar_preview(st.session_state.avatar or "")
 
     # JS to highlight selected avatar button with gold border
     import json as _json_av
@@ -1867,7 +2083,7 @@ inject_sound_toggle()
 # ------------------------------
 
 if st.session_state.terminou and st.session_state.get("user_id") is not None:
-    remove_avatar_3d()
+    remove_avatar_mascot()
     hist  = st.session_state.historico_quiz
     score = sum(1 for h in hist if h["dada"] == h["correta"])
     total = len(perguntas)
@@ -2240,7 +2456,7 @@ elif _pending_av is not None:
 else:
     _av_mood = 'idle';    _av_speech = ''
 
-render_avatar_3d(_av_mood, _av_speech)
+render_avatar_mascot(_avatar_emoji, _av_mood, _av_speech)
 
 # ── Streak display ────────────────────────────────────────────────────────────
 _streak = st.session_state.get('streak', 0)
