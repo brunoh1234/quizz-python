@@ -1306,7 +1306,6 @@ if st.session_state.user_id is None:
         inject_persistent_music(is_intro=not st.session_state.quiz_completed)
 
     # ── Ranking na página principal ────────────────────────────────────────
-    import time as _time_home
     resultados_atuais = carregar_resultados()
     if resultados_atuais:
         st.markdown("<br>", unsafe_allow_html=True)
@@ -1355,17 +1354,14 @@ if st.session_state.user_id is None:
 </div>
 """, unsafe_allow_html=True)
 
-        # Auto-refresh silencioso a cada 30 segundos
-        now_ts = int(_time_home.time())
-        if "home_ranking_last_refresh" not in st.session_state:
-            st.session_state.home_ranking_last_refresh = now_ts
-        elapsed = now_ts - st.session_state.home_ranking_last_refresh
-        if elapsed >= 30:
-            st.session_state.home_ranking_last_refresh = now_ts
-            st.rerun()
-        else:
-            _time_home.sleep(1)
-            st.rerun()
+        # Auto-refresh via JavaScript — sem sleep, sem double render
+        components.html("""
+<script>
+setTimeout(function() {
+    window.parent.location.reload();
+}, 30000);
+</script>
+""", height=0)
 
     st.stop()
 
