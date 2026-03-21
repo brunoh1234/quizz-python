@@ -189,6 +189,53 @@ def play_sfx(sound_type: str, key: str):
 
 
 
+def play_confetti(key: str, mode: str = "burst"):
+    """
+    Dispara confetti na página pai via iframe.
+    mode='burst'       — pequena explosão (resposta certa)
+    mode='celebration' — chuva contínua 3s (fim com boa pontuação)
+    key                — chave única para não repetir no mesmo rerun
+    """
+    import streamlit.components.v1 as _comp
+    if mode == "burst":
+        confetti_js = """
+        p.confetti({particleCount:120,spread:80,origin:{y:0.55},
+          colors:['#ffd700','#00e676','#1e90ff','#ff6b6b','#ffffff']});
+        """
+    else:  # celebration
+        confetti_js = """
+        var end=Date.now()+3200;
+        (function frame(){
+          p.confetti({particleCount:4,angle:60,spread:55,origin:{x:0},
+            colors:['#ffd700','#1e90ff','#00e676']});
+          p.confetti({particleCount:4,angle:120,spread:55,origin:{x:1},
+            colors:['#ffd700','#ff6b6b','#ffffff']});
+          if(Date.now()<end) requestAnimationFrame(frame);
+        })();
+        """
+
+    html_code = f"""<!DOCTYPE html><html><body><script>
+(function(){{
+  var p=window.parent;
+  var k='{key}';
+  if(localStorage.getItem(k))return;
+  localStorage.setItem(k,'1');
+  function fire(){{
+    try{{ {confetti_js} }}catch(e){{console.log('confetti err:',e);}}
+  }}
+  if(p.confetti){{
+    fire();
+  }}else{{
+    var s=p.document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js';
+    s.onload=fire;
+    p.document.head.appendChild(s);
+  }}
+}})();
+</script></body></html>"""
+    _comp.html(html_code, height=0)
+
+
 # ------------------------------
 # Funções de armazenamento
 # ------------------------------
@@ -1344,6 +1391,8 @@ if st.session_state.terminou:
         }
         guardar_resultados(resultados)
     st.session_state.quiz_completed = True
+    if score >= total * 0.7:
+        play_confetti(f"conf_end_{st.session_state.get('game_id','g')}", mode="celebration")
 
     # ── CSS extra para o ecrã de resultados ─────────────────────────────────
     st.markdown("""
@@ -1631,6 +1680,12 @@ div[data-testid="stButton"] > button[title="timer"] {
 _is_paused  = False  # timer nunca pausa ao selecionar resposta — só para ao confirmar
 _is_stopped = st.session_state.resposta_dada is not None  # resposta confirmada → congela timer
 _timer_html = f"""
+<style>
+@keyframes timerPulse {{
+  0%,100% {{ transform: scale(1); }}
+  50%      {{ transform: scale(1.12); }}
+}}
+</style>
 <div style="display:flex;justify-content:center;align-items:center;margin:0 0 8px 0;">
   <div id="timer-wrap" style="position:relative;width:110px;height:110px;">
     <svg width="110" height="110" viewBox="0 0 110 110">
@@ -1662,6 +1717,7 @@ _timer_html = f"""
 
   var arc  = document.getElementById("timer-arc");
   var num  = document.getElementById("timer-num");
+  var wrap = document.getElementById("timer-wrap");
   var CIRC = 2 * Math.PI * 48;
 
   // ── Paragem definitiva (resposta confirmada) ──────────────────────
@@ -1703,12 +1759,15 @@ _timer_html = f"""
     if (remaining > 20) {{
       arc.style.stroke = "#00e676";
       num.style.fill   = "#ffffff";
+      wrap.style.animation = "none";
     }} else if (remaining > 10) {{
       arc.style.stroke = "#ffd700";
       num.style.fill   = "#ffd700";
+      wrap.style.animation = "none";
     }} else {{
       arc.style.stroke = "#ff4444";
       num.style.fill   = "#ff4444";
+      wrap.style.animation = remaining > 0 ? "timerPulse 0.55s ease-in-out infinite" : "none";
     }}
 
     if (remaining <= 0 && !timerDone) {{
@@ -1974,6 +2033,8 @@ if resposta_dada is not None and resposta_dada != -1:
     _game_id = st.session_state.get("game_id", "x")
     _sfx_type = "correct" if acertou else "wrong"
     play_sfx(_sfx_type, f"sfx_{_game_id}_{idx}")
+    if acertou:
+        play_confetti(f"conf_{_game_id}_{idx}", mode="burst")
 
     # Auto-avançar após 5 segundos
     _ts_res = st.session_state.get("mostrar_resultado_ts")
