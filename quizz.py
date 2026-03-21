@@ -161,7 +161,7 @@ def play_sfx(sound_type: str, key: str):
       });"""
     elif sound_type == "wrong":
         sound_js = """
-      // Três notas descendentes suaves (Lá4 → Fá4 → Ré4) — estilo quiz clássico
+      // Três notas descendentes suaves (Lá4 → Fá4 → Ré4) - estilo quiz clássico
       [
         {freq:440, delay:0.0},
         {freq:349, delay:0.22},
@@ -217,9 +217,9 @@ def play_sfx(sound_type: str, key: str):
 def play_confetti(key: str, mode: str = "burst"):
     """
     Dispara confetti na página pai via iframe.
-    mode='burst'       — pequena explosão (resposta certa)
-    mode='celebration' — chuva contínua 3s (fim com boa pontuação)
-    key                — chave única para não repetir no mesmo rerun
+    mode='burst'       - pequena explosão (resposta certa)
+    mode='celebration' - chuva contínua 3s (fim com boa pontuação)
+    key                - chave única para não repetir no mesmo rerun
     """
     import streamlit.components.v1 as _comp
     if mode == "burst":
@@ -381,13 +381,13 @@ def render_3d_avatar_preview(avatar_key: str):
 <body>
 <canvas id="c" width="260" height="260"></canvas>
 <div id="av3d-name">Seleciona um avatar</div>
-<div id="av3d-hint">✋ acena contigo!</div>
+<div id="av3d-hint">&#x270B; acena contigo!</div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 (function(){{
 var AVATAR_KEY = {_key_js};
 
-// ── Scene ──────────────────────────────────────────────────────────────────────
+// -- Scene ----------------------------------------------------------------------
 var W=260, H=260;
 var scene = new THREE.Scene();
 scene.background = new THREE.Color(0x060e1e);
@@ -397,7 +397,7 @@ var renderer = new THREE.WebGLRenderer({{canvas:document.getElementById('c'), an
 renderer.setSize(W,H);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
 
-// ── Lights ─────────────────────────────────────────────────────────────────────
+// -- Lights ---------------------------------------------------------------------
 scene.add(new THREE.AmbientLight(0x304070, 0.9));
 var dl = new THREE.DirectionalLight(0x88aaff, 1.6);
 dl.position.set(2,3,3); scene.add(dl);
@@ -406,7 +406,7 @@ rl.position.set(-2,0,-1); scene.add(rl);
 var pl = new THREE.PointLight(0x0066ff, 0.8, 8);
 pl.position.set(0,2,2); scene.add(pl);
 
-// ── Platform ──────────────────────────────────────────────────────────────────
+// -- Platform ------------------------------------------------------------------
 var platMesh = new THREE.Mesh(
   new THREE.CylinderGeometry(0.9,0.9,0.06,48),
   new THREE.MeshPhongMaterial({{color:0x0a1a4a,emissive:0x002288,emissiveIntensity:0.4,shininess:120}})
@@ -418,7 +418,7 @@ var ringMesh = new THREE.Mesh(
 );
 ringMesh.rotation.x=Math.PI/2; ringMesh.position.y=-1.39; scene.add(ringMesh);
 
-// ── Particle stars ─────────────────────────────────────────────────────────────
+// -- Particle stars -------------------------------------------------------------
 var starGeo = new THREE.BufferGeometry();
 var starsPos = [];
 for(var i=0;i<80;i++){{
@@ -428,7 +428,7 @@ starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starsPos,3));
 var stars = new THREE.Points(starGeo, new THREE.PointsMaterial({{color:0x88aaff,size:0.04}}));
 scene.add(stars);
 
-// ── Avatar config ─────────────────────────────────────────────────────────────
+// -- Avatar config -------------------------------------------------------------
 var CONFIGS = {{
   '\uD83C\uDF99\uFE0F': {{
     name:'O Moderador', bodyCol:0x1a4a9f, legsCol:0x0d2560, skinCol:0xffcc99,
@@ -727,7 +727,7 @@ if(!config) {{
 document.getElementById('av3d-name').textContent = config.name;
 document.getElementById('av3d-hint').textContent = '\u2728 clica e vai jogar!';
 
-// ── Build base character ───────────────────────────────────────────────────────
+// -- Build base character -------------------------------------------------------
 function buildCharacter(cfg){{
   var g=new THREE.Group();
   var skinMat=new THREE.MeshPhongMaterial({{color:cfg.skinCol,shininess:40}});
@@ -762,7 +762,7 @@ function buildCharacter(cfg){{
   var body=new THREE.Mesh(new THREE.BoxGeometry(0.55,0.65,0.28),bodyMat);
   body.position.y=0.18; g.add(body);
 
-  // ARM RIGHT (wave arm) — pivot at shoulder
+  // ARM RIGHT (wave arm) - pivot at shoulder
   var armR=new THREE.Group(); armR.position.set(0.38,0.44,0);
   var armRM=new THREE.Mesh(new THREE.BoxGeometry(0.14,0.52,0.14),bodyMat);
   armRM.position.y=-0.26; armR.add(armRM);
@@ -770,7 +770,7 @@ function buildCharacter(cfg){{
   handR.position.y=-0.56; armR.add(handR);
   g.add(armR);
 
-  // ARM LEFT — pivot at shoulder
+  // ARM LEFT - pivot at shoulder
   var armL=new THREE.Group(); armL.position.set(-0.38,0.44,0);
   var armLM=new THREE.Mesh(new THREE.BoxGeometry(0.14,0.52,0.14),bodyMat);
   armLM.position.y=-0.26; armL.add(armLM);
@@ -797,7 +797,7 @@ var parts = buildCharacter(config);
 config.extras(parts);
 scene.add(parts.group);
 
-// ── Animation loop ─────────────────────────────────────────────────────────────
+// -- Animation loop -------------------------------------------------------------
 var t=0;
 function animate(){{
   requestAnimationFrame(animate);
@@ -886,13 +886,13 @@ st.set_page_config(page_title="Quem Quer Ser Produtivo?", layout="wide")
 
 
 # ------------------------------
-# CSS — DESIGN QUEM QUER SER MILIONÁRIO
+# CSS - DESIGN QUEM QUER SER MILIONÁRIO
 # ------------------------------
 
 st.markdown("""
 <style>
 
-/* ── FADE IN entre perguntas ── */
+/* -- FADE IN entre perguntas -- */
 @keyframes fadeInQuestion {
   from { opacity: 0; transform: translateY(18px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -955,7 +955,7 @@ st.markdown("""
     padding: 0 20px;
 }
 
-/* Botão de resposta — hexágono alongado */
+/* Botão de resposta - hexágono alongado */
 .answer-option {
     background: linear-gradient(135deg, #0a1a4a 0%, #001030 100%);
     border: 2px solid #1e90ff;
@@ -1208,7 +1208,7 @@ if not st.session_state.splash_shown:
     </style>
     """, unsafe_allow_html=True)
 
-    # Botão Streamlit escondido — clicado pelo JS dentro do iframe
+    # Botão Streamlit escondido - clicado pelo JS dentro do iframe
     if st.button("SPLASH_NAV", key="splash_nav"):
         st.session_state.splash_shown = True
         st.rerun()
@@ -1624,7 +1624,7 @@ function enterQuiz() {
     // --- INICIAR MUSICA (gesto direto do utilizador = autoplay permitido) ---
     if (!p._ytMusicInit) {
         p._ytMusicInit = true;
-        p._ytPhase = 1; // começa já na fase 1 (transição) — intro foi durante o splash
+        p._ytPhase = 1; // começa já na fase 1 (transição) - intro foi durante o splash
         var d = p.document.createElement('div');
         d.id = '_yt_persist';
         d.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;overflow:hidden;';
@@ -1704,7 +1704,7 @@ function enterQuiz() {
     }
 
     function showIntroVideo() {
-        // ─── VÍDEO EM ECRÃ CHEIO (sem controlos YouTube visíveis) ───
+        // --- VÍDEO EM ECRÃ CHEIO (sem controlos YouTube visíveis) ---
         // Parar a música de transição no player pai
         try { p._ytPlayer.pauseVideo(); } catch(e) {}
 
@@ -1754,7 +1754,7 @@ function enterQuiz() {
                     },
                     onStateChange: function(e) {
                         if (e.data === 0) {
-                            // Vídeo terminou — fade para preto + mensagem
+                            // Vídeo terminou - fade para preto + mensagem
                             var fd = document.getElementById('vf-fade');
                             var msg = document.getElementById('vf-msg');
                             if (fd) fd.style.opacity = '1';
@@ -1826,7 +1826,7 @@ function enterQuiz() {
 
 
 
-# ── Countdown de entrada — página exclusiva, sem título nem formulário ────────
+# -- Countdown de entrada - página exclusiva, sem título nem formulário --------
 if st.session_state.get('show_countdown'):
     # Botão oculto que o JS clica após o countdown
     if st.button("▶", key="btn_start_quiz_hidden"):
@@ -1916,7 +1916,7 @@ html, body { margin:0; padding:0; background:#02050a; overflow:hidden; }
         }, s.delay);
     });
 
-    // Após GO! — clicar o botão oculto com retry para garantir que é encontrado
+    // Após GO! - clicar o botão oculto com retry para garantir que é encontrado
     function clickHiddenBtn(attempts) {
         var btns = par.document.querySelectorAll('button');
         for (var b of btns) {
@@ -1928,7 +1928,7 @@ html, body { margin:0; padding:0; background:#02050a; overflow:hidden; }
                 return;
             }
         }
-        // Botão ainda não carregou — tentar novamente
+        // Botão ainda não carregou - tentar novamente
         if (attempts > 0) setTimeout(function(){ clickHiddenBtn(attempts-1); }, 150);
     }
 
@@ -2004,7 +2004,7 @@ div[data-testid="column"] button {
                 st.session_state.avatar = _av_emoji
                 st.rerun()
 
-    # 3D avatar preview — shows animated 3D character for the selected avatar
+    # 3D avatar preview - shows animated 3D character for the selected avatar
     render_3d_avatar_preview(st.session_state.avatar or "")
 
     # JS to highlight selected avatar button with gold border
@@ -2039,17 +2039,17 @@ div[data-testid="column"] button {
             elif not user_id.strip():
                 st.warning("Por favor insere o teu nome.")
             elif not _re.fullmatch(r"[A-Za-zÀ-ÿ\s]+", user_id.strip()):
-                st.error("❌ Nome inválido — só são aceites letras.")
+                st.error("❌ Nome inválido - só são aceites letras.")
             elif ja_jogou(user_id.strip(), resultados):
                 dados = resultados[user_id.strip()]
                 st.error("Este utilizador já jogou.")
-                st.info(f"Pontuação anterior: {dados['score']}/10 — {dados['data']} às {dados['hora']}")
+                st.info(f"Pontuação anterior: {dados['score']}/10 - {dados['data']} às {dados['hora']}")
             else:
                 st.session_state.pending_user_id = user_id.strip()
                 st.session_state.show_countdown = True
                 st.rerun()
 
-    # Música persistente — sobrevive a reruns via window.parent
+    # Música persistente - sobrevive a reruns via window.parent
     inject_persistent_music(is_intro=not st.session_state.quiz_completed)
 
     # Scroll to top após "Jogar Novamente" (sem reload de página)
@@ -2074,7 +2074,7 @@ div[data-testid="column"] button {
 if st.session_state.user_id is None:
     st.stop()
 
-# Música persistente — já inicializada no login, apenas garante continuidade
+# Música persistente - já inicializada no login, apenas garante continuidade
 inject_persistent_music(is_intro=False)
 inject_sound_toggle()
 
@@ -2100,10 +2100,10 @@ if st.session_state.terminou and st.session_state.get("user_id") is not None:
         msg = "🥈 Bom esforço! Ainda há espaço para melhorar."
         cor = "#1e90ff"
     else:
-        msg = "🥉 Continua a praticar — estás no caminho certo!"
+        msg = "🥉 Continua a praticar - estás no caminho certo!"
         cor = "#ff9800"
 
-    # ── Guardar resultado ────────────────────────────────────────────────────
+    # -- Guardar resultado ----------------------------------------------------
     resultados = carregar_resultados()
     if st.session_state.user_id not in resultados:
         resultados[st.session_state.user_id] = {
@@ -2116,7 +2116,7 @@ if st.session_state.terminou and st.session_state.get("user_id") is not None:
     if score >= total * 0.7:
         play_confetti(f"conf_end_{st.session_state.get('game_id','g')}", mode="celebration")
 
-    # ── CSS extra para o ecrã de resultados ─────────────────────────────────
+    # -- CSS extra para o ecrã de resultados ---------------------------------
     st.markdown("""
 <style>
 .stats-grid {
@@ -2163,7 +2163,7 @@ if st.session_state.terminou and st.session_state.get("user_id") is not None:
 </style>
     """, unsafe_allow_html=True)
 
-    # ── Caixa principal ──────────────────────────────────────────────────────
+    # -- Caixa principal ------------------------------------------------------
     st.markdown(f"""
 <div class="final-box">
     <h2 style="color:#ffd700; font-size:32px; text-shadow: 0 0 20px rgba(255,215,0,0.8);">
@@ -2179,7 +2179,7 @@ if st.session_state.terminou and st.session_state.get("user_id") is not None:
 </div>
     """, unsafe_allow_html=True)
 
-    # ── Stats grid ───────────────────────────────────────────────────────────
+    # -- Stats grid -----------------------------------------------------------
     acertos  = score
     erros    = sum(1 for h in hist if h["dada"] != h["correta"] and h["dada"] != -1)
     timeouts = sum(1 for h in hist if h["dada"] == -1)
@@ -2214,7 +2214,7 @@ if st.session_state.terminou and st.session_state.get("user_id") is not None:
 </div>
     """, unsafe_allow_html=True)
 
-    # ── Resumo rápido por pergunta ───────────────────────────────────────────
+    # -- Resumo rápido por pergunta -------------------------------------------
     st.markdown('<h3 style="color:#7eb8ff; text-align:center; margin:24px 0 12px; letter-spacing:2px;">📋 RESUMO</h3>', unsafe_allow_html=True)
     for i, h in enumerate(hist, 1):
         if h["dada"] == h["correta"]:
@@ -2224,7 +2224,7 @@ if st.session_state.terminou and st.session_state.get("user_id") is not None:
         else:
             icon, cor_r = "❌", "#ff4444"
         letras_rev = ["A","B","C","D"]
-        resp_str = letras_rev[h["dada"]] if h["dada"] >= 0 else "—"
+        resp_str = letras_rev[h["dada"]] if h["dada"] >= 0 else "-"
         st.markdown(f"""
 <div class="q-summary-row">
     <span style="font-size:18px;">{icon}</span>
@@ -2234,7 +2234,7 @@ if st.session_state.terminou and st.session_state.get("user_id") is not None:
 </div>
         """, unsafe_allow_html=True)
 
-    # ── Botão ver revisão detalhada ──────────────────────────────────────────
+    # -- Botão ver revisão detalhada ------------------------------------------
     st.markdown("<br>", unsafe_allow_html=True)
     col_r1, col_r2, col_r3 = st.columns([1, 2, 1])
     with col_r2:
@@ -2243,19 +2243,19 @@ if st.session_state.terminou and st.session_state.get("user_id") is not None:
             st.session_state.ver_revisao = not st.session_state.ver_revisao
             st.rerun()
 
-    # ── Revisão detalhada ────────────────────────────────────────────────────
+    # -- Revisão detalhada ----------------------------------------------------
     if st.session_state.ver_revisao:
         st.markdown('<h3 style="color:#7eb8ff; text-align:center; margin:28px 0 16px; letter-spacing:2px;">🔍 REVISÃO DETALHADA</h3>', unsafe_allow_html=True)
         letras_rev = ["A","B","C","D"]
         for i, h in enumerate(hist, 1):
             if h["dada"] == h["correta"]:
-                classe, titulo = "acertou", f"✅ Pergunta {i} — Certa!"
+                classe, titulo = "acertou", f"✅ Pergunta {i} - Certa!"
                 t_cor = "#00e676"
             elif h["dada"] == -1:
-                classe, titulo = "timeout", f"⏰ Pergunta {i} — Tempo Esgotado"
+                classe, titulo = "timeout", f"⏰ Pergunta {i} - Tempo Esgotado"
                 t_cor = "#ff9800"
             else:
-                classe, titulo = "errou", f"❌ Pergunta {i} — Errada"
+                classe, titulo = "errou", f"❌ Pergunta {i} - Errada"
                 t_cor = "#ff4444"
 
             opts_html = ""
@@ -2280,7 +2280,7 @@ if st.session_state.terminou and st.session_state.get("user_id") is not None:
 </div>
             """, unsafe_allow_html=True)
 
-    # ── Ranking dos Participantes ─────────────────────────────────────────────
+    # -- Ranking dos Participantes ---------------------------------------------
     st.markdown("<br>", unsafe_allow_html=True)
     _res_rank = carregar_resultados()
     if _res_rank:
@@ -2315,7 +2315,7 @@ if st.session_state.terminou and st.session_state.get("user_id") is not None:
   </div>
 </div>""", unsafe_allow_html=True)
 
-    # ── Desafiar Amigo ────────────────────────────────────────────────────────
+    # -- Desafiar Amigo --------------------------------------------------------
     st.markdown("<br>", unsafe_allow_html=True)
     _max_str = st.session_state.get('max_streak', 0)
     _streak_txt = f" | 🔥 Melhor série: {_max_str}" if _max_str >= 2 else ""
@@ -2376,7 +2376,7 @@ function copiarDesafio(){{
 </script>
 """, height=200)
 
-    # ── Botão jogar novamente ────────────────────────────────────────────────
+    # -- Botão jogar novamente ------------------------------------------------
     st.markdown("<br>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 1, 1])
     with col2:
@@ -2430,7 +2430,7 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# ── Avatar mascot animado ─────────────────────────────────────────────────────
+# -- Avatar mascot animado -----------------------------------------------------
 _avatar_emoji = st.session_state.get('avatar', '🧑‍💻')
 _resp_dada_av = st.session_state.resposta_dada
 _streak_av    = st.session_state.get('streak', 0)
@@ -2458,7 +2458,7 @@ else:
 
 render_avatar_mascot(_avatar_emoji, _av_mood, _av_speech)
 
-# ── Streak display ────────────────────────────────────────────────────────────
+# -- Streak display ------------------------------------------------------------
 _streak = st.session_state.get('streak', 0)
 if _streak >= 5:
     _streak_html = f'<div class="streak-badge streak-fire2">🔥🔥 Em chama! {_streak} seguidas!</div>'
@@ -2513,7 +2513,7 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# ── TIMER CIRCULAR (60 segundos) ──────────────────────────────────────────────
+# -- TIMER CIRCULAR (60 segundos) ----------------------------------------------
 # Botão oculto que o JavaScript clica quando o tempo expira
 timer_expired = st.button("⏰", key=f"timer_exp_{idx}", help="timer")
 if timer_expired:
@@ -2539,8 +2539,8 @@ div[data-testid="stButton"] > button[title="timer"] {
 </style>
 """, unsafe_allow_html=True)
 
-# Timer circular via components.html — usa localStorage para persistir entre reruns
-_is_paused  = False  # timer nunca pausa ao selecionar resposta — só para ao confirmar
+# Timer circular via components.html - usa localStorage para persistir entre reruns
+_is_paused  = False  # timer nunca pausa ao selecionar resposta - só para ao confirmar
 _is_stopped = st.session_state.resposta_dada is not None  # resposta confirmada → congela timer
 _timer_html = f"""
 <style>
@@ -2574,7 +2574,7 @@ _timer_html = f"""
 (function(){{
   var TOTAL      = 60;
   var FROZEN_KEY = "quiz_timer_frozen_{idx}";
-  // startTs vem sempre do Python (session_state) — nunca do localStorage
+  // startTs vem sempre do Python (session_state) - nunca do localStorage
   var startTs    = {_timer_start_ms};
   var IS_STOPPED = {'true' if _is_stopped else 'false'};
 
@@ -2583,7 +2583,7 @@ _timer_html = f"""
   var wrap = document.getElementById("timer-wrap");
   var CIRC = 2 * Math.PI * 48;
 
-  // ── Paragem definitiva (resposta confirmada) ──────────────────────
+  // -- Paragem definitiva (resposta confirmada) ----------------------
   if (IS_STOPPED) {{
     var frozenRaw = localStorage.getItem(FROZEN_KEY);
     var frozenRem;
@@ -2655,7 +2655,7 @@ _timer_html = f"""
 import streamlit.components.v1 as components
 components.html(_timer_html, height=130, scrolling=False)
 
-# ── TECLADO: A/B/C/D seleciona, Enter confirma ───────────────────────────────
+# -- TECLADO: A/B/C/D seleciona, Enter confirma -------------------------------
 _keyboard_html = f"""
 <script>
 (function() {{
@@ -2703,7 +2703,7 @@ _keyboard_html = f"""
 import streamlit.components.v1 as components
 components.html(_keyboard_html, height=0, scrolling=False)
 
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 
 # Caixa da pergunta
 st.markdown(f"""
@@ -2822,13 +2822,13 @@ for i, (opcao, letra) in enumerate(zip(opcoes, letras)):
                 st.session_state.pendente_resposta = i
                 st.rerun()
 
-# ── BOTÃO CONFIRMAR (direto no layout Streamlit) ──────────────────────────
+# -- BOTÃO CONFIRMAR (direto no layout Streamlit) --------------------------
 if pendente is not None and resposta_dada is None and st.session_state.get('mostrar_resultado_ts') is None:
     st.markdown("<br>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         if st.button("✅ CONFIRMAR RESPOSTA", key=f"confirmar_sim_{idx}", use_container_width=True):
-            # Guarda a resposta mas NÃO avança ainda — mostra resultado primeiro
+            # Guarda a resposta mas NÃO avança ainda - mostra resultado primeiro
             _elapsed_s = round((_time.time()*1000 - _timer_start_ms) / 1000, 1)
             st.session_state.tempos_pergunta.append(min(_elapsed_s, 60.0))
             st.session_state.historico_quiz.append({
@@ -2850,14 +2850,14 @@ if pendente is not None and resposta_dada is None and st.session_state.get('most
                 st.session_state.streak = 0
             st.rerun()
 
-# ── ESCONDER BOTÃO CONFIRMAR via CSS após responder ─────────────────────────
+# -- ESCONDER BOTÃO CONFIRMAR via CSS após responder -------------------------
 if resposta_dada is not None:
     st.markdown("""
 <style>
 /* Esconder botão Confirmar após responder */
 div[data-testid="stButton"] button[kind="secondary"],
 div[data-testid="stButton"] button {
-    /* só esconde se contiver CONFIRMAR — via JS abaixo */
+    /* só esconde se contiver CONFIRMAR - via JS abaixo */
 }
 </style>
 <script>
@@ -2877,7 +2877,7 @@ div[data-testid="stButton"] button {
 </script>
 """, unsafe_allow_html=True)
 
-# ── MOSTRAR RESULTADO após confirmar (verde/vermelho) + auto-avançar 5s ────
+# -- MOSTRAR RESULTADO após confirmar (verde/vermelho) + auto-avançar 5s ----
 if resposta_dada is not None and resposta_dada != -1:
     acertou = (resposta_dada == correta)
     if acertou:
@@ -2898,7 +2898,7 @@ if resposta_dada is not None and resposta_dada != -1:
 </div>
         """, unsafe_allow_html=True)
 
-    # ── SOM DE FEEDBACK (acerto/erro) + duck da música ────────────────────
+    # -- SOM DE FEEDBACK (acerto/erro) + duck da música --------------------
     _game_id = st.session_state.get("game_id", "x")
     _sfx_type = "correct" if acertou else "wrong"
     play_sfx(_sfx_type, f"sfx_{_game_id}_{idx}")
@@ -2928,7 +2928,7 @@ if resposta_dada is not None and resposta_dada != -1:
         _time.sleep(1)
         st.rerun()
 
-# ── TEMPO ESGOTADO ──────────────────────────────────────────────────────────
+# -- TEMPO ESGOTADO ----------------------------------------------------------
 if resposta_dada == -1:
     st.markdown(f"""
 <div style="text-align:center; color:#ff6b6b; font-size:18px; font-weight:bold;
@@ -2938,7 +2938,7 @@ if resposta_dada == -1:
     """, unsafe_allow_html=True)
 
 
-    # ── SOM DE TEMPO ESGOTADO ──────────────────────────────────────────────
+    # -- SOM DE TEMPO ESGOTADO ----------------------------------------------
     _game_id_exp = st.session_state.get("game_id", "x")
     play_sfx("timeout", f"sfx_timeout_{_game_id_exp}_{idx}")
 
