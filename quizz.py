@@ -261,102 +261,357 @@ def play_confetti(key: str, mode: str = "burst"):
     _comp.html(html_code, height=0)
 
 
-def render_avatar_mascot(avatar_emoji: str, mood: str, speech: str = ""):
-    """Injeta avatar animado fixo no canto inferior direito."""
+def render_avatar_3d(mood: str, speech: str = ""):
+    """Injeta robô 3D animado (Three.js) no canto inferior direito."""
     import json as _json
-    components.html(f"""
-<script>
+    components.html(f"""<script>
 (function() {{
-    var emoji = {_json.dumps(avatar_emoji)};
-    var mood  = {_json.dumps(mood)};
+    var mood   = {_json.dumps(mood)};
     var speech = {_json.dumps(speech)};
-    var pdoc = window.parent.document;
+    var p    = window.parent;
+    var pdoc = p.document;
 
-    if (!pdoc.getElementById('av-mascot-css')) {{
-        var s = pdoc.createElement('style');
-        s.id = 'av-mascot-css';
-        s.textContent = `
-            #av-mascot {{
-                position:fixed; bottom:24px; right:24px;
-                z-index:10000; display:flex; flex-direction:column;
-                align-items:center; pointer-events:none;
-            }}
-            .av-speech {{
-                background:rgba(10,26,74,0.95);
-                border:2px solid #1e90ff;
-                border-radius:16px 16px 0 16px;
-                padding:5px 13px; font-size:12px;
-                color:#7eb8ff; font-weight:bold;
-                margin-bottom:5px; white-space:nowrap;
-                animation:speechPop 0.3s cubic-bezier(0.175,0.885,0.32,1.275);
-                box-shadow:0 0 10px rgba(30,144,255,0.4);
-            }}
-            .av-emoji {{
-                font-size:54px; display:block;
-                line-height:1;
-                filter:drop-shadow(0 4px 8px rgba(0,0,0,0.5));
-            }}
-            @keyframes avFloat  {{ 0%,100%{{transform:translateY(0)}} 50%{{transform:translateY(-8px)}} }}
-            @keyframes avBounce {{ 0%,100%{{transform:translateY(0) scale(1)}} 30%{{transform:translateY(-20px) scale(1.2)}} 60%{{transform:translateY(-8px) scale(1.05)}} }}
-            @keyframes avShake  {{ 0%,100%{{transform:translateX(0)}} 20%{{transform:translateX(-8px) rotate(-5deg)}} 40%{{transform:translateX(8px) rotate(5deg)}} 60%{{transform:translateX(-5px) rotate(-3deg)}} 80%{{transform:translateX(5px) rotate(3deg)}} }}
-            @keyframes avSpin   {{ 0%{{transform:rotate(0) scale(1)}} 25%{{transform:rotate(-15deg) scale(1.15)}} 50%{{transform:rotate(15deg) scale(1.2)}} 75%{{transform:rotate(-10deg) scale(1.1)}} 100%{{transform:rotate(0) scale(1)}} }}
-            @keyframes avTremble{{ 0%,100%{{transform:translateX(0) rotate(0)}} 25%{{transform:translateX(-3px) rotate(-2deg)}} 75%{{transform:translateX(3px) rotate(2deg)}} }}
-            @keyframes avShock  {{ 0%{{transform:scale(1)}} 20%{{transform:scale(1.35) rotate(-5deg)}} 40%{{transform:scale(0.9) rotate(5deg)}} 60%{{transform:scale(1.15) rotate(-3deg)}} 100%{{transform:scale(1) rotate(0)}} }}
-            @keyframes speechPop{{ 0%{{transform:scale(0.5);opacity:0}} 100%{{transform:scale(1);opacity:1}} }}
-            #av-mascot.av-idle    .av-emoji {{ animation:avFloat   2s ease-in-out infinite }}
-            #av-mascot.av-happy   .av-emoji {{ animation:avBounce  0.7s cubic-bezier(0.36,0.07,0.19,0.97) 3 }}
-            #av-mascot.av-sad     .av-emoji {{ animation:avShake   0.6s ease-in-out 2 }}
-            #av-mascot.av-fire    .av-emoji {{ animation:avSpin    0.9s ease-in-out infinite }}
-            #av-mascot.av-nervous .av-emoji {{ animation:avTremble 0.18s linear infinite }}
-            #av-mascot.av-shocked .av-emoji {{ animation:avShock   0.5s ease-in-out 3 }}
-            #av-mascot.av-pending .av-emoji {{ animation:avFloat   1s ease-in-out infinite }}
-        `;
-        pdoc.head.appendChild(s);
+    // Se já inicializado, apenas atualiza o mood
+    if (typeof p._setRobotMood === 'function') {{
+        p._setRobotMood(mood, speech);
+        return;
     }}
 
-    var mascot = pdoc.getElementById('av-mascot');
-    if (!mascot) {{
-        mascot = pdoc.createElement('div');
-        mascot.id = 'av-mascot';
-        pdoc.body.appendChild(mascot);
+    // Se canvas já existe mas Three.js ainda está a carregar
+    if (pdoc.getElementById('av-robot-canvas')) {{
+        var waitId = setInterval(function() {{
+            if (typeof p._setRobotMood === 'function') {{
+                clearInterval(waitId);
+                p._setRobotMood(mood, speech);
+            }}
+        }}, 50);
+        return;
     }}
-    mascot.className = 'av-' + mood;
-    mascot.innerHTML = (speech ? '<div class="av-speech">' + speech + '</div>' : '') +
-                       '<span class="av-emoji">' + emoji + '</span>';
 
-    // JS also watches the timer arc for nervous state
-    if (mood === 'idle' || mood === 'pending') {{
-        var watchTimer = setInterval(function() {{
-            var numEl = pdoc.getElementById('timer-num');
-            if (!numEl) {{ clearInterval(watchTimer); return; }}
-            var remaining = parseInt(numEl.textContent, 10);
-            var m = pdoc.getElementById('av-mascot');
-            if (!m) {{ clearInterval(watchTimer); return; }}
-            // Only override if still idle/pending (not confirmed)
-            if (remaining <= 10 && remaining > 0 && (m.className === 'av-idle' || m.className === 'av-pending')) {{
-                m.className = 'av-nervous';
-                var sp = m.querySelector('.av-speech');
-                if (!sp) {{
-                    m.innerHTML = '<div class="av-speech">⚡ Depressa!</div>' + m.innerHTML;
+    // === PRIMEIRA INICIALIZAÇÃO ===
+
+    // Canvas 3D
+    var canvas = pdoc.createElement('canvas');
+    canvas.id = 'av-robot-canvas';
+    canvas.width  = 170;
+    canvas.height = 240;
+    canvas.style.cssText = 'position:fixed;bottom:16px;right:16px;z-index:10000;pointer-events:none;border-radius:10px;';
+    pdoc.body.appendChild(canvas);
+
+    // Speech bubble
+    var bubble = pdoc.createElement('div');
+    bubble.id = 'av-robot-bubble';
+    bubble.style.cssText =
+        'position:fixed;bottom:264px;right:12px;z-index:10001;' +
+        'background:rgba(10,26,74,0.96);border:2px solid #1e90ff;' +
+        'border-radius:14px 14px 0 14px;padding:6px 13px;' +
+        'font-size:12px;color:#7eb8ff;font-weight:bold;white-space:nowrap;' +
+        'display:none;pointer-events:none;' +
+        'box-shadow:0 0 12px rgba(30,144,255,0.5);' +
+        'font-family:Arial,sans-serif;letter-spacing:0.5px;';
+    pdoc.body.appendChild(bubble);
+
+    // Carregar Three.js (verifica se já está carregado)
+    function startBuild() {{
+        buildRobot(mood, speech);
+    }}
+
+    if (p.THREE) {{
+        startBuild();
+    }} else if (pdoc.getElementById('av-three-js')) {{
+        var chk = setInterval(function() {{
+            if (p.THREE) {{ clearInterval(chk); startBuild(); }}
+        }}, 40);
+    }} else {{
+        var tag = pdoc.createElement('script');
+        tag.id  = 'av-three-js';
+        tag.src = 'https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js';
+        tag.onload = startBuild;
+        pdoc.head.appendChild(tag);
+    }}
+
+    function buildRobot(initMood, initSpeech) {{
+        var THREE = p.THREE;
+
+        // Cena, câmara, renderer
+        var scene    = new THREE.Scene();
+        var camera   = new THREE.PerspectiveCamera(42, 170/240, 0.1, 100);
+        camera.position.set(0, 0.4, 9.2);
+        camera.lookAt(0, 0.4, 0);
+
+        var renderer = new THREE.WebGLRenderer({{ canvas: canvas, alpha: true, antialias: true }});
+        renderer.setSize(170, 240);
+        renderer.setPixelRatio(Math.min(p.devicePixelRatio || 1, 2));
+        renderer.setClearColor(0x000000, 0);
+
+        // Luzes
+        var ambLight  = new THREE.AmbientLight(0x334466, 1.0);
+        scene.add(ambLight);
+        var keyLight  = new THREE.PointLight(0x1e90ff, 2.2, 28);
+        keyLight.position.set(4, 6, 7);
+        scene.add(keyLight);
+        var fillLight = new THREE.PointLight(0x4488ff, 0.8, 22);
+        fillLight.position.set(-4, 2, -2);
+        scene.add(fillLight);
+
+        // Materiais
+        var matBody    = new THREE.MeshPhongMaterial({{ color: 0x0d1f3c, shininess: 110, specular: 0x2255aa }});
+        var matAccent  = new THREE.MeshPhongMaterial({{ color: 0x1a3a7a, shininess: 130, specular: 0x3366cc }});
+        var matEye     = new THREE.MeshBasicMaterial({{ color: 0x00aaff }});
+        var matEyeGlow = new THREE.MeshBasicMaterial({{ color: 0x00aaff, transparent: true, opacity: 0.25 }});
+        var matAntenna = new THREE.MeshBasicMaterial({{ color: 0x00aaff, transparent: true, opacity: 1.0 }});
+        var matScreen  = new THREE.MeshBasicMaterial({{ color: 0x1e90ff, transparent: true, opacity: 0.55 }});
+        var matMouth   = new THREE.MeshBasicMaterial({{ color: 0x1e90ff, transparent: true, opacity: 0.72 }});
+
+        // Grupo principal
+        var rg = new THREE.Group();
+        scene.add(rg);
+
+        // Pernas
+        var legGeo = new THREE.BoxGeometry(0.55, 1.3, 0.5);
+        var legL = new THREE.Mesh(legGeo, matBody); legL.position.set(-0.42, -2.05, 0); rg.add(legL);
+        var legR = new THREE.Mesh(legGeo, matBody); legR.position.set( 0.42, -2.05, 0); rg.add(legR);
+
+        // Pés
+        var footGeo = new THREE.BoxGeometry(0.7, 0.28, 0.72);
+        var footL = new THREE.Mesh(footGeo, matAccent); footL.position.set(-0.42, -2.72, 0.1); rg.add(footL);
+        var footR = new THREE.Mesh(footGeo, matAccent); footR.position.set( 0.42, -2.72, 0.1); rg.add(footR);
+
+        // Corpo
+        var bodyMesh = new THREE.Mesh(new THREE.BoxGeometry(2.0, 1.9, 0.9), matBody);
+        bodyMesh.position.set(0, -0.55, 0); rg.add(bodyMesh);
+
+        // Ecrã do peito
+        var screenMesh = new THREE.Mesh(new THREE.PlaneGeometry(1.15, 0.75), matScreen);
+        screenMesh.position.set(0, -0.45, 0.46); rg.add(screenMesh);
+
+        // Ombros
+        var sGeo = new THREE.BoxGeometry(0.38, 0.32, 1.0);
+        rg.add(Object.assign(new THREE.Mesh(sGeo, matAccent), {{ position: new THREE.Vector3(-1.18, 0.42, 0) }}));
+        rg.add(Object.assign(new THREE.Mesh(sGeo, matAccent), {{ position: new THREE.Vector3( 1.18, 0.42, 0) }}));
+
+        // Braços (grupos para rodar)
+        var armGeo = new THREE.BoxGeometry(0.44, 1.5, 0.44);
+        var agL = new THREE.Group(); agL.position.set(-1.24, 0.1, 0); rg.add(agL);
+        agL.add(Object.assign(new THREE.Mesh(armGeo, matBody), {{ position: new THREE.Vector3(0,-0.75,0) }}));
+        var agR = new THREE.Group(); agR.position.set( 1.24, 0.1, 0); rg.add(agR);
+        agR.add(Object.assign(new THREE.Mesh(armGeo, matBody), {{ position: new THREE.Vector3(0,-0.75,0) }}));
+        agL.rotation.z =  0.15;
+        agR.rotation.z = -0.15;
+
+        // Pescoço
+        var neck = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.3, 0.38, 8), matAccent);
+        neck.position.set(0, 0.5, 0); rg.add(neck);
+
+        // Grupo da cabeça
+        var hg = new THREE.Group(); hg.position.set(0, 1.22, 0); rg.add(hg);
+
+        // Cabeça
+        hg.add(new THREE.Mesh(new THREE.BoxGeometry(1.82, 1.7, 1.1), matBody));
+
+        // Topo da cabeça (accent)
+        var headTop = new THREE.Mesh(new THREE.BoxGeometry(1.82, 0.22, 1.15), matAccent);
+        headTop.position.set(0, 0.86, 0); hg.add(headTop);
+
+        // Olhos
+        var eyeGeo = new THREE.BoxGeometry(0.44, 0.28, 0.05);
+        var eyeL = new THREE.Mesh(eyeGeo, matEye); eyeL.position.set(-0.44, 0.15, 0.575); hg.add(eyeL);
+        var eyeR = new THREE.Mesh(eyeGeo, matEye); eyeR.position.set( 0.44, 0.15, 0.575); hg.add(eyeR);
+
+        // Brilho dos olhos
+        var egGeo = new THREE.BoxGeometry(0.58, 0.40, 0.04);
+        var egL = new THREE.Mesh(egGeo, matEyeGlow); egL.position.set(-0.44, 0.15, 0.568); hg.add(egL);
+        var egR = new THREE.Mesh(egGeo, matEyeGlow); egR.position.set( 0.44, 0.15, 0.568); hg.add(egR);
+
+        // Boca (LED strip)
+        var mouthMesh = new THREE.Mesh(new THREE.BoxGeometry(0.82, 0.13, 0.05), matMouth);
+        mouthMesh.position.set(0, -0.26, 0.575); hg.add(mouthMesh);
+
+        // Antena (poste)
+        var pole = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.065, 0.82, 6), matAccent);
+        pole.position.set(0, 1.26, 0); hg.add(pole);
+
+        // Ponta da antena
+        var antTip = new THREE.Mesh(new THREE.SphereGeometry(0.15, 10, 10), matAntenna);
+        antTip.position.set(0, 1.73, 0); hg.add(antTip);
+
+        // === Mapa de cores dos olhos por mood ===
+        var eyeColorMap = {{
+            idle:    0x00aaff,
+            happy:   0x00ff88,
+            sad:     0xff2244,
+            fire:    0xff6600,
+            nervous: 0xffee00,
+            shocked: 0xffffff,
+            pending: 0xffcc00
+        }};
+
+        var curMood    = 'idle';
+        var curSpeech  = '';
+
+        p._setRobotMood = function(m, s) {{
+            curMood   = m || 'idle';
+            curSpeech = s || '';
+            var col = eyeColorMap[curMood] || 0x00aaff;
+            matEye.color.setHex(col);
+            matEyeGlow.color.setHex(col);
+            matAntenna.color.setHex(col);
+            // Boca
+            if (curMood === 'happy') {{
+                mouthMesh.scale.x = 1.3;
+                matMouth.color.setHex(0x00ff88);
+            }} else if (curMood === 'sad') {{
+                mouthMesh.scale.x = 0.7;
+                matMouth.color.setHex(0xff2244);
+            }} else {{
+                mouthMesh.scale.x = 1.0;
+                matMouth.color.setHex(0x1e90ff);
+            }}
+            // Speech bubble
+            var bbl = pdoc.getElementById('av-robot-bubble');
+            if (bbl) {{
+                if (curSpeech) {{
+                    bbl.textContent = curSpeech;
+                    bbl.style.display = 'block';
                 }} else {{
-                    sp.textContent = '⚡ Depressa!';
+                    bbl.style.display = 'none';
                 }}
-            }} else if (remaining > 10 && (m.className === 'av-nervous')) {{
-                m.className = 'av-' + mood;
             }}
-        }}, 500);
+        }};
+
+        p._setRobotMood(initMood, initSpeech);
+
+        // === LOOP DE ANIMAÇÃO ===
+        function animate() {{
+            p._robotRafId = p.requestAnimationFrame(animate);
+            var t = p.performance.now() / 1000;
+
+            // Reset base
+            rg.rotation.set(0, 0, 0);
+            rg.position.set(0, 0, 0);
+            rg.scale.set(1, 1, 1);
+            hg.rotation.set(0, 0, 0);
+            agL.rotation.set(0, 0,  0.15);
+            agR.rotation.set(0, 0, -0.15);
+            keyLight.color.setHex(0x1e90ff);
+            matScreen.color.setHex(0x1e90ff);
+            matScreen.opacity = 0.55;
+            matEyeGlow.opacity = 0.25;
+
+            // Timer watch automático
+            var timerEl = pdoc.getElementById('timer-num');
+            if (timerEl) {{
+                var rem = parseInt(timerEl.textContent, 10);
+                if (!isNaN(rem) && rem <= 10 && rem > 0 &&
+                    (curMood === 'idle' || curMood === 'pending')) {{
+                    p._setRobotMood('nervous', '⚡ Depressa!');
+                }} else if (!isNaN(rem) && rem > 10 && curMood === 'nervous') {{
+                    p._setRobotMood('idle', '');
+                }}
+            }}
+
+            // ── IDLE ──────────────────────────────────────────────────────────
+            if (curMood === 'idle') {{
+                rg.position.y = Math.sin(t * 1.6) * 0.13;
+                rg.rotation.y = Math.sin(t * 0.65) * 0.09;
+                hg.rotation.z = Math.sin(t * 0.85) * 0.045;
+                matEyeGlow.opacity = 0.12 + Math.abs(Math.sin(t * 2.2)) * 0.18;
+                matAntenna.opacity = 0.55 + Math.abs(Math.sin(t * 3.5)) * 0.45;
+
+            // ── HAPPY ─────────────────────────────────────────────────────────
+            }} else if (curMood === 'happy') {{
+                var b = Math.abs(Math.sin(t * 5.5));
+                rg.position.y = b * 0.55;
+                agL.rotation.z =  0.15 - b * 1.4;
+                agR.rotation.z = -0.15 + b * 1.4;
+                rg.rotation.z  = Math.sin(t * 5)   * 0.08;
+                hg.rotation.z  = Math.sin(t * 6)   * 0.10;
+                matEye.color.setHex(Math.floor(t * 4) % 2 === 0 ? 0x00ff88 : 0xffffff);
+                matAntenna.color.setHex(0x00ff88);
+                matEyeGlow.opacity = 0.25 + b * 0.45;
+                matScreen.color.setHex(Math.floor(t * 3.5) % 2 === 0 ? 0x00ff88 : 0x1e90ff);
+                matScreen.opacity = 0.75;
+
+            // ── SAD ───────────────────────────────────────────────────────────
+            }} else if (curMood === 'sad') {{
+                hg.rotation.x = 0.28 + Math.sin(t * 1.2) * 0.04;
+                agL.rotation.set(0.28, 0,  0.38);
+                agR.rotation.set(0.28, 0, -0.38);
+                rg.position.y = -0.12;
+                matEyeGlow.opacity = 0.1;
+                matScreen.color.setHex(0xff1111);
+                matScreen.opacity = 0.28;
+
+            // ── FIRE ──────────────────────────────────────────────────────────
+            }} else if (curMood === 'fire') {{
+                rg.rotation.y = t * 4.2;
+                agL.rotation.z =  0.15 - Math.abs(Math.sin(t * 7))   * 1.6;
+                agR.rotation.z = -0.15 + Math.abs(Math.sin(t * 7.3)) * 1.6;
+                rg.position.y = Math.abs(Math.sin(t * 4.5)) * 0.28;
+                matEye.color.setHex(Math.floor(t * 8) % 2 === 0 ? 0xff6600 : 0xffaa00);
+                matAntenna.color.setHex(0xff4400);
+                matEyeGlow.color.setHex(0xff6600);
+                matEyeGlow.opacity = 0.5;
+                matScreen.color.setHex(0xff5500);
+                matScreen.opacity = 0.85;
+                keyLight.color.setHex(0xff4400);
+
+            // ── NERVOUS ───────────────────────────────────────────────────────
+            }} else if (curMood === 'nervous') {{
+                rg.position.set(
+                    (Math.random() - 0.5) * 0.10,
+                    (Math.random() - 0.5) * 0.08,
+                    0
+                );
+                rg.rotation.z = (Math.random() - 0.5) * 0.08;
+                hg.rotation.z = Math.sin(t * 18) * 0.10;
+                agL.rotation.z =  0.15 + Math.sin(t * 14)     * 0.18;
+                agR.rotation.z = -0.15 + Math.sin(t * 14 + 1) * 0.18;
+                matEye.color.setHex(Math.floor(t * 14) % 2 === 0 ? 0xffee00 : 0xffaa00);
+                matAntenna.color.setHex(0xffee00);
+                matEyeGlow.color.setHex(0xffee00);
+                matEyeGlow.opacity = 0.35 + Math.abs(Math.sin(t * 18)) * 0.38;
+                matScreen.color.setHex(0xffcc00);
+                matScreen.opacity = 0.55;
+
+            // ── SHOCKED ───────────────────────────────────────────────────────
+            }} else if (curMood === 'shocked') {{
+                var sh = 1 + Math.sin(t * 9) * 0.14;
+                rg.scale.set(sh, sh, sh);
+                hg.rotation.z = Math.sin(t * 11) * 0.22;
+                agL.rotation.z = -0.7 + Math.sin(t * 9) * 0.28;
+                agR.rotation.z =  0.7 + Math.sin(t * 9) * 0.28;
+                matEyeGlow.opacity = 0.6;
+                matScreen.color.setHex(0xffffff);
+                matScreen.opacity = 0.85;
+
+            // ── PENDING ───────────────────────────────────────────────────────
+            }} else if (curMood === 'pending') {{
+                hg.rotation.z = Math.sin(t * 1.4) * 0.13;
+                rg.position.y = Math.sin(t * 1.9) * 0.09;
+                matEyeGlow.color.setHex(0xffcc00);
+                matEyeGlow.opacity = 0.20 + Math.abs(Math.sin(t * 3.2)) * 0.22;
+            }}
+
+            renderer.render(scene, camera);
+        }}
+
+        animate();
     }}
 }})();
-</script>
-""", height=0)
+</script>""", height=0)
 
 
-def remove_avatar_mascot():
-    """Remove o avatar mascote da página (para usar fora do quiz)."""
+def remove_avatar_3d():
+    """Remove o robô 3D e cancela o animation loop."""
     components.html("""<script>
 (function(){
-    var m = window.parent.document.getElementById('av-mascot');
-    if (m) m.remove();
+    var p    = window.parent;
+    var pdoc = p.document;
+    if (p._robotRafId) { p.cancelAnimationFrame(p._robotRafId); p._robotRafId = null; }
+    p._setRobotMood = null;
+    var c = pdoc.getElementById('av-robot-canvas'); if (c) c.remove();
+    var b = pdoc.getElementById('av-robot-bubble'); if (b) b.remove();
 })();
 </script>""", height=0)
 
@@ -1471,7 +1726,7 @@ html, body { margin:0; padding:0; background:#02050a; overflow:hidden; }
 
     # Show avatar on countdown too
     _av = st.session_state.get('avatar', '🧑‍💻')
-    render_avatar_mascot(_av, 'idle', '🎯 Vai!')
+    render_avatar_3d('idle', '🎯 Vai!')
     st.stop()
 
 # Título principal
@@ -1493,7 +1748,7 @@ with col_reset:
 # ------------------------------
 
 if st.session_state.user_id is None:
-    remove_avatar_mascot()
+    remove_avatar_3d()
     st.markdown("""
     <div class="login-box">
         <h2 style="color:#7eb8ff; margin-bottom:20px;">👤 Identificação</h2>
@@ -1612,7 +1867,7 @@ inject_sound_toggle()
 # ------------------------------
 
 if st.session_state.terminou and st.session_state.get("user_id") is not None:
-    remove_avatar_mascot()
+    remove_avatar_3d()
     hist  = st.session_state.historico_quiz
     score = sum(1 for h in hist if h["dada"] == h["correta"])
     total = len(perguntas)
@@ -1985,7 +2240,7 @@ elif _pending_av is not None:
 else:
     _av_mood = 'idle';    _av_speech = ''
 
-render_avatar_mascot(_avatar_emoji, _av_mood, _av_speech)
+render_avatar_3d(_av_mood, _av_speech)
 
 # ── Streak display ────────────────────────────────────────────────────────────
 _streak = st.session_state.get('streak', 0)
