@@ -1309,63 +1309,52 @@ if st.session_state.user_id is None:
     resultados_atuais = carregar_resultados()
     if resultados_atuais:
         st.markdown("<br>", unsafe_allow_html=True)
-        st.markdown("""
-<div style="display:flex; justify-content:center; width:100%;">
-<div style="
-    background: linear-gradient(135deg, #0d1f4a 0%, #050e2a 100%);
-    border: 1px solid #1e3a7a;
-    border-radius: 16px;
-    padding: 24px;
-    width: 100%;
-    max-width: 700px;
-">
-    <h3 style="color:#ffd700; text-align:center; margin-bottom:18px; font-size:20px;">
-        🏆 Ranking dos Participantes
-    </h3>
-""", unsafe_allow_html=True)
 
-        # Ordenar por score descendente
+        # Construir HTML completo de uma vez
         ranking = sorted(resultados_atuais.items(), key=lambda x: x[1]['score'], reverse=True)
+        rows_html = ""
         for pos, (nome, dados) in enumerate(ranking, start=1):
             score_val = dados['score']
             total_q = 10
             pct = round((score_val / total_q) * 100)
             if pos == 1:
-                medal = "🥇"
-                cor_pos = "#ffd700"
+                medal = "🥇"; cor_pos = "#ffd700"
             elif pos == 2:
-                medal = "🥈"
-                cor_pos = "#c0c0c0"
+                medal = "🥈"; cor_pos = "#c0c0c0"
             elif pos == 3:
-                medal = "🥉"
-                cor_pos = "#cd7f32"
+                medal = "🥉"; cor_pos = "#cd7f32"
             else:
-                medal = f"#{pos}"
-                cor_pos = "#7eb8ff"
-
+                medal = f"#{pos}"; cor_pos = "#7eb8ff"
             if pct >= 70:
                 cor_score = "#00e676"
             elif pct >= 50:
                 cor_score = "#1e90ff"
             else:
                 cor_score = "#ff9800"
-
-            st.markdown(f"""
-<div style="
-    display:flex; align-items:center; justify-content:space-between;
-    padding: 10px 16px; margin: 6px 0;
+            rows_html += f"""
+<div style="display:flex; align-items:center; justify-content:space-between;
+    padding: 8px 14px; margin: 5px 0;
     background: rgba(255,255,255,0.04);
-    border-radius: 10px;
-    border: 1px solid rgba(30,58,122,0.5);
-">
-    <span style="color:{cor_pos}; font-weight:bold; font-size:18px; min-width:40px;">{medal}</span>
-    <span style="color:#e0eaff; font-size:16px; flex:1; margin-left:12px;">{nome}</span>
-    <span style="color:{cor_score}; font-weight:bold; font-size:18px;">{score_val}/{total_q}</span>
-    <span style="color:#5a7ab0; font-size:13px; margin-left:16px;">{dados['data']} {dados['hora']}</span>
+    border-radius: 10px; border: 1px solid rgba(30,58,122,0.5);">
+  <span style="color:{cor_pos}; font-weight:bold; font-size:16px; min-width:36px;">{medal}</span>
+  <span style="color:#e0eaff; font-size:15px; flex:1; margin-left:10px;">{nome}</span>
+  <span style="color:{cor_score}; font-weight:bold; font-size:16px;">{score_val}/{total_q}</span>
+  <span style="color:#5a7ab0; font-size:12px; margin-left:14px;">{dados['data']} {dados['hora']}</span>
+</div>"""
+
+        st.markdown(f"""
+<div style="display:flex; justify-content:center; width:100%;">
+  <div style="
+      background: linear-gradient(135deg, #0d1f4a 0%, #050e2a 100%);
+      border: 1px solid #1e3a7a; border-radius: 16px;
+      padding: 20px 24px; width: 100%; max-width: 560px;">
+    <h3 style="color:#ffd700; text-align:center; margin:0 0 14px 0; font-size:18px;">
+        🏆 Ranking dos Participantes
+    </h3>
+    {rows_html}
+  </div>
 </div>
 """, unsafe_allow_html=True)
-
-        st.markdown("</div></div>", unsafe_allow_html=True)
 
         # Auto-refresh a cada 30 segundos
         import time as _time_home
