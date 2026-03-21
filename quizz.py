@@ -1259,12 +1259,7 @@ function enterQuiz() {
 # ── Countdown de entrada — página exclusiva, sem título nem formulário ────────
 if st.session_state.get('show_countdown'):
     # Botão oculto que o JS clica após o countdown
-    st.markdown("""
-<style>
-div[data-testid="stButton"] button[title="hidden_start"] { display:none!important; }
-</style>
-""", unsafe_allow_html=True)
-    if st.button("__start_quiz__", key="btn_start_quiz_hidden", help="hidden_start"):
+    if st.button("▶", key="btn_start_quiz_hidden"):
         st.session_state.user_id = st.session_state.pending_user_id
         st.session_state.show_countdown = False
         st.session_state.pending_user_id = None
@@ -1318,14 +1313,16 @@ html, body { margin:0; padding:0; background:#02050a; overflow:hidden; }
 <script>
 (function(){
     var par = window.parent;
-    // Esconder TODO o conteúdo da página pai — só este iframe fica visível
+
+    // Esconder TODO o conteúdo da página pai incluindo o botão oculto
     var hideStyle = par.document.createElement('style');
     hideStyle.id = 'cd-hide-all';
     hideStyle.textContent = [
         'header[data-testid="stHeader"] { display:none!important; }',
         '[data-testid="stDecoration"] { display:none!important; }',
-        '.main .block-container > div { visibility:hidden!important; }',
-        'iframe[title="st.components.v1.html"] { visibility:visible!important; position:fixed!important; inset:0!important; width:100vw!important; height:100vh!important; border:none!important; z-index:99999!important; }'
+        '[data-testid="stAppViewContainer"] { background:#02050a!important; }',
+        '.main .block-container { opacity:0!important; }',
+        'iframe[title="st.components.v1.html"] { opacity:1!important; position:fixed!important; inset:0!important; width:100vw!important; height:100vh!important; border:none!important; z-index:99999!important; }'
     ].join('');
     par.document.head.appendChild(hideStyle);
 
@@ -1349,17 +1346,23 @@ html, body { margin:0; padding:0; background:#02050a; overflow:hidden; }
         }, s.delay);
     });
 
-    // Após 3.8s remover CSS de ocultação e clicar no botão hidden para avançar
-    setTimeout(function(){
-        var hs = par.document.getElementById('cd-hide-all');
-        if (hs) hs.remove();
+    // Após GO! — clicar o botão oculto com retry para garantir que é encontrado
+    function clickHiddenBtn(attempts) {
         var btns = par.document.querySelectorAll('button');
-        for(var b of btns){
-            if(b.innerText && b.innerText.trim() === '__start_quiz__'){
-                b.click(); break;
+        for (var b of btns) {
+            if (b.innerText && b.innerText.trim() === '▶') {
+                // Restaurar visibilidade antes de clicar
+                var hs = par.document.getElementById('cd-hide-all');
+                if (hs) hs.remove();
+                b.click();
+                return;
             }
         }
-    }, 3800);
+        // Botão ainda não carregou — tentar novamente
+        if (attempts > 0) setTimeout(function(){ clickHiddenBtn(attempts-1); }, 150);
+    }
+
+    setTimeout(function(){ clickHiddenBtn(10); }, 3600);
 })();
 </script>
 """, height=800)
