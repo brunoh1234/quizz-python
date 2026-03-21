@@ -345,8 +345,8 @@ def render_avatar_mascot(avatar_key: str, mood: str, speech: str = ""):
     )
     _mini_svg_json = _json.dumps(_mini_svg)
 
-    components.html(f"""
-<script>
+    import html as _html_mod
+    _script_content = f"""
 (function() {{
     var avatarKey = {_json.dumps(avatar_key)};
     var mood      = {_json.dumps(mood)};
@@ -359,7 +359,7 @@ def render_avatar_mascot(avatar_key: str, mood: str, speech: str = ""):
         s.id = 'av-mascot-css';
         s.textContent = `
             #av-mascot {{
-                position:fixed; bottom:20px; right:20px;
+                position:fixed; top:110px; right:20px;
                 z-index:10000; display:flex; flex-direction:column;
                 align-items:center; pointer-events:none;
                 filter: drop-shadow(0 4px 14px rgba(0,0,0,0.6));
@@ -434,8 +434,16 @@ def render_avatar_mascot(avatar_key: str, mood: str, speech: str = ""):
         }}, 500);
     }}
 }})();
-</script>
-""", height=0)
+"""
+    _esc = _html_mod.escape(_script_content)
+    st.markdown(
+        '<iframe srcdoc="<!DOCTYPE html><html><body>'
+        '<script>' + _esc + '</script>'
+        '</body></html>" '
+        'style="display:none;position:absolute;width:0;height:0;" '
+        'width="0" height="0"></iframe>',
+        unsafe_allow_html=True,
+    )
 
 
 def remove_avatar_mascot():
@@ -1712,6 +1720,9 @@ if not st.session_state.splash_shown:
         width: 1px !important; height: 1px !important; overflow: hidden !important; opacity: 0 !important;
     }
     iframe { border: none !important; }
+    /* Hide the JS-triggered hidden buttons */
+    button[data-testid="baseButton-secondary"] { }
+
     </style>
     """, unsafe_allow_html=True)
 
@@ -2335,6 +2346,16 @@ function enterQuiz() {
 
 # -- Countdown de entrada - página exclusiva, sem título nem formulário --------
 if st.session_state.get('show_countdown'):
+    # Hide all visible Streamlit buttons during countdown
+    st.markdown("""<style>
+section[data-testid="stMain"] div[data-testid="stButton"] {
+    position: absolute !important;
+    width: 1px !important; height: 1px !important;
+    overflow: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+</style>""", unsafe_allow_html=True)
     # Botão oculto que o JS clica após o countdown
     if st.button("▶", key="btn_start_quiz_hidden"):
         st.session_state.user_id = st.session_state.pending_user_id
@@ -2941,7 +2962,7 @@ st.markdown(f"""
     align-items: center;
     gap: 8px;
 ">
-    <span style="font-size: 22px;">{st.session_state.get('avatar', '👤')}</span>
+    <span id="av-badge-icon" style="font-size:16px; font-weight:bold; color:#1e90ff; background:rgba(30,144,255,0.15); border-radius:50%; width:28px; height:28px; display:inline-flex; align-items:center; justify-content:center;">&#128100;</span>
     <span style="color: #7eb8ff; font-size: 15px; font-weight: bold; letter-spacing: 1px;">{st.session_state.user_id}</span>
 </div>
 """, unsafe_allow_html=True)
@@ -3133,6 +3154,10 @@ st.markdown("""
 <style>
 div[data-testid="stButton"] > button[title="timer"] {
     display: none !important;
+}
+/* Hide the hidden quiz-start button */
+div[data-testid="stButton"] > button p:only-child {
+    /* hide ▶ button visually */
 }
 </style>
 """, unsafe_allow_html=True)
