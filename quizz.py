@@ -1305,6 +1305,85 @@ if st.session_state.user_id is None:
         # Música persistente — sobrevive a reruns via window.parent
         inject_persistent_music(is_intro=not st.session_state.quiz_completed)
 
+    # ── Ranking na página principal ──────────────────────────────────────────
+    resultados_atuais = carregar_resultados()
+    if resultados_atuais:
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown("""
+<div style="
+    background: linear-gradient(135deg, #0d1f4a 0%, #050e2a 100%);
+    border: 1px solid #1e3a7a;
+    border-radius: 16px;
+    padding: 24px;
+    margin: 0 auto;
+    max-width: 700px;
+">
+    <h3 style="color:#ffd700; text-align:center; margin-bottom:18px; font-size:20px;">
+        🏆 Ranking dos Participantes
+    </h3>
+""", unsafe_allow_html=True)
+
+        # Ordenar por score descendente
+        ranking = sorted(resultados_atuais.items(), key=lambda x: x[1]['score'], reverse=True)
+        for pos, (nome, dados) in enumerate(ranking, start=1):
+            score_val = dados['score']
+            total_q = 10
+            pct = round((score_val / total_q) * 100)
+            if pos == 1:
+                medal = "🥇"
+                cor_pos = "#ffd700"
+            elif pos == 2:
+                medal = "🥈"
+                cor_pos = "#c0c0c0"
+            elif pos == 3:
+                medal = "🥉"
+                cor_pos = "#cd7f32"
+            else:
+                medal = f"#{pos}"
+                cor_pos = "#7eb8ff"
+
+            if pct >= 70:
+                cor_score = "#00e676"
+            elif pct >= 50:
+                cor_score = "#1e90ff"
+            else:
+                cor_score = "#ff9800"
+
+            st.markdown(f"""
+<div style="
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 10px 16px; margin: 6px 0;
+    background: rgba(255,255,255,0.04);
+    border-radius: 10px;
+    border: 1px solid rgba(30,58,122,0.5);
+">
+    <span style="color:{cor_pos}; font-weight:bold; font-size:18px; min-width:40px;">{medal}</span>
+    <span style="color:#e0eaff; font-size:16px; flex:1; margin-left:12px;">{nome}</span>
+    <span style="color:{cor_score}; font-weight:bold; font-size:18px;">{score_val}/{total_q}</span>
+    <span style="color:#5a7ab0; font-size:13px; margin-left:16px;">{dados['data']} {dados['hora']}</span>
+</div>
+""", unsafe_allow_html=True)
+
+        st.markdown("</div>", unsafe_allow_html=True)
+
+        # Auto-refresh a cada 30 segundos
+        now_ts = int(time.time())
+        if "home_ranking_last_refresh" not in st.session_state:
+            st.session_state.home_ranking_last_refresh = now_ts
+        elapsed = now_ts - st.session_state.home_ranking_last_refresh
+        remaining = max(0, 30 - elapsed)
+        if remaining == 0:
+            st.session_state.home_ranking_last_refresh = now_ts
+            st.rerun()
+        else:
+            st.markdown(
+                f"<p style='text-align:center; color:#3a5a8a; font-size:12px; margin-top:8px;'>"
+                f"🔄 Atualiza em {remaining}s</p>",
+                unsafe_allow_html=True
+            )
+            time.sleep(1)
+            st.rerun()
+
     st.stop()
 
 # Segurança: se user_id ainda for None, parar completamente
