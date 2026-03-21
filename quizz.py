@@ -1353,6 +1353,10 @@ if st.session_state.user_id is None:
 
     st.stop()
 
+# Segurança: se user_id ainda for None, parar completamente
+if st.session_state.user_id is None:
+    st.stop()
+
 # Música persistente — já inicializada no login, apenas garante continuidade
 inject_persistent_music(is_intro=False)
 inject_sound_toggle()
@@ -1603,6 +1607,9 @@ if st.session_state.terminou and st.session_state.get("user_id") is not None:
             st.session_state.historico_quiz  = []
             st.session_state.ver_revisao     = False
             st.session_state.game_id         = _uuid2.uuid4().hex[:8]
+            # Resetar o auto-refresh para evitar refresh imediato
+            if 'hist_last_refresh' in st.session_state:
+                del st.session_state['hist_last_refresh']
             st.rerun()
 
     st.stop()
