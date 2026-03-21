@@ -545,6 +545,13 @@ st.markdown("""
 # Estado inicial
 # ------------------------------
 
+# ── Detetar navegação limpa via query param ──────────────────────────────
+if st.query_params.get("action") == "reset":
+    st.query_params.clear()
+    for _k in list(st.session_state.keys()):
+        del st.session_state[_k]
+    st.rerun()
+
 if "user_id" not in st.session_state:
     st.session_state.user_id = None
 if "pergunta" not in st.session_state:
@@ -1240,32 +1247,6 @@ with col_reset:
 # ------------------------------
 
 if st.session_state.user_id is None:
-    # Forçar scroll para o topo quando vem do "Jogar Novamente"
-    if st.session_state.get('needs_scroll_top'):
-        del st.session_state['needs_scroll_top']
-        components.html("""
-        <style>body{margin:0;padding:0;background:transparent;}</style>
-        <script>
-        function doScroll() {
-            try {
-                window.parent.history.scrollRestoration = 'manual';
-                window.parent.scrollTo(0, 0);
-                window.parent.document.documentElement.scrollTop = 0;
-                window.parent.document.body.scrollTop = 0;
-                var sels = ['section.main','[data-testid="stAppViewContainer"]','.main','.block-container'];
-                sels.forEach(function(s){
-                    var el = window.parent.document.querySelector(s);
-                    if(el) el.scrollTop = 0;
-                });
-            } catch(e) {}
-        }
-        doScroll();
-        setTimeout(doScroll, 50);
-        setTimeout(doScroll, 150);
-        setTimeout(doScroll, 400);
-        setTimeout(doScroll, 800);
-        </script>
-        """, height=60)
     st.markdown("""
     <div class="login-box">
         <h2 style="color:#7eb8ff; margin-bottom:20px;">👤 Identificação</h2>
@@ -1637,7 +1618,9 @@ if st.session_state.terminou and st.session_state.get("user_id") is not None:
             if 'hist_last_refresh' in st.session_state:
                 del st.session_state['hist_last_refresh']
             # Flag para forçar scroll-to-top na home page
-            st.session_state.needs_scroll_top = True
+            # Navegar para ?action=reset — força navegação real no browser
+            # que reseta o scroll automaticamente
+            st.query_params["action"] = "reset"
             st.rerun()
 
     st.stop()
