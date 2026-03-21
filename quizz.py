@@ -1,4 +1,3 @@
-
 import streamlit as st
 import streamlit.components.v1 as components
 import json
@@ -1543,18 +1542,17 @@ if st.session_state.terminou and st.session_state.get("user_id") is not None:
     st.markdown("<br>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 1, 1])
     with col2:
-        if st.button("🔄 Jogar Novamente", use_container_width=True):
-            # Navegação real do browser → limpa DOM + scroll + sessão
-            # O query param ?new_game=1 garante que o splash é saltado
-            components.html("""
-<script>
-(function(){
-    var base = window.parent.location.href.split('?')[0];
-    window.parent.location.href = base + '?new_game=1';
-})();
-</script>
-""", height=0)
-            st.stop()
+        # Botão como link HTML direto — navega sem depender de iframes/JS
+        st.markdown("""
+<div style="text-align:center; margin-top:8px;">
+  <a href="?new_game=1" target="_self"
+     style="display:inline-block; padding:12px 28px; background:#4CAF50;
+            color:white; border-radius:8px; font-size:16px; font-weight:600;
+            text-decoration:none; cursor:pointer;">
+    🔄 Jogar Novamente
+  </a>
+</div>
+""", unsafe_allow_html=True)
 
     st.stop()
 
