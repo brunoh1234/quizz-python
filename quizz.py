@@ -261,15 +261,97 @@ def play_confetti(key: str, mode: str = "burst"):
     _comp.html(html_code, height=0)
 
 
-def render_avatar_mascot(avatar_emoji: str, mood: str, speech: str = ""):
-    """Injeta avatar animado fixo no canto inferior direito."""
+def render_avatar_mascot(avatar_key: str, mood: str, speech: str = ""):
+    """Renders a mini SVG character mascot fixed in bottom-right corner."""
     import json as _json
+
+    # Mini SVG config per character: (body_color, hair_color, accessory_svg)
+    _MINI_CFG = {
+        'moderador':    ('#2a5ecf', '#2a1800',
+            '<path d="M28 22 Q50 10 72 22" stroke="#333" stroke-width="3" fill="none"/>'
+            '<rect x="21" y="19" width="9" height="12" rx="3" fill="#333"/>'
+            '<rect x="70" y="19" width="9" height="12" rx="3" fill="#333"/>'),
+        'pontual':      ('#22884a', '#5c3010',
+            '<circle cx="80" cy="16" r="11" fill="#ccaa00" opacity="0.9"/>'
+            '<circle cx="80" cy="16" r="9" fill="#ffffcc"/>'
+            '<line x1="80" y1="10" x2="80" y2="16" stroke="#333" stroke-width="1.5"/>'
+            '<line x1="80" y1="16" x2="86" y2="16" stroke="#333" stroke-width="1.5"/>'),
+        'apresentador': ('#8833cc', '#2a1800',
+            '<circle cx="18" cy="60" r="6" fill="#ff2200"/>'
+            '<circle cx="18" cy="60" r="3.5" fill="#ff6644"/>'),
+        'silenciado':   ('#cc4422', '#3a2008',
+            '<rect x="74" y="32" width="11" height="18" rx="5" fill="#888"/>'
+            '<ellipse cx="79" cy="28" rx="5" ry="5" fill="#aaa"/>'
+            '<line x1="70" y1="26" x2="90" y2="54" stroke="#ff2200" stroke-width="2.5" stroke-linecap="round"/>'),
+        'secretario':   ('#1a9a88', '#4a2808',
+            '<rect x="72" y="50" width="21" height="28" rx="2" fill="#f0f0f0"/>'
+            '<rect x="72" y="50" width="21" height="5" rx="2" fill="#ccc"/>'
+            '<line x1="75" y1="60" x2="90" y2="60" stroke="#aaa" stroke-width="1.5"/>'
+            '<line x1="75" y1="65" x2="90" y2="65" stroke="#aaa" stroke-width="1.5"/>'
+            '<line x1="75" y1="70" x2="90" y2="70" stroke="#aaa" stroke-width="1.5"/>'),
+        'tecnico':      ('#6a6a7a', '#3a2808',
+            '<text x="72" y="28" font-size="18" fill="#6af">&#x1F4F6;</text>'),
+        'executivo':    ('#1a1a2a', '#2a1800',
+            '<polygon points="50,55 46,72 50,78 54,72" fill="#cc2200"/>'
+            '<polygon points="47,55 53,55 52,63 48,63" fill="#aa1800"/>'),
+        'remoto':       ('#cc7722', '#5c3010',
+            '<polygon points="50,96 38,107 62,107" fill="#996611" opacity="0.8"/>'
+            '<rect x="42" y="107" width="16" height="8" rx="2" fill="#774400"/>'),
+    }
+
+    # Fallback config
+    _cfg = _MINI_CFG.get(avatar_key, _MINI_CFG['moderador'])
+    _body_color, _hair_color, _accessory = _cfg
+
+    # Mouth SVG per mood
+    _mouths = {
+        'idle':    '<path d="M44 38 Q50 42 56 38" stroke="#cc5533" stroke-width="1.5" fill="none" stroke-linecap="round"/>',
+        'happy':   '<path d="M43 36 Q50 44 57 36" stroke="#cc5533" stroke-width="2" fill="none" stroke-linecap="round"/>',
+        'fire':    '<path d="M43 36 Q50 44 57 36" stroke="#cc5533" stroke-width="2" fill="none" stroke-linecap="round"/>',
+        'sad':     '<path d="M44 42 Q50 37 56 42" stroke="#cc5533" stroke-width="1.5" fill="none" stroke-linecap="round"/>',
+        'nervous': '<path d="M44 39 Q47 37 50 39 Q53 41 56 39" stroke="#cc5533" stroke-width="1.5" fill="none" stroke-linecap="round"/>',
+        'shocked': '<ellipse cx="50" cy="41" rx="5" ry="5" fill="#cc5533" opacity="0.6"/>',
+        'pending': '<path d="M44 39 Q50 42 56 39" stroke="#cc5533" stroke-width="1.5" fill="none" stroke-linecap="round"/>',
+    }
+    _mouth = _mouths.get(mood, _mouths['idle'])
+
+    # Build mini SVG
+    _mini_svg = (
+        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 115" width="72" height="83" class="av-svg">'
+        f'<defs>'
+        f'<linearGradient id="msk_sg" x1="0" y1="0" x2="0" y2="1">'
+        f'<stop offset="0%" stop-color="#FFCC99"/>'
+        f'<stop offset="100%" stop-color="#E8906A"/>'
+        f'</linearGradient>'
+        f'</defs>'
+        f'<rect x="28" y="55" width="44" height="42" rx="8" fill="{_body_color}"/>'
+        f'<rect x="44" y="48" width="12" height="10" rx="4" fill="url(#msk_sg)"/>'
+        f'<ellipse cx="28" cy="33" rx="5" ry="7" fill="url(#msk_sg)"/>'
+        f'<ellipse cx="72" cy="33" rx="5" ry="7" fill="url(#msk_sg)"/>'
+        f'<ellipse cx="50" cy="30" rx="22" ry="24" fill="url(#msk_sg)"/>'
+        f'<ellipse cx="50" cy="13" rx="22" ry="11" fill="{_hair_color}"/>'
+        f'<rect x="28" y="13" width="44" height="11" fill="{_hair_color}"/>'
+        f'<ellipse cx="34" cy="36" rx="7" ry="5" fill="#ff7777" opacity="0.2"/>'
+        f'<ellipse cx="66" cy="36" rx="7" ry="5" fill="#ff7777" opacity="0.2"/>'
+        f'<ellipse cx="41" cy="28" rx="5" ry="5" fill="white"/>'
+        f'<circle cx="41" cy="28" r="3" fill="#1a1a33"/>'
+        f'<circle cx="42" cy="27" r="1" fill="white"/>'
+        f'<ellipse cx="59" cy="28" rx="5" ry="5" fill="white"/>'
+        f'<circle cx="59" cy="28" r="3" fill="#1a1a33"/>'
+        f'<circle cx="60" cy="27" r="1" fill="white"/>'
+        + _mouth
+        + _accessory
+        + f'</svg>'
+    )
+    _mini_svg_json = _json.dumps(_mini_svg)
+
     components.html(f"""
 <script>
 (function() {{
-    var emoji = {_json.dumps(avatar_emoji)};
-    var mood  = {_json.dumps(mood)};
-    var speech = {_json.dumps(speech)};
+    var avatarKey = {_json.dumps(avatar_key)};
+    var mood      = {_json.dumps(mood)};
+    var speech    = {_json.dumps(speech)};
+    var miniSvg   = {_mini_svg_json};
     var pdoc = window.parent.document;
 
     if (!pdoc.getElementById('av-mascot-css')) {{
@@ -277,39 +359,35 @@ def render_avatar_mascot(avatar_emoji: str, mood: str, speech: str = ""):
         s.id = 'av-mascot-css';
         s.textContent = `
             #av-mascot {{
-                position:fixed; bottom:24px; right:24px;
+                position:fixed; bottom:20px; right:20px;
                 z-index:10000; display:flex; flex-direction:column;
                 align-items:center; pointer-events:none;
+                filter: drop-shadow(0 4px 14px rgba(0,0,0,0.6));
             }}
             .av-speech {{
                 background:rgba(10,26,74,0.95);
                 border:2px solid #1e90ff;
-                border-radius:16px 16px 0 16px;
-                padding:5px 13px; font-size:12px;
+                border-radius:14px 14px 0 14px;
+                padding:4px 12px; font-size:11px;
                 color:#7eb8ff; font-weight:bold;
-                margin-bottom:5px; white-space:nowrap;
+                margin-bottom:4px; white-space:nowrap;
                 animation:speechPop 0.3s cubic-bezier(0.175,0.885,0.32,1.275);
                 box-shadow:0 0 10px rgba(30,144,255,0.4);
             }}
-            .av-emoji {{
-                font-size:54px; display:block;
-                line-height:1;
-                filter:drop-shadow(0 4px 8px rgba(0,0,0,0.5));
-            }}
-            @keyframes avFloat  {{ 0%,100%{{transform:translateY(0)}} 50%{{transform:translateY(-8px)}} }}
-            @keyframes avBounce {{ 0%,100%{{transform:translateY(0) scale(1)}} 30%{{transform:translateY(-20px) scale(1.2)}} 60%{{transform:translateY(-8px) scale(1.05)}} }}
-            @keyframes avShake  {{ 0%,100%{{transform:translateX(0)}} 20%{{transform:translateX(-8px) rotate(-5deg)}} 40%{{transform:translateX(8px) rotate(5deg)}} 60%{{transform:translateX(-5px) rotate(-3deg)}} 80%{{transform:translateX(5px) rotate(3deg)}} }}
-            @keyframes avSpin   {{ 0%{{transform:rotate(0) scale(1)}} 25%{{transform:rotate(-15deg) scale(1.15)}} 50%{{transform:rotate(15deg) scale(1.2)}} 75%{{transform:rotate(-10deg) scale(1.1)}} 100%{{transform:rotate(0) scale(1)}} }}
-            @keyframes avTremble{{ 0%,100%{{transform:translateX(0) rotate(0)}} 25%{{transform:translateX(-3px) rotate(-2deg)}} 75%{{transform:translateX(3px) rotate(2deg)}} }}
-            @keyframes avShock  {{ 0%{{transform:scale(1)}} 20%{{transform:scale(1.35) rotate(-5deg)}} 40%{{transform:scale(0.9) rotate(5deg)}} 60%{{transform:scale(1.15) rotate(-3deg)}} 100%{{transform:scale(1) rotate(0)}} }}
-            @keyframes speechPop{{ 0%{{transform:scale(0.5);opacity:0}} 100%{{transform:scale(1);opacity:1}} }}
-            #av-mascot.av-idle    .av-emoji {{ animation:avFloat   2s ease-in-out infinite }}
-            #av-mascot.av-happy   .av-emoji {{ animation:avBounce  0.7s cubic-bezier(0.36,0.07,0.19,0.97) 3 }}
-            #av-mascot.av-sad     .av-emoji {{ animation:avShake   0.6s ease-in-out 2 }}
-            #av-mascot.av-fire    .av-emoji {{ animation:avSpin    0.9s ease-in-out infinite }}
-            #av-mascot.av-nervous .av-emoji {{ animation:avTremble 0.18s linear infinite }}
-            #av-mascot.av-shocked .av-emoji {{ animation:avShock   0.5s ease-in-out 3 }}
-            #av-mascot.av-pending .av-emoji {{ animation:avFloat   1s ease-in-out infinite }}
+            @keyframes avFloat   {{ 0%,100%{{transform:translateY(0)}} 50%{{transform:translateY(-8px)}} }}
+            @keyframes avBounce  {{ 0%,100%{{transform:translateY(0) scale(1)}} 30%{{transform:translateY(-20px) scale(1.15)}} 60%{{transform:translateY(-8px) scale(1.05)}} }}
+            @keyframes avShake   {{ 0%,100%{{transform:translateX(0)}} 20%{{transform:translateX(-8px) rotate(-5deg)}} 40%{{transform:translateX(8px) rotate(5deg)}} 60%{{transform:translateX(-5px) rotate(-3deg)}} 80%{{transform:translateX(5px) rotate(3deg)}} }}
+            @keyframes avSpin    {{ 0%{{transform:rotate(0) scale(1)}} 25%{{transform:rotate(-15deg) scale(1.15)}} 50%{{transform:rotate(15deg) scale(1.2)}} 75%{{transform:rotate(-10deg) scale(1.1)}} 100%{{transform:rotate(0) scale(1)}} }}
+            @keyframes avTremble {{ 0%,100%{{transform:translateX(0) rotate(0)}} 25%{{transform:translateX(-3px) rotate(-2deg)}} 75%{{transform:translateX(3px) rotate(2deg)}} }}
+            @keyframes avShock   {{ 0%{{transform:scale(1)}} 20%{{transform:scale(1.35) rotate(-5deg)}} 40%{{transform:scale(0.9) rotate(5deg)}} 60%{{transform:scale(1.15) rotate(-3deg)}} 100%{{transform:scale(1) rotate(0)}} }}
+            @keyframes speechPop {{ 0%{{transform:scale(0.5);opacity:0}} 100%{{transform:scale(1);opacity:1}} }}
+            #av-mascot.av-idle    .av-svg {{ animation:avFloat   2s ease-in-out infinite }}
+            #av-mascot.av-happy   .av-svg {{ animation:avBounce  0.7s cubic-bezier(0.36,0.07,0.19,0.97) 3 }}
+            #av-mascot.av-sad     .av-svg {{ animation:avShake   0.6s ease-in-out 2 }}
+            #av-mascot.av-fire    .av-svg {{ animation:avSpin    0.9s ease-in-out infinite }}
+            #av-mascot.av-nervous .av-svg {{ animation:avTremble 0.18s linear infinite }}
+            #av-mascot.av-shocked .av-svg {{ animation:avShock   0.5s ease-in-out 3 }}
+            #av-mascot.av-pending .av-svg {{ animation:avFloat   1s ease-in-out infinite }}
         `;
         pdoc.head.appendChild(s);
     }}
@@ -321,27 +399,36 @@ def render_avatar_mascot(avatar_emoji: str, mood: str, speech: str = ""):
         pdoc.body.appendChild(mascot);
     }}
     mascot.className = 'av-' + mood;
-    mascot.innerHTML = (speech ? '<div class="av-speech">' + speech + '</div>' : '') +
-                       '<span class="av-emoji">' + emoji + '</span>';
+    mascot.innerHTML = (speech ? '<div class="av-speech">' + speech + '</div>' : '') + miniSvg;
 
-    // JS also watches the timer arc for nervous state
+    // Watch timer for nervous override
     if (mood === 'idle' || mood === 'pending') {{
+        var nervousSpeeches = {{
+            moderador: "⚡ Ordem! Foco!",
+            pontual: "⚡ O tempo conta!",
+            apresentador: "⚡ Pointer a tremer!",
+            silenciado: "⚡ *acena os braços*",
+            secretario: "⚡ Escrever mais rápido!",
+            tecnico: "⚡ Buffer... buffer...",
+            executivo: "⚡ Board meeting!",
+            remoto: "⚡ Fundo a distrair!"
+        }};
+        var nervousMsg = nervousSpeeches[avatarKey] || "⚡ Depressa!";
         var watchTimer = setInterval(function() {{
             var numEl = pdoc.getElementById('timer-num');
             if (!numEl) {{ clearInterval(watchTimer); return; }}
             var remaining = parseInt(numEl.textContent, 10);
             var m = pdoc.getElementById('av-mascot');
             if (!m) {{ clearInterval(watchTimer); return; }}
-            // Only override if still idle/pending (not confirmed)
             if (remaining <= 10 && remaining > 0 && (m.className === 'av-idle' || m.className === 'av-pending')) {{
                 m.className = 'av-nervous';
                 var sp = m.querySelector('.av-speech');
                 if (!sp) {{
-                    m.innerHTML = '<div class="av-speech">⚡ Depressa!</div>' + m.innerHTML;
+                    m.innerHTML = '<div class="av-speech">' + nervousMsg + '</div>' + m.innerHTML;
                 }} else {{
-                    sp.textContent = '⚡ Depressa!';
+                    sp.textContent = nervousMsg;
                 }}
-            }} else if (remaining > 10 && (m.className === 'av-nervous')) {{
+            }} else if (remaining > 10 && m.className === 'av-nervous') {{
                 m.className = 'av-' + mood;
             }}
         }}, 500);
@@ -2859,33 +2946,115 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# -- Avatar mascot animado -----------------------------------------------------
-_avatar_emoji = st.session_state.get('avatar', '🧑‍💻')
-_resp_dada_av = st.session_state.resposta_dada
-_streak_av    = st.session_state.get('streak', 0)
-_pending_av   = st.session_state.pendente_resposta
+# -- Avatar mascot animado (Phase 2 - character-specific reactions) -----------
+_avatar_key_av = st.session_state.get('avatar', 'moderador') or 'moderador'
+_resp_dada_av  = st.session_state.resposta_dada
+_streak_av     = st.session_state.get('streak', 0)
+_pending_av    = st.session_state.pendente_resposta
 
 import time as _time
-_elapsed_av   = (_time.time() * 1000 - _timer_start_ms) / 1000
-_remaining_av = max(0, 60 - _elapsed_av)
+_elapsed_av    = (_time.time() * 1000 - _timer_start_ms) / 1000
+_remaining_av  = max(0, 60 - _elapsed_av)
 
+# Character-specific speech lines: {avatar_key: {mood: speech}}
+_AV_SPEECHES = {
+    'moderador': {
+        'idle':    '🎙️ Atenção a todos!',
+        'happy':   '✅ Excelente ponto!',
+        'sad':     '😬 Temos de melhorar...',
+        'fire':    '🔥 Reunião produtiva!',
+        'nervous': '⚡ Ordem! Foco!',
+        'shocked': '⏰ Agenda ultrapassada!',
+        'pending': '🤔 A palavra está dada...',
+    },
+    'pontual': {
+        'idle':    '⏰ Na hora certa!',
+        'happy':   '✅ Pontualidade premiada!',
+        'sad':     '😅 Recuperar terreno...',
+        'fire':    '🔥 Série imparável!',
+        'nervous': '⚡ O tempo conta!',
+        'shocked': '⏰ Como o tempo voa!',
+        'pending': '🤔 A cronometrar...',
+    },
+    'apresentador': {
+        'idle':    '📊 Slide seguinte!',
+        'happy':   '✅ Audiência conquistada!',
+        'sad':     '😅 Próximo slide...',
+        'fire':    '🔥 A audiência ama!',
+        'nervous': '⚡ Pointer a tremer!',
+        'shocked': '⏰ Projetor desligou!',
+        'pending': '🤔 A preparar slide...',
+    },
+    'silenciado': {
+        'idle':    '🔇 *murmura*',
+        'happy':   '✅ *(ninguém ouviu)*',
+        'sad':     '😅 *gesticula*',
+        'fire':    '🔥 *grita em mudo*',
+        'nervous': '⚡ *acena os braços*',
+        'shocked': '⏰ Ainda em mudo!?',
+        'pending': '🤔 *boca a mover*',
+    },
+    'secretario': {
+        'idle':    '📝 A tomar notas...',
+        'happy':   '✅ Registado!',
+        'sad':     '😅 Anotei o erro...',
+        'fire':    '🔥 Produtividade máx!',
+        'nervous': '⚡ Escrever mais rápido!',
+        'shocked': '⏰ Ata incompleta!',
+        'pending': '🤔 A registar...',
+    },
+    'tecnico': {
+        'idle':    '📶 Estão a ouvir-me?',
+        'happy':   '✅ Tudo a funcionar!',
+        'sad':     '😅 Falha de rede...',
+        'fire':    '🔥 WiFi a 100%!',
+        'nervous': '⚡ Buffer... buffer...',
+        'shocked': '⏰ Ecrã congelado!',
+        'pending': '🤔 Ligação instável...',
+    },
+    'executivo': {
+        'idle':    '👔 Em reunião!',
+        'happy':   '✅ Aprovado!',
+        'sad':     '😅 Re-estrategizar...',
+        'fire':    '🔥 KPIs em alta!',
+        'nervous': '⚡ Board meeting!',
+        'shocked': '⏰ Sem pijama na câmara!',
+        'pending': '🤔 A deliberar...',
+    },
+    'remoto': {
+        'idle':    '🏠 Home office!',
+        'happy':   '✅ Do sofá, campeão!',
+        'sad':     '😅 O gato saltou...',
+        'fire':    '🔥 Remoto e produtivo!',
+        'nervous': '⚡ Fundo a distrair!',
+        'shocked': '⏰ Passou a hora!',
+        'pending': '🤔 A ignorar filhos...',
+    },
+}
+
+# Determine mood
 if _resp_dada_av == -1:
-    _av_mood = 'shocked';  _av_speech = '⏰ Tempo!'
+    _av_mood = 'shocked'
 elif _resp_dada_av is not None:
-    if _resp_dada_av == correta:
-        _av_mood = 'happy';  _av_speech = '🎉 Certo!'
-    else:
-        _av_mood = 'sad';    _av_speech = '😅 Quase!'
+    _av_mood = 'happy' if _resp_dada_av == correta else 'sad'
 elif _streak_av >= 3:
-    _av_mood = 'fire';    _av_speech = f'🔥 {_streak_av} seguidas!'
+    _av_mood = 'fire'
 elif _remaining_av <= 10:
-    _av_mood = 'nervous'; _av_speech = '⚡ Depressa!'
+    _av_mood = 'nervous'
 elif _pending_av is not None:
-    _av_mood = 'pending'; _av_speech = '🤔 Confirma?'
+    _av_mood = 'pending'
 else:
-    _av_mood = 'idle';    _av_speech = ''
+    _av_mood = 'idle'
 
-render_avatar_mascot(_avatar_emoji, _av_mood, _av_speech)
+# Get character-specific speech
+_char_speeches = _AV_SPEECHES.get(_avatar_key_av, _AV_SPEECHES['moderador'])
+_av_speech = _char_speeches.get(_av_mood, '')
+
+# For fire mood, append streak count
+if _av_mood == 'fire' and _streak_av >= 3:
+    _av_speech = f'🔥 {_streak_av} seguidas!'
+
+render_avatar_mascot(_avatar_key_av, _av_mood, _av_speech)
 
 # -- Streak display ------------------------------------------------------------
 _streak = st.session_state.get('streak', 0)
