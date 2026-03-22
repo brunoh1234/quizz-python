@@ -2999,7 +2999,7 @@ if st.session_state.terminou and st.session_state.get("user_id") is not None:
     if(el) el.textContent = t;
     if(t <= 0){{
       clearInterval(iv);
-      window.parent.location.reload();
+      if(el) el.textContent = '...';
     }}
   }}, 1000);
 }})();
@@ -3075,9 +3075,9 @@ function copiarDesafio(){{
             reset_para_novo_jogo()
             st.rerun()
 
-    # Auto-refresh do ranking a cada 30 segundos (mantém sessão e música)
+    # Auto-refresh do ranking a cada 15 segundos (mantém sessão e música)
     import time as _t_res
-    _t_res.sleep(30)
+    _t_res.sleep(15)
     st.rerun()
 
 # ------------------------------
