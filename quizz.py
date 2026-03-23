@@ -1789,6 +1789,8 @@ if "max_streak" not in st.session_state:
     st.session_state.max_streak = 0
 if "show_countdown" not in st.session_state:
     st.session_state.show_countdown = False
+if "show_video" not in st.session_state:
+    st.session_state.show_video = False
 if "pending_user_id" not in st.session_state:
     st.session_state.pending_user_id = None
 if "avatar" not in st.session_state:
@@ -2333,53 +2335,54 @@ function enterQuiz() {
     }
 
     function showTransitionVideo() {
-        // --- VÍDEO LOCAL EM ECRÃ CHEIO ---
-        // Parar a música de transição
+        // Parar a musica de transicao
         try { p._ytPlayer.pauseVideo(); } catch(e) {}
 
+        // Fullscreen overlay com iframe YouTube direto
         overlay.style.background = '#000';
         overlay.style.overflow = 'hidden';
-
         overlay.innerHTML =
         '<style>' +
-        '.vt-wrap{position:fixed;inset:0;background:#000;z-index:9999;display:flex;align-items:center;justify-content:center}' +
-        '.vt-wrap video{width:100%;height:100%;object-fit:cover}' +
+        '#yt-fw{position:fixed;inset:0;background:#000;z-index:9999;}' +
+        '#yt-fw iframe{width:100%;height:100%;border:none;}' +
+        '#yt-sk{position:fixed;bottom:20px;right:20px;z-index:10000;' +
+        'background:rgba(0,0,0,0.7);color:#fff;border:2px solid rgba(255,255,255,0.4);' +
+        'padding:10px 22px;border-radius:8px;cursor:pointer;font-size:15px;font-family:sans-serif;}' +
         '</style>' +
-        '<div class="vt-wrap">' +
-        '<video id="vt-video" autoplay playsinline style="width:100%;height:100%;object-fit:cover">' +
-        '<source src="data:video/mp4;base64,__VIDEO_B64__" type="video/mp4">' +
-        '</video>' +
-        '</div>';
+        '<div id="yt-fw">' +
+        '<iframe src="https://www.youtube.com/embed/0d8EXkgwYN4?autoplay=1&controls=1&rel=0&modestbranding=1&iv_load_policy=3&enablejsapi=1&playsinline=1" ' +
+        'allow="autoplay; fullscreen; picture-in-picture; encrypted-media" allowfullscreen frameborder="0"></iframe>' +
+        '</div>' +
+        '<button id="yt-sk" onclick="window._ytSkip()">&#9654;&#9654; Saltar</button>';
 
-        var vid = document.getElementById('vt-video');
-        if (vid) {
-            vid.onended = function() {
-                // Trocar para música quiz em loop
-                try {
-                    p._ytPlayer.loadVideoById({videoId: 'ren6rd9FfV8', startSeconds: 0});
-                    p._ytPhase = 2;
-                } catch(ex) {}
-                navigateToLogin();
-            };
-            // Fallback: se o vídeo não carregar em 30s, avança na mesma
-            setTimeout(function() {
-                try {
-                    p._ytPlayer.loadVideoById({videoId: 'ren6rd9FfV8', startSeconds: 0});
-                    p._ytPhase = 2;
-                } catch(ex) {}
-                navigateToLogin();
-            }, 30000);
-        } else {
-            // Fallback imediato se vídeo não existir
+        var ytSafetyTimer = null;
+
+        function doAfterVideo() {
+            if (ytSafetyTimer) clearTimeout(ytSafetyTimer);
+            window.removeEventListener('message', ytMsgHandler);
             try {
                 p._ytPlayer.loadVideoById({videoId: 'ren6rd9FfV8', startSeconds: 0});
                 p._ytPhase = 2;
             } catch(ex) {}
             navigateToLogin();
         }
+
+        window._ytSkip = doAfterVideo;
+
+        // Safety timeout: 5 minutos
+        ytSafetyTimer = setTimeout(doAfterVideo, 300000);
+
+        // Detetar fim do video via postMessage do YouTube
+        function ytMsgHandler(evt) {
+            try {
+                var d = (typeof evt.data === 'string') ? JSON.parse(evt.data) : evt.data;
+                if (d.event === 'onStateChange' && d.info === 0) { doAfterVideo(); }
+            } catch(ex) {}
+        }
+        window.addEventListener('message', ytMsgHandler);
     }
 
-    function navigateToLogin() {
+        function navigateToLogin() {
         var btns = p.document.querySelectorAll('button');
         for (var i = 0; i < btns.length; i++) {
             if (btns[i].textContent.trim() === 'SPLASH_NAV') {
@@ -2445,9 +2448,8 @@ section[data-testid="stMain"] div[data-testid="stButton"] {
 </style>""", unsafe_allow_html=True)
     # Botão oculto que o JS clica após o countdown
     if st.button("▶", key="btn_start_quiz_hidden"):
-        st.session_state.user_id = st.session_state.pending_user_id
         st.session_state.show_countdown = False
-        st.session_state.pending_user_id = None
+        st.session_state.show_video = True
         st.rerun()
 
     inject_persistent_music(is_intro=not st.session_state.quiz_completed)
@@ -2556,6 +2558,54 @@ html, body { margin:0; padding:0; background:#02050a; overflow:hidden; }
     _av = st.session_state.get('avatar', '🧑‍💻')
     render_avatar_mascot(_av, 'idle', '🎯 Vai!')
     st.stop()
+
+# ------------------------------
+# VÍDEO DE TRANSIÇÃO (YouTube)
+# ------------------------------
+if st.session_state.get('show_video'):
+    import time as _vtime
+
+    if 'video_start_time' not in st.session_state or st.session_state.video_start_time is None:
+        st.session_state.video_start_time = _vtime.time()
+
+    # Página preta enquanto vídeo toca
+    st.markdown('<style>header[data-testid="stHeader"],footer,[data-testid="stToolbar"],[data-testid="stStatusWidget"]{display:none!important;}[data-testid="stAppViewContainer"],.main,.block-container{padding:0!important;margin:0!important;background:#000!important;max-width:100%!important;}</style>', unsafe_allow_html=True)
+
+    # Botão hidden que o JS clica para avançar
+    if st.button('VIDEO_DONE', key='btn_video_done_hidden'):
+        st.session_state.show_video = False
+        st.session_state.video_start_time = None
+        st.session_state.user_id = st.session_state.pending_user_id
+        st.session_state.pending_user_id = None
+        st.rerun()
+
+    # Esconder botão VIDEO_DONE
+    st.markdown('<style>button p{} </style>', unsafe_allow_html=True)
+
+    # Injetar JS que usa o p._ytPlayer existente
+    _yt_video_js = '(function(){var p=window.parent;var el=p.document.getElementById(&#x27;_yt_persist&#x27;);if(el){  el.style.cssText=&#x27;position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:99999;background:#000;&#x27;;}var ov=p.document.createElement(&#x27;div&#x27;);ov.id=&#x27;_yt_overlay_bg&#x27;;ov.style.cssText=&#x27;position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:99998;background:#000;&#x27;;p.document.body.appendChild(ov);var sk=p.document.createElement(&#x27;button&#x27;);sk.innerHTML=&#x27;&amp;#9197; Saltar&#x27;;sk.style.cssText=&#x27;position:fixed;bottom:24px;right:24px;z-index:100000;background:rgba(0,0,0,0.8);color:#fff;border:2px solid rgba(255,255,255,0.6);border-radius:8px;padding:10px 22px;font-size:15px;cursor:pointer;font-family:sans-serif;&#x27;;p.document.body.appendChild(sk);function done(){  if(el){el.style.cssText=&#x27;position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;&#x27;;}  var o=p.document.getElementById(&#x27;_yt_overlay_bg&#x27;);if(o)o.remove();  if(p.document.getElementById(&#x27;_sk_btn&#x27;))p.document.getElementById(&#x27;_sk_btn&#x27;).remove();  if(p._ytPlayer&amp;&amp;p._ytPlayer.loadVideoById){    p._ytPlayer.setVolume(70);    p._ytPlayer.loadVideoById({videoId:&#x27;ren6rd9FfV8&#x27;,startSeconds:0});  }  var btns=window.document.querySelectorAll(&#x27;button&#x27;);  for(var i=0;i&lt;btns.length;i++){    if(btns[i].innerText&amp;&amp;btns[i].innerText.indexOf(&#x27;VIDEO_DONE&#x27;)&gt;=0){btns[i].click();break;}  }}sk.id=&#x27;_sk_btn&#x27;;sk.onclick=done;function loadVid(){  if(p._ytPlayer&amp;&amp;p._ytPlayer.loadVideoById){    p._ytPlayer.setVolume(100);    p._ytPlayer.loadVideoById({videoId:&#x27;0d8EXkgwYN4&#x27;,startSeconds:0});    p._ytPlayer.addEventListener(&#x27;onStateChange&#x27;,function(e){      if(e.data===0){done();}    });  } else {    setTimeout(loadVid,500);  }}setTimeout(loadVid,500);})();'
+    st.markdown(
+        '<iframe srcdoc="<!DOCTYPE html><html><body><script>'
+        + _yt_video_js +
+        '</script></body></html>" style="display:none;position:absolute;width:0;height:0;" width="0" height="0"></iframe>',
+        unsafe_allow_html=True,
+    )
+
+    # Timer Python fallback (70 segundos)
+    elapsed = _vtime.time() - st.session_state.video_start_time
+    remaining = 70 - elapsed
+    if remaining > 0:
+        _vtime.sleep(min(4, remaining))
+        st.rerun()
+    else:
+        st.session_state.show_video = False
+        st.session_state.video_start_time = None
+        st.session_state.user_id = st.session_state.pending_user_id
+        st.session_state.pending_user_id = None
+        st.rerun()
+
+    st.stop()
+
 
 # Título principal
 st.markdown('<div class="main-title">🎯 QUEM QUER SER PRODUTIVO?</div>', unsafe_allow_html=True)
