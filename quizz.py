@@ -2332,9 +2332,9 @@ function enterQuiz() {
         }
     }
 
-    function showIntroVideo() {
-        // --- VÍDEO EM ECRÃ CHEIO (sem controlos YouTube visíveis) ---
-        // Parar a música de transição no player pai
+    function showTransitionVideo() {
+        // --- VÍDEO LOCAL EM ECRÃ CHEIO ---
+        // Parar a música de transição
         try { p._ytPlayer.pauseVideo(); } catch(e) {}
 
         overlay.style.background = '#000';
@@ -2342,73 +2342,40 @@ function enterQuiz() {
 
         overlay.innerHTML =
         '<style>' +
-        '.vf-wrap{position:absolute;inset:0;background:#000;overflow:hidden}' +
-        // Truque para cobrir o ecrã todo: 177.78vh = 16/9 * 100vh
-        '.vf-sizer{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);' +
-        'width:177.78vh;height:100vh;min-width:100%;min-height:56.25vw}' +
-        '@media(max-aspect-ratio:16/9){.vf-sizer{width:100vw;height:56.25vw;min-height:100vh}}' +
-        '#vf-player-el{width:100%;height:100%;pointer-events:none}' +
-        // Camada de fade para escurecer no fim
-        '#vf-fade{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none;z-index:30;transition:opacity 1.5s ease}' +
-        // Mensagem a aparecer nos 5 segundos finais
-        '#vf-msg{position:absolute;bottom:60px;left:50%;transform:translateX(-50%);' +
-        'font-size:clamp(14px,2vw,22px);color:#8ab8ff;letter-spacing:4px;font-family:Georgia,serif;' +
-        'text-transform:uppercase;opacity:0;transition:opacity 1s ease;z-index:40;text-align:center;' +
-        'text-shadow:0 0 20px #1e90ff}' +
+        '.vt-wrap{position:fixed;inset:0;background:#000;z-index:9999;display:flex;align-items:center;justify-content:center}' +
+        '.vt-wrap video{width:100%;height:100%;object-fit:cover}' +
         '</style>' +
-        '<div class="vf-wrap">' +
-        '<div class="vf-sizer"><div id="vf-player-el"></div></div>' +
-        '<div id="vf-fade"></div>' +
-        '<div id="vf-msg">✦ A PREPARAR O QUIZ ✦</div>' +
+        '<div class="vt-wrap">' +
+        '<video id="vt-video" autoplay playsinline style="width:100%;height:100%;object-fit:cover">' +
+        '<source src="data:video/mp4;base64,__VIDEO_B64__" type="video/mp4">' +
+        '</video>' +
         '</div>';
 
-        function startVidPlayer() {
-            new YT.Player('vf-player-el', {
-                videoId: '2oPVdx3QaAM',
-                playerVars: {
-                    autoplay: 1,
-                    controls: 0,
-                    modestbranding: 1,
-                    rel: 0,
-                    showinfo: 0,
-                    iv_load_policy: 3,
-                    disablekb: 1,
-                    fs: 0,
-                    playsinline: 1,
-                    cc_load_policy: 0
-                },
-                events: {
-                    onReady: function(e) {
-                        e.target.setVolume(90);
-                    },
-                    onStateChange: function(e) {
-                        if (e.data === 0) {
-                            // Vídeo terminou - fade para preto + mensagem
-                            var fd = document.getElementById('vf-fade');
-                            var msg = document.getElementById('vf-msg');
-                            if (fd) fd.style.opacity = '1';
-                            if (msg) msg.style.opacity = '1';
-                            // 5 segundos depois: música quiz em loop + navegar para login
-                            setTimeout(function() {
-                                try {
-                                    p._ytPlayer.loadVideoById({videoId: 'ren6rd9FfV8', startSeconds: 0});
-                                    p._ytPhase = 2;
-                                } catch(ex) {}
-                                navigateToLogin();
-                            }, 5000);
-                        }
-                    }
-                }
-            });
-        }
-
-        if (window.YT && window.YT.Player) {
-            startVidPlayer();
+        var vid = document.getElementById('vt-video');
+        if (vid) {
+            vid.onended = function() {
+                // Trocar para música quiz em loop
+                try {
+                    p._ytPlayer.loadVideoById({videoId: 'ren6rd9FfV8', startSeconds: 0});
+                    p._ytPhase = 2;
+                } catch(ex) {}
+                navigateToLogin();
+            };
+            // Fallback: se o vídeo não carregar em 30s, avança na mesma
+            setTimeout(function() {
+                try {
+                    p._ytPlayer.loadVideoById({videoId: 'ren6rd9FfV8', startSeconds: 0});
+                    p._ytPhase = 2;
+                } catch(ex) {}
+                navigateToLogin();
+            }, 30000);
         } else {
-            window.onYouTubeIframeAPIReady = startVidPlayer;
-            var tag = document.createElement('script');
-            tag.src = 'https://www.youtube.com/iframe_api';
-            document.head.appendChild(tag);
+            // Fallback imediato se vídeo não existir
+            try {
+                p._ytPlayer.loadVideoById({videoId: 'ren6rd9FfV8', startSeconds: 0});
+                p._ytPhase = 2;
+            } catch(ex) {}
+            navigateToLogin();
         }
     }
 
@@ -2452,6 +2419,15 @@ function enterQuiz() {
 </body></html>"""
 
     _splash_html = _splash_html.replace("__STARS_CSS__", _stars)
+    # Embed video transition
+    import base64, os
+    _video_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "video_transition.mp4")
+    if os.path.exists(_video_path):
+        with open(_video_path, "rb") as _vf:
+            _video_b64 = base64.b64encode(_vf.read()).decode("ascii")
+        _splash_html = _splash_html.replace("__VIDEO_B64__", _video_b64)
+    else:
+        _splash_html = _splash_html.replace("__VIDEO_B64__", "")
     components.html(_splash_html, height=750, scrolling=False)
     st.stop()
 
