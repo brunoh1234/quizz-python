@@ -2250,30 +2250,24 @@ html, body {
 function enterQuiz() {
     var p = window.parent;
 
-    // --- INICIAR MUSICA (gesto direto do utilizador = autoplay permitido) ---
+    // Iniciar música
     if (!p._ytMusicInit) {
         p._ytMusicInit = true;
-        p._ytPhase = 1; // começa já na fase 1 (transição) - intro foi durante o splash
+        p._ytPhase = 2;
         var d = p.document.createElement('div');
         d.id = '_yt_persist';
         d.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;overflow:hidden;';
         p.document.body.appendChild(d);
         function buildPlayer() {
-            var transVid = 'iahlZ4g6RQc';
-            var quizVid  = 'ren6rd9FfV8';
+            var quizVid = 'ren6rd9FfV8';
             p._ytPlayer = new p.YT.Player('_yt_persist', {
-                width:'1', height:'1', videoId: transVid,
+                width:'1', height:'1', videoId: quizVid,
                 playerVars: { autoplay:1, controls:0, disablekb:1, fs:0, rel:0 },
                 events: {
                     onReady: function(e) { e.target.setVolume(70); },
                     onStateChange: function(e) {
-                        if (e.data === 0) {
-                            if (p._ytPhase === 1) {
-                                p._ytPhase = 2;
-                                p._ytPlayer.loadVideoById(quizVid);
-                            } else if (p._ytPhase === 2) {
-                                p._ytPlayer.playVideo(); // loop
-                            }
+                        if (e.data === 0 && p._ytPhase === 2) {
+                            p._ytPlayer.playVideo(); // loop
                         }
                     }
                 }
@@ -2288,161 +2282,10 @@ function enterQuiz() {
         }
     }
 
-    // --- COUNTDOWN SINCRONIZADO COM A MÚSICA ---
-    var overlay = document.getElementById('countdown-overlay');
-    var cdContent = document.getElementById('cd-content');
-    var cdLabel   = document.getElementById('cd-label');
-    var cdRing    = document.getElementById('cd-ring');
-    overlay.classList.add('active');
-
-    // Timestamps em segundos: palavras karaoke + números
-    var steps = [
-        { time: 1,  text:'WELCOME',    lbl:'', cls:'cd-word',   ring:false },
-        { time: 2,  text:'LADIES',     lbl:'', cls:'cd-word',   ring:false },
-        { time: 3,  text:'AND',        lbl:'', cls:'cd-word',   ring:false },
-        { time: 4,  text:'GENTLEMEN',  lbl:'', cls:'cd-word',   ring:false },
-        { time: 5,  text:'THE',        lbl:'', cls:'cd-word',   ring:false },
-        { time: 6,  text:'SHOW',       lbl:'', cls:'cd-word',   ring:false },
-        { time: 7,  text:'STARTS',     lbl:'', cls:'cd-word',   ring:false },
-        { time: 8,  text:'IN',         lbl:'', cls:'cd-word',   ring:false },
-        { time: 9,  text:'3',          lbl:'PREPARAR', cls:'cd-number', ring:true },
-        { time: 11, text:'2',          lbl:'ATENÇÃO',  cls:'cd-number', ring:true },
-        { time: 13, text:'1',          lbl:'JÁ!',      cls:'cd-number', ring:true },
-        { time: 15, text:'GO!',        lbl:'',         cls:'cd-go',     ring:false }
-    ];
-    var stepShown = [false, false, false, false];
-    var navigated = false;
-
-    function showCdStep(s) {
-        cdContent.className = s.cls;
-        cdContent.style.animation = 'none';
-        cdRing.style.animation = 'none';
-        void cdContent.offsetWidth; // reflow
-        cdContent.textContent = s.text;
-        cdLabel.textContent   = s.lbl;
-        cdContent.style.opacity = '1';
-        cdLabel.style.opacity = s.lbl ? '1' : '0';
-        cdContent.style.animation = '';
-        if (s.ring) {
-            cdRing.style.opacity = '1';
-            cdRing.style.animation = '';
-        } else {
-            cdRing.style.opacity = '0';
-            cdRing.style.animation = 'none';
-        }
-    }
-
-    function showIntroVideo() {
-        // --- VÍDEO EM ECRÃ CHEIO (sem controlos YouTube visíveis) ---
-        // Parar a música de transição no player pai
-        try { p._ytPlayer.pauseVideo(); } catch(e) {}
-
-        overlay.style.background = '#000';
-        overlay.style.overflow = 'hidden';
-
-        overlay.innerHTML =
-        '<style>' +
-        '.vf-wrap{position:absolute;inset:0;background:#000;overflow:hidden}' +
-        // Truque para cobrir o ecrã todo: 177.78vh = 16/9 * 100vh
-        '.vf-sizer{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);' +
-        'width:177.78vh;height:100vh;min-width:100%;min-height:56.25vw}' +
-        '@media(max-aspect-ratio:16/9){.vf-sizer{width:100vw;height:56.25vw;min-height:100vh}}' +
-        '#vf-player-el{width:100%;height:100%;pointer-events:none}' +
-        // Camada de fade para escurecer no fim
-        '#vf-fade{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none;z-index:30;transition:opacity 1.5s ease}' +
-        // Mensagem a aparecer nos 5 segundos finais
-        '#vf-msg{position:absolute;bottom:60px;left:50%;transform:translateX(-50%);' +
-        'font-size:clamp(14px,2vw,22px);color:#8ab8ff;letter-spacing:4px;font-family:Georgia,serif;' +
-        'text-transform:uppercase;opacity:0;transition:opacity 1s ease;z-index:40;text-align:center;' +
-        'text-shadow:0 0 20px #1e90ff}' +
-        '</style>' +
-        '<div class="vf-wrap">' +
-        '<div class="vf-sizer"><div id="vf-player-el"></div></div>' +
-        '<div id="vf-fade"></div>' +
-        '<div id="vf-msg">✦ A PREPARAR O QUIZ ✦</div>' +
-        '</div>';
-
-        function startVidPlayer() {
-            new YT.Player('vf-player-el', {
-                videoId: '2oPVdx3QaAM',
-                playerVars: {
-                    autoplay: 1,
-                    controls: 0,
-                    modestbranding: 1,
-                    rel: 0,
-                    showinfo: 0,
-                    iv_load_policy: 3,
-                    disablekb: 1,
-                    fs: 0,
-                    playsinline: 1,
-                    cc_load_policy: 0
-                },
-                events: {
-                    onReady: function(e) {
-                        e.target.setVolume(90);
-                    },
-                    onStateChange: function(e) {
-                        if (e.data === 0) {
-                            // Vídeo terminou - fade para preto + mensagem
-                            var fd = document.getElementById('vf-fade');
-                            var msg = document.getElementById('vf-msg');
-                            if (fd) fd.style.opacity = '1';
-                            if (msg) msg.style.opacity = '1';
-                            // 5 segundos depois: música quiz em loop + navegar para login
-                            setTimeout(function() {
-                                try {
-                                    p._ytPlayer.loadVideoById({videoId: 'ren6rd9FfV8', startSeconds: 0});
-                                    p._ytPhase = 2;
-                                } catch(ex) {}
-                                navigateToLogin();
-                            }, 5000);
-                        }
-                    }
-                }
-            });
-        }
-
-        if (window.YT && window.YT.Player) {
-            startVidPlayer();
-        } else {
-            window.onYouTubeIframeAPIReady = startVidPlayer;
-            var tag = document.createElement('script');
-            tag.src = 'https://www.youtube.com/iframe_api';
-            document.head.appendChild(tag);
-        }
-    }
-
-    function navigateToLogin() {
-        var btns = p.document.querySelectorAll('button');
-        for (var i = 0; i < btns.length; i++) {
-            if (btns[i].textContent.trim() === 'SPLASH_NAV') {
-                btns[i].click(); return;
-            }
-        }
-        if (btns.length > 0) btns[0].click();
-    }
-
-    // Polling a cada 100ms para verificar o tempo atual da música
-    var cdInterval = setInterval(function() {
-        var player = p._ytPlayer;
-        if (!player || typeof player.getCurrentTime !== 'function') return;
-        var t = player.getCurrentTime();
-
-        for (var i = 0; i < steps.length; i++) {
-            if (!stepShown[i] && t >= steps[i].time) {
-                stepShown[i] = true;
-                showCdStep(steps[i]);
-            }
-        }
-
-        // Após o GO! ao segundo 20 → mostrar vídeo 2oPVdx3QaAM
-        if (!navigated && t >= 20) {
-            navigated = true;
-            clearInterval(cdInterval);
-            showIntroVideo();
-        }
-    }, 100);
+    // Ir direto para o login (sem animação)
+    navigateToLogin();
 }
+
 </script>
 </body></html>"""
 
