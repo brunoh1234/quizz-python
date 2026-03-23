@@ -3036,25 +3036,13 @@ if st.session_state.terminou and st.session_state.get("user_id") is not None:
     <div class="rk-title">&#127942; Ranking dos Participantes</div>
     {_rows_html}
     <div class="rk-footer">
-      <span class="rk-spin">&#8635;</span>
-      <span>A atualizar em</span>
-      <span class="rk-countdown" id="cd">15</span>
-      <span>segundos</span>
+      <span>&#127942; Obrigado por participares!</span>
     </div>
   </div>
 </div>
 <script>
 (function(){{
-  var t = 15;
-  var el = document.getElementById('cd');
-  var iv = setInterval(function(){{
-    t--;
-    if(el) el.textContent = t;
-    if(t <= 0){{
-      clearInterval(iv);
-      window.parent.location.reload();
-    }}
-  }}, 1000);
+  /* Auto-reload removido - não recarrega a página */
 }})();
 </script>
 </body></html>""", height={max(180, 54 + _rank_count * 46)}, scrolling=False)
