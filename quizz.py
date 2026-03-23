@@ -3029,6 +3029,9 @@ if st.session_state.terminou and st.session_state.get("user_id") is not None:
   .rk-title{{color:#ffd700;text-align:center;margin:0 0 14px 0;font-size:18px;font-weight:700;}}
   .rk-footer{{display:flex;justify-content:center;align-items:center;gap:8px;
     margin-top:12px;font-size:12px;color:#5a7ab0;}}
+  .rk-countdown{{color:#1e90ff;font-weight:bold;min-width:18px;text-align:center;}}
+  @keyframes spin{{from{{transform:rotate(0deg)}}to{{transform:rotate(360deg)}}}}
+  .rk-spin{{display:inline-block;animation:spin 1s linear infinite;}}
 </style>
 </head>
 <body>
@@ -3037,11 +3040,25 @@ if st.session_state.terminou and st.session_state.get("user_id") is not None:
     <div class="rk-title">&#127942; Ranking dos Participantes</div>
     {_rows_html}
     <div class="rk-footer">
-      <span>&#9654; Atualiza automaticamente de 15 em 15 segundos</span>
+      <span class="rk-spin">&#8635;</span>
+      <span>A atualizar em</span>
+      <span class="rk-countdown" id="cd">15</span>
+      <span>segundos</span>
     </div>
   </div>
 </div>
-</body></html>""", height=max(180, 54 + _rank_count * 46), scrolling=False)
+<script>
+(function(){{
+  var t = 15;
+  var el = document.getElementById('cd');
+  var iv = setInterval(function(){{
+    t--;
+    if(el) el.textContent = t;
+    if(t <= 0) {{ clearInterval(iv); if(el) el.textContent = '...'; }}
+  }}, 1000);
+}})();
+</script>
+</body></html>""", height=max(200, 54 + _rank_count * 46), scrolling=False)
 
     mostrar_ranking()
 
