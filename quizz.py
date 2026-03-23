@@ -3027,9 +3027,10 @@ if st.session_state.terminou and st.session_state.get("user_id") is not None:
   .rk-box{{background:linear-gradient(135deg,#0d1f4a 0%,#050e2a 100%);
     border:1px solid #1e3a7a;border-radius:16px;padding:20px 24px;width:100%;max-width:560px;}}
   .rk-title{{color:#ffd700;text-align:center;margin:0 0 14px 0;font-size:18px;font-weight:700;}}
-  .rk-footer{{display:flex;justify-content:center;align-items:center;gap:8px;
-    margin-top:12px;font-size:12px;color:#5a7ab0;}}
-  .rk-countdown{{color:#1e90ff;font-weight:bold;min-width:18px;text-align:center;}}
+  .rk-footer{{display:flex;justify-content:center;align-items:center;gap:6px;
+    margin-top:16px;padding:10px;font-size:14px;color:#8ab4e8;
+    background:rgba(30,58,122,0.3);border-radius:10px;border:1px solid rgba(30,58,122,0.5);}}
+  .rk-countdown{{color:#00cfff;font-weight:bold;font-size:18px;min-width:22px;text-align:center;}}
   @keyframes spin{{from{{transform:rotate(0deg)}}to{{transform:rotate(360deg)}}}}
   .rk-spin{{display:inline-block;animation:spin 1s linear infinite;}}
 </style>
@@ -3058,7 +3059,7 @@ if st.session_state.terminou and st.session_state.get("user_id") is not None:
   }}, 1000);
 }})();
 </script>
-</body></html>""", height=max(200, 54 + _rank_count * 46), scrolling=False)
+</body></html>""", height=max(260, 100 + _rank_count * 54), scrolling=False)
 
     mostrar_ranking()
 
