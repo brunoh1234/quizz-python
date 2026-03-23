@@ -2402,16 +2402,11 @@ function enterQuiz() {
             }
         }
 
-        // Após o GO! ao segundo 20 → ir direto para login com música do quiz
+        // Após o GO! ao segundo 20 → mostrar vídeo de transição
         if (!navigated && t >= 20) {
             navigated = true;
             clearInterval(cdInterval);
-            // Trocar para música do quiz em loop (sem vídeo de transição)
-            try {
-                p._ytPlayer.loadVideoById({videoId: 'ren6rd9FfV8', startSeconds: 0});
-                p._ytPhase = 2;
-            } catch(ex) {}
-            navigateToLogin();
+            showTransitionVideo();
         }
     }, 100);
 }
