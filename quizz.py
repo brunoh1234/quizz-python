@@ -2370,7 +2370,7 @@ function enterQuiz() {
         }
 
         // Safety timeout: 5 minutos
-        ytSafetyTimer = setTimeout(doAfterVideo, 300000);
+        ytSafetyTimer = setTimeout(doAfterVideo, 5000);
 
         // Detetar fim do video via postMessage do YouTube
         function ytMsgHandler(evt) {
