@@ -14,28 +14,38 @@ def inject_persistent_music(is_intro=False):
     Injeta um player de YouTube em window.parent via iframe srcdoc (same-origin).
     O flag _ytMusicInit em window.parent garante que o player só é criado UMA VEZ,
     sobrevivendo a todos os st.rerun() do Streamlit sem quebrar a música.
-    Toca apenas a música do quiz em loop (sem intro do Quem Quer Ser Milionário).
     """
     import html as _html
+
+    is_intro_js = "true" if is_intro else "false"
 
     script = (
         "(function(){"
         "var p=window.parent;"
         "if(p._ytMusicInit)return;"
         "p._ytMusicInit=true;"
+        "var isIntro=" + is_intro_js + ";"
+        "var introVid='2oPVdx3QaAM';"
+        "var transVid='iahlZ4g6RQc';"
         "var quizVid='ren6rd9FfV8';"
+        "var phase=isIntro?0:2;"
         "var d=p.document.createElement('div');"
         "d.id='_yt_persist';"
         "d.style.cssText='position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;';"
         "p.document.body.appendChild(d);"
         "function build(){"
-        "  var pv={autoplay:1,controls:0,disablekb:1,fs:0,rel:0,loop:1,playlist:quizVid};"
+        "  var vid=phase===0?introVid:quizVid;"
+        "  var pv={autoplay:1,controls:0,disablekb:1,fs:0,rel:0};"
         "  p._ytPlayer=new p.YT.Player('_yt_persist',{"
-        "    width:'1',height:'1',videoId:quizVid,playerVars:pv,"
+        "    width:'1',height:'1',videoId:vid,playerVars:pv,"
         "    events:{"
         "      onReady:function(e){e.target.setVolume(70);},"
         "      onStateChange:function(e){"
-        "        if(e.data===0){p._ytPlayer.playVideo();}"
+        "        if(e.data===0){"
+        "          if(phase===0){phase=1;p._ytPlayer.loadVideoById(transVid);}"
+        "          else if(phase===1){phase=2;p._ytPlayer.loadVideoById(quizVid);}"
+        "          else if(phase===2){p._ytPlayer.playVideo();}"
+        "        }"
         "      }"
         "    }"
         "  });"
@@ -2240,71 +2250,199 @@ html, body {
 function enterQuiz() {
     var p = window.parent;
 
-    // --- ANIMAÇÃO COUNTDOWN (WELCOME / 3-2-1-GO) ---
-    var overlay = p.document.createElement('div');
-    overlay.id = 'cd-overlay';
-    overlay.style.cssText = [
-        'position:fixed','top:0','left:0','width:100vw','height:100vh',
-        'background:#02050a','display:flex','flex-direction:column',
-        'align-items:center','justify-content:center',
-        'z-index:99999','font-family:Arial,sans-serif'
-    ].join(';');
-
-    var style = p.document.createElement('style');
-    style.textContent = [
-        '@keyframes cdPop{0%{transform:scale(0.3);opacity:0}60%{transform:scale(1.2)}100%{transform:scale(1);opacity:1}}',
-        '@keyframes cdShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}',
-        '#cd-num{font-size:140px;font-weight:900;color:#fff;text-shadow:0 0 40px currentColor;animation:cdPop .4s ease-out;line-height:1}',
-        '#cd-lbl{font-size:28px;font-weight:700;letter-spacing:4px;margin-top:16px;color:rgba(255,255,255,0.7)}'
-    ].join('');
-    p.document.head.appendChild(style);
-
-    var content = p.document.createElement('div');
-    content.id = 'cd-num';
-    var label = p.document.createElement('div');
-    label.id = 'cd-lbl';
-    overlay.appendChild(content);
-    overlay.appendChild(label);
-    p.document.body.appendChild(overlay);
-
-    var steps = [
-        {delay:0,    num:'WELCOME',           lbl:'BEM-VINDO!',            cls:'',  color:'#FFD700'},
-        {delay:1200, num:'LADIES &',          lbl:'SENHORAS E...',         cls:'',  color:'#a78bfa'},
-        {delay:2400, num:'GENTLEMEN',         lbl:'...SENHORES!',          cls:'',  color:'#a78bfa'},
-        {delay:3600, num:'3',                 lbl:'PREPARA-TE...',         cls:'',  color:'#60a5fa'},
-        {delay:4600, num:'2',                 lbl:'QUASE...',              cls:'',  color:'#f97316'},
-        {delay:5600, num:'1',                 lbl:'JÁ!',                   cls:'',  color:'#ef4444'},
-        {delay:6600, num:'GO!',               lbl:'FORÇA!!! 🚀',           cls:'',  color:'#22c55e'},
-    ];
-
-    steps.forEach(function(s) {
-        setTimeout(function() {
-            content.textContent = s.num;
-            label.textContent = s.lbl;
-            content.style.color = s.color;
-            content.style.textShadow = '0 0 40px ' + s.color;
-            content.style.animation = 'none';
-            void content.offsetWidth;
-            content.style.animation = 'cdPop .4s ease-out';
-        }, s.delay);
-    });
-
-    // Após GO! clicar SPLASH_NAV para avançar para a página de registo
-    function clickSplashNav(attempts) {
-        var btns = p.document.querySelectorAll('button');
-        for (var b of btns) {
-            if (b.innerText && b.innerText.trim() === 'SPLASH_NAV') {
-                b.click();
-                return;
-            }
+    // --- INICIAR MUSICA (gesto direto do utilizador = autoplay permitido) ---
+    if (!p._ytMusicInit) {
+        p._ytMusicInit = true;
+        p._ytPhase = 1; // começa já na fase 1 (transição) - intro foi durante o splash
+        var d = p.document.createElement('div');
+        d.id = '_yt_persist';
+        d.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;overflow:hidden;';
+        p.document.body.appendChild(d);
+        function buildPlayer() {
+            var transVid = 'iahlZ4g6RQc';
+            var quizVid  = 'ren6rd9FfV8';
+            p._ytPlayer = new p.YT.Player('_yt_persist', {
+                width:'1', height:'1', videoId: transVid,
+                playerVars: { autoplay:1, controls:0, disablekb:1, fs:0, rel:0 },
+                events: {
+                    onReady: function(e) { e.target.setVolume(70); },
+                    onStateChange: function(e) {
+                        if (e.data === 0) {
+                            if (p._ytPhase === 1) {
+                                p._ytPhase = 2;
+                                p._ytPlayer.loadVideoById(quizVid);
+                            } else if (p._ytPhase === 2) {
+                                p._ytPlayer.playVideo(); // loop
+                            }
+                        }
+                    }
+                }
+            });
         }
-        if (attempts > 0) setTimeout(function(){ clickSplashNav(attempts-1); }, 150);
+        if (p.YT && p.YT.Player) { buildPlayer(); }
+        else {
+            p.onYouTubeIframeAPIReady = buildPlayer;
+            var tag = p.document.createElement('script');
+            tag.src = 'https://www.youtube.com/iframe_api';
+            p.document.head.appendChild(tag);
+        }
     }
 
-    setTimeout(function() { clickSplashNav(15); }, 7400);
+    // --- COUNTDOWN SINCRONIZADO COM A MÚSICA ---
+    var overlay = document.getElementById('countdown-overlay');
+    var cdContent = document.getElementById('cd-content');
+    var cdLabel   = document.getElementById('cd-label');
+    var cdRing    = document.getElementById('cd-ring');
+    overlay.classList.add('active');
+
+    // Timestamps em segundos: palavras karaoke + números
+    var steps = [
+        { time: 1,  text:'WELCOME',    lbl:'', cls:'cd-word',   ring:false },
+        { time: 2,  text:'LADIES',     lbl:'', cls:'cd-word',   ring:false },
+        { time: 3,  text:'AND',        lbl:'', cls:'cd-word',   ring:false },
+        { time: 4,  text:'GENTLEMEN',  lbl:'', cls:'cd-word',   ring:false },
+        { time: 5,  text:'THE',        lbl:'', cls:'cd-word',   ring:false },
+        { time: 6,  text:'SHOW',       lbl:'', cls:'cd-word',   ring:false },
+        { time: 7,  text:'STARTS',     lbl:'', cls:'cd-word',   ring:false },
+        { time: 8,  text:'IN',         lbl:'', cls:'cd-word',   ring:false },
+        { time: 9,  text:'3',          lbl:'PREPARAR', cls:'cd-number', ring:true },
+        { time: 11, text:'2',          lbl:'ATENÇÃO',  cls:'cd-number', ring:true },
+        { time: 13, text:'1',          lbl:'JÁ!',      cls:'cd-number', ring:true },
+        { time: 15, text:'GO!',        lbl:'',         cls:'cd-go',     ring:false }
+    ];
+    var stepShown = [false, false, false, false];
+    var navigated = false;
+
+    function showCdStep(s) {
+        cdContent.className = s.cls;
+        cdContent.style.animation = 'none';
+        cdRing.style.animation = 'none';
+        void cdContent.offsetWidth; // reflow
+        cdContent.textContent = s.text;
+        cdLabel.textContent   = s.lbl;
+        cdContent.style.opacity = '1';
+        cdLabel.style.opacity = s.lbl ? '1' : '0';
+        cdContent.style.animation = '';
+        if (s.ring) {
+            cdRing.style.opacity = '1';
+            cdRing.style.animation = '';
+        } else {
+            cdRing.style.opacity = '0';
+            cdRing.style.animation = 'none';
+        }
+    }
+
+    function showIntroVideo() {
+        // --- VÍDEO EM ECRÃ CHEIO (sem controlos YouTube visíveis) ---
+        // Parar a música de transição no player pai
+        try { p._ytPlayer.pauseVideo(); } catch(e) {}
+
+        overlay.style.background = '#000';
+        overlay.style.overflow = 'hidden';
+
+        overlay.innerHTML =
+        '<style>' +
+        '.vf-wrap{position:absolute;inset:0;background:#000;overflow:hidden}' +
+        // Truque para cobrir o ecrã todo: 177.78vh = 16/9 * 100vh
+        '.vf-sizer{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);' +
+        'width:177.78vh;height:100vh;min-width:100%;min-height:56.25vw}' +
+        '@media(max-aspect-ratio:16/9){.vf-sizer{width:100vw;height:56.25vw;min-height:100vh}}' +
+        '#vf-player-el{width:100%;height:100%;pointer-events:none}' +
+        // Camada de fade para escurecer no fim
+        '#vf-fade{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none;z-index:30;transition:opacity 1.5s ease}' +
+        // Mensagem a aparecer nos 5 segundos finais
+        '#vf-msg{position:absolute;bottom:60px;left:50%;transform:translateX(-50%);' +
+        'font-size:clamp(14px,2vw,22px);color:#8ab8ff;letter-spacing:4px;font-family:Georgia,serif;' +
+        'text-transform:uppercase;opacity:0;transition:opacity 1s ease;z-index:40;text-align:center;' +
+        'text-shadow:0 0 20px #1e90ff}' +
+        '</style>' +
+        '<div class="vf-wrap">' +
+        '<div class="vf-sizer"><div id="vf-player-el"></div></div>' +
+        '<div id="vf-fade"></div>' +
+        '<div id="vf-msg">✦ A PREPARAR O QUIZ ✦</div>' +
+        '</div>';
+
+        function startVidPlayer() {
+            new YT.Player('vf-player-el', {
+                videoId: '2oPVdx3QaAM',
+                playerVars: {
+                    autoplay: 1,
+                    controls: 0,
+                    modestbranding: 1,
+                    rel: 0,
+                    showinfo: 0,
+                    iv_load_policy: 3,
+                    disablekb: 1,
+                    fs: 0,
+                    playsinline: 1,
+                    cc_load_policy: 0
+                },
+                events: {
+                    onReady: function(e) {
+                        e.target.setVolume(90);
+                    },
+                    onStateChange: function(e) {
+                        if (e.data === 0) {
+                            // Vídeo terminou - fade para preto + mensagem
+                            var fd = document.getElementById('vf-fade');
+                            var msg = document.getElementById('vf-msg');
+                            if (fd) fd.style.opacity = '1';
+                            if (msg) msg.style.opacity = '1';
+                            // 5 segundos depois: música quiz em loop + navegar para login
+                            setTimeout(function() {
+                                try {
+                                    p._ytPlayer.loadVideoById({videoId: 'ren6rd9FfV8', startSeconds: 0});
+                                    p._ytPhase = 2;
+                                } catch(ex) {}
+                                navigateToLogin();
+                            }, 5000);
+                        }
+                    }
+                }
+            });
+        }
+
+        if (window.YT && window.YT.Player) {
+            startVidPlayer();
+        } else {
+            window.onYouTubeIframeAPIReady = startVidPlayer;
+            var tag = document.createElement('script');
+            tag.src = 'https://www.youtube.com/iframe_api';
+            document.head.appendChild(tag);
+        }
+    }
+
+    function navigateToLogin() {
+        var btns = p.document.querySelectorAll('button');
+        for (var i = 0; i < btns.length; i++) {
+            if (btns[i].textContent.trim() === 'SPLASH_NAV') {
+                btns[i].click(); return;
+            }
+        }
+        if (btns.length > 0) btns[0].click();
+    }
+
+    // Polling a cada 100ms para verificar o tempo atual da música
+    var cdInterval = setInterval(function() {
+        var player = p._ytPlayer;
+        if (!player || typeof player.getCurrentTime !== 'function') return;
+        var t = player.getCurrentTime();
+
+        for (var i = 0; i < steps.length; i++) {
+            if (!stepShown[i] && t >= steps[i].time) {
+                stepShown[i] = true;
+                showCdStep(steps[i]);
+            }
+        }
+
+        // Após o GO! ao segundo 20 → mostrar vídeo 2oPVdx3QaAM
+        if (!navigated && t >= 20) {
+            navigated = true;
+            clearInterval(cdInterval);
+            showIntroVideo();
+        }
+    }, 100);
 }
-
-
 </script>
 </body></html>"""
 
@@ -2533,8 +2671,8 @@ div[data-testid="column"] button {
                 st.error("Este utilizador j\u00e1 jogou.")
                 st.info(f"Pontua\u00e7\u00e3o anterior: {dados['score']}/10 - {dados['data']} \u00e0s {dados['hora']}")
             else:
-                st.session_state.user_id = user_id.strip()
-                st.session_state.show_countdown = False
+                st.session_state.pending_user_id = user_id.strip()
+                st.session_state.show_countdown = True
                 st.rerun()
 
     # JS to highlight selected avatar button with gold border
@@ -2861,7 +2999,7 @@ if st.session_state.terminou and st.session_state.get("user_id") is not None:
     if(el) el.textContent = t;
     if(t <= 0){{
       clearInterval(iv);
-      if(el) el.textContent = '...';
+      window.parent.location.reload();
     }}
   }}, 1000);
 }})();
@@ -2937,9 +3075,9 @@ function copiarDesafio(){{
             reset_para_novo_jogo()
             st.rerun()
 
-    # Auto-refresh do ranking a cada 15 segundos (mantém sessão e música)
+    # Auto-refresh do ranking a cada 30 segundos (mantém sessão e música)
     import time as _t_res
-    _t_res.sleep(15)
+    _t_res.sleep(30)
     st.rerun()
 
 # ------------------------------
