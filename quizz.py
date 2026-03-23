@@ -3710,17 +3710,13 @@ if resposta_dada is not None and resposta_dada != -1:
     if acertou:
         play_confetti(f"conf_{_game_id}_{idx}", mode="burst")
 
-    # Auto-avançar após 5 segundos
+    # Auto-avançar após 5 segundos via JS countdown visual (sem sleep)
     _ts_res = st.session_state.get("mostrar_resultado_ts")
-    elapsed = _time.time() - _ts_res if _ts_res is not None else 0
-    segundos_restantes = max(0, 5 - int(elapsed))
-    st.markdown(f"""
-<div style="text-align:center; color:#888; font-size:13px; margin-top:8px;">
-    A avançar em {segundos_restantes}s...
-</div>
-    """, unsafe_allow_html=True)
+    _ts_ms = int(_ts_res * 1000) if _ts_res is not None else int(_time.time() * 1000)
 
-    if elapsed >= 5:
+    # Botão oculto que o JS clica para avançar
+    _next_key = f"btn_next_{idx}_{st.session_state.get('game_id','x')}"
+    if st.button("NEXT_QUESTION", key=_next_key):
         st.session_state.resposta_dada = None
         st.session_state.mostrar_resultado_ts = None
         st.session_state.pendente_resposta = None
@@ -3729,9 +3725,73 @@ if resposta_dada is not None and resposta_dada != -1:
         else:
             st.session_state.terminou = True
         st.rerun()
-    else:
-        _time.sleep(1)
-        st.rerun()
+
+    import streamlit.components.v1 as _comp_next
+    _comp_next.html(f"""
+<style>
+html,body{{margin:0;padding:0;background:transparent;overflow:hidden;}}
+#cd-wrap{{display:flex;align-items:center;justify-content:center;gap:10px;margin:6px 0;}}
+#cd-bar-bg{{width:200px;height:5px;background:rgba(255,255,255,0.1);border-radius:3px;overflow:hidden;}}
+#cd-bar{{height:5px;background:linear-gradient(90deg,#1e90ff,#00e676);border-radius:3px;width:100%;}}
+#cd-txt{{color:#888;font-size:12px;font-family:Arial,sans-serif;min-width:75px;text-align:left;letter-spacing:0.5px;}}
+</style>
+<div id="cd-wrap">
+  <div id="cd-bar-bg"><div id="cd-bar"></div></div>
+  <div id="cd-txt">5s ...</div>
+</div>
+<script>
+(function(){{
+  var startMs={_ts_ms};
+  var totalMs=5000;
+  var bar=document.getElementById('cd-bar');
+  var txt=document.getElementById('cd-txt');
+  var p=window.parent;
+  var clicked=false;
+
+  (function hideBtn(){{
+    var btns=p.document.querySelectorAll('button');
+    for(var i=0;i<btns.length;i++){{
+      if(btns[i].innerText&&btns[i].innerText.trim()==='NEXT_QUESTION'){{
+        btns[i].style.cssText='position:absolute!important;width:1px!important;height:1px!important;overflow:hidden!important;opacity:0!important;pointer-events:none!important;';
+        return;
+      }}
+    }}
+    setTimeout(hideBtn,80);
+  }})();
+
+  function clickNext(){{
+    if(clicked)return;
+    clicked=true;
+    var btns=p.document.querySelectorAll('button');
+    for(var i=0;i<btns.length;i++){{
+      if(btns[i].innerText&&btns[i].innerText.trim()==='NEXT_QUESTION'){{
+        btns[i].style.cssText='';
+        btns[i].click();return;
+      }}
+    }}
+    setTimeout(function(){{clicked=false;clickNext();}},150);
+  }}
+
+  function tick(){{
+    var now=Date.now();
+    var elapsed=now-startMs;
+    var remaining=Math.max(0,totalMs-elapsed);
+    var pct=(remaining/totalMs)*100;
+    if(bar)bar.style.width=pct+'%';
+    var secs=Math.ceil(remaining/1000);
+    if(txt)txt.textContent=secs+'s ...';
+    if(remaining<=0){{
+      if(bar)bar.style.width='0%';
+      if(txt)txt.textContent='0s ...';
+      clickNext();
+    }}else{{
+      requestAnimationFrame(tick);
+    }}
+  }}
+  requestAnimationFrame(tick);
+}})();
+</script>
+""", height=36)
 
 # -- TEMPO ESGOTADO ----------------------------------------------------------
 if resposta_dada == -1:
@@ -3747,22 +3807,14 @@ if resposta_dada == -1:
     _game_id_exp = st.session_state.get("game_id", "x")
     play_sfx("timeout", f"sfx_timeout_{_game_id_exp}_{idx}")
 
-    _ts_exp = st.session_state.get("mostrar_resultado_ts")
-    if _ts_exp is None:
+    # Garantir que mostrar_resultado_ts está definido
+    if st.session_state.get("mostrar_resultado_ts") is None:
         st.session_state.mostrar_resultado_ts = _time.time()
-        _ts_exp = st.session_state.mostrar_resultado_ts
-        elapsed_exp = 0
-    else:
-        elapsed_exp = _time.time() - _ts_exp
+    _ts_exp_ms = int(st.session_state.mostrar_resultado_ts * 1000)
 
-    segundos_restantes_exp = max(0, 5 - int(elapsed_exp))
-    st.markdown(f"""
-<div style="text-align:center; color:#888; font-size:13px; margin-top:8px;">
-    A avançar em {segundos_restantes_exp}s...
-</div>
-    """, unsafe_allow_html=True)
-
-    if elapsed_exp >= 5:
+    # Botão oculto que o JS clica para avançar (timeout)
+    _next_key_exp = f"btn_next_exp_{idx}_{st.session_state.get('game_id','x')}"
+    if st.button("NEXT_QUESTION_EXP", key=_next_key_exp):
         st.session_state.resposta_dada = None
         st.session_state.mostrar_resultado_ts = None
         st.session_state.pendente_resposta = None
@@ -3771,6 +3823,70 @@ if resposta_dada == -1:
         else:
             st.session_state.terminou = True
         st.rerun()
-    else:
-        _time.sleep(1)
-        st.rerun()
+
+    import streamlit.components.v1 as _comp_exp
+    _comp_exp.html(f"""
+<style>
+html,body{{margin:0;padding:0;background:transparent;overflow:hidden;}}
+#cd-wrap2{{display:flex;align-items:center;justify-content:center;gap:10px;margin:6px 0;}}
+#cd-bar-bg2{{width:200px;height:5px;background:rgba(255,255,255,0.1);border-radius:3px;overflow:hidden;}}
+#cd-bar2{{height:5px;background:linear-gradient(90deg,#ff6b6b,#ffd700);border-radius:3px;width:100%;}}
+#cd-txt2{{color:#888;font-size:12px;font-family:Arial,sans-serif;min-width:75px;text-align:left;letter-spacing:0.5px;}}
+</style>
+<div id="cd-wrap2">
+  <div id="cd-bar-bg2"><div id="cd-bar2"></div></div>
+  <div id="cd-txt2">5s ...</div>
+</div>
+<script>
+(function(){{
+  var startMs={_ts_exp_ms};
+  var totalMs=5000;
+  var bar=document.getElementById('cd-bar2');
+  var txt=document.getElementById('cd-txt2');
+  var p=window.parent;
+  var clicked=false;
+
+  (function hideBtn(){{
+    var btns=p.document.querySelectorAll('button');
+    for(var i=0;i<btns.length;i++){{
+      if(btns[i].innerText&&btns[i].innerText.trim()==='NEXT_QUESTION_EXP'){{
+        btns[i].style.cssText='position:absolute!important;width:1px!important;height:1px!important;overflow:hidden!important;opacity:0!important;pointer-events:none!important;';
+        return;
+      }}
+    }}
+    setTimeout(hideBtn,80);
+  }})();
+
+  function clickNext(){{
+    if(clicked)return;
+    clicked=true;
+    var btns=p.document.querySelectorAll('button');
+    for(var i=0;i<btns.length;i++){{
+      if(btns[i].innerText&&btns[i].innerText.trim()==='NEXT_QUESTION_EXP'){{
+        btns[i].style.cssText='';
+        btns[i].click();return;
+      }}
+    }}
+    setTimeout(function(){{clicked=false;clickNext();}},150);
+  }}
+
+  function tick(){{
+    var now=Date.now();
+    var elapsed=now-startMs;
+    var remaining=Math.max(0,totalMs-elapsed);
+    var pct=(remaining/totalMs)*100;
+    if(bar)bar.style.width=pct+'%';
+    var secs=Math.ceil(remaining/1000);
+    if(txt)txt.textContent=secs+'s ...';
+    if(remaining<=0){{
+      if(bar)bar.style.width='0%';
+      if(txt)txt.textContent='0s ...';
+      clickNext();
+    }}else{{
+      requestAnimationFrame(tick);
+    }}
+  }}
+  requestAnimationFrame(tick);
+}})();
+</script>
+""", height=36)
