@@ -3128,10 +3128,7 @@ function copiarDesafio(){{
             reset_para_novo_jogo()
             st.rerun()
 
-    # Auto-refresh do ranking a cada 30 segundos (mantém sessão e música)
-    import time as _t_res
-    _t_res.sleep(30)
-    st.rerun()
+    st.stop()
 
 # ------------------------------
 # ECRÃ DA PERGUNTA
