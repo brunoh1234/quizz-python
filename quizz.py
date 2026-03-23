@@ -2338,28 +2338,26 @@ function enterQuiz() {
         // Parar a musica de transicao
         try { p._ytPlayer.pauseVideo(); } catch(e) {}
 
-        // Fullscreen overlay com iframe YouTube direto (sem botao Saltar)
+        // Overlay negro + div para o player YouTube API
         overlay.style.background = '#000';
         overlay.style.overflow = 'hidden';
         overlay.innerHTML =
-        '<style>' +
-        '#yt-fw{position:fixed;inset:0;background:#000;z-index:9999;}' +
-        '#yt-fw iframe{width:100%;height:100%;border:none;}' +
-        '</style>' +
-        '<div id="yt-fw">' +
-        '<iframe src="https://www.youtube.com/embed/0d8EXkgwYN4?autoplay=1&controls=1&rel=0&modestbranding=1&iv_load_policy=3&enablejsapi=1&playsinline=1" ' +
-        'allow="autoplay; fullscreen; picture-in-picture; encrypted-media" allowfullscreen frameborder="0"></iframe>' +
-        '</div>';
+            '<style>' +
+            '#yt-fw{position:fixed;inset:0;background:#000;z-index:9999;}' +
+            '#yt-fw-player{width:100%;height:100%;}' +
+            '</style>' +
+            '<div id="yt-fw"><div id="yt-fw-player"></div></div>';
 
-        var ytSafetyTimer = null;
         var doneCalled = false;
+        var safetyTimer = null;
+        var pollTimer = null;
 
         function doAfterVideo() {
             if (doneCalled) return;
             doneCalled = true;
-            if (ytSafetyTimer) clearTimeout(ytSafetyTimer);
-            window.removeEventListener('message', ytMsgHandler);
-            // Aguardar 5 segundos antes de avancar
+            if (safetyTimer) clearTimeout(safetyTimer);
+            if (pollTimer) clearInterval(pollTimer);
+            // Aguardar 5 segundos e avancar para o quiz
             setTimeout(function() {
                 try {
                     p._ytPlayer.loadVideoById({videoId: 'ren6rd9FfV8', startSeconds: 0});
@@ -2369,27 +2367,53 @@ function enterQuiz() {
             }, 5000);
         }
 
-        // Safety timeout: 5 minutos
-        ytSafetyTimer = setTimeout(doAfterVideo, 5000);
+        // Safety timeout: video tem 55s, damos 80s de margem
+        safetyTimer = setTimeout(doAfterVideo, 65000);
 
-        // Detetar fim do video via postMessage do YouTube
-        function ytMsgHandler(evt) {
-            try {
-                var d = (typeof evt.data === 'string') ? JSON.parse(evt.data) : evt.data;
-                if (d.event === 'onStateChange' && d.info === 0) { doAfterVideo(); }
-            } catch(ex) {}
+        function initPlayer() {
+            var localPlayer = new YT.Player('yt-fw-player', {
+                videoId: '0d8EXkgwYN4',
+                playerVars: {
+                    autoplay: 1,
+                    controls: 0,
+                    rel: 0,
+                    modestbranding: 1,
+                    iv_load_policy: 3,
+                    playsinline: 1,
+                    disablekb: 1,
+                    fs: 0
+                },
+                events: {
+                    onStateChange: function(e) {
+                        if (e.data === 0) { doAfterVideo(); }
+                    }
+                }
+            });
+            // Polling de backup a cada segundo
+            pollTimer = setInterval(function() {
+                try { if (localPlayer.getPlayerState() === 0) { doAfterVideo(); } } catch(ex) {}
+            }, 1000);
         }
-        window.addEventListener('message', ytMsgHandler);
+
+        // Carregar YT IFrame API no contexto deste iframe (mais fiavel)
+        if (typeof YT !== 'undefined' && YT.Player) {
+            initPlayer();
+        } else {
+            window.onYouTubeIframeAPIReady = initPlayer;
+            var tag = document.createElement('script');
+            tag.src = 'https://www.youtube.com/iframe_api';
+            document.head.appendChild(tag);
+        }
     }
 
-        function navigateToLogin() {
+    function navigateToLogin() {
         var btns = p.document.querySelectorAll('button');
         for (var i = 0; i < btns.length; i++) {
             if (btns[i].textContent.trim() === 'SPLASH_NAV') {
                 btns[i].click(); return;
             }
         }
-        if (btns.length > 0) btns[0].click();
+        // Sem fallback - so clica se encontrar o botao certo
     }
 
     // Polling a cada 100ms para verificar o tempo atual da música
