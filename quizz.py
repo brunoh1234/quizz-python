@@ -1,3 +1,4 @@
+
 import streamlit as st
 import streamlit.components.v1 as components
 import json
@@ -2338,36 +2339,36 @@ function enterQuiz() {
         // Parar a musica de transicao
         try { p._ytPlayer.pauseVideo(); } catch(e) {}
 
-        // Fullscreen overlay com iframe YouTube direto
+        // Fullscreen overlay com iframe YouTube direto (sem botao Saltar)
         overlay.style.background = '#000';
         overlay.style.overflow = 'hidden';
         overlay.innerHTML =
         '<style>' +
         '#yt-fw{position:fixed;inset:0;background:#000;z-index:9999;}' +
         '#yt-fw iframe{width:100%;height:100%;border:none;}' +
-        '#yt-sk{position:fixed;bottom:20px;right:20px;z-index:10000;' +
-        'background:rgba(0,0,0,0.7);color:#fff;border:2px solid rgba(255,255,255,0.4);' +
-        'padding:10px 22px;border-radius:8px;cursor:pointer;font-size:15px;font-family:sans-serif;}' +
         '</style>' +
         '<div id="yt-fw">' +
         '<iframe src="https://www.youtube.com/embed/0d8EXkgwYN4?autoplay=1&controls=1&rel=0&modestbranding=1&iv_load_policy=3&enablejsapi=1&playsinline=1" ' +
         'allow="autoplay; fullscreen; picture-in-picture; encrypted-media" allowfullscreen frameborder="0"></iframe>' +
-        '</div>' +
-        '<button id="yt-sk" onclick="window._ytSkip()">&#9654;&#9654; Saltar</button>';
+        '</div>';
 
         var ytSafetyTimer = null;
+        var doneCalled = false;
 
         function doAfterVideo() {
+            if (doneCalled) return;
+            doneCalled = true;
             if (ytSafetyTimer) clearTimeout(ytSafetyTimer);
             window.removeEventListener('message', ytMsgHandler);
-            try {
-                p._ytPlayer.loadVideoById({videoId: 'ren6rd9FfV8', startSeconds: 0});
-                p._ytPhase = 2;
-            } catch(ex) {}
-            navigateToLogin();
+            // Aguardar 5 segundos antes de avancar
+            setTimeout(function() {
+                try {
+                    p._ytPlayer.loadVideoById({videoId: 'ren6rd9FfV8', startSeconds: 0});
+                    p._ytPhase = 2;
+                } catch(ex) {}
+                navigateToLogin();
+            }, 5000);
         }
-
-        window._ytSkip = doAfterVideo;
 
         // Safety timeout: 5 minutos
         ytSafetyTimer = setTimeout(doAfterVideo, 300000);
@@ -2583,7 +2584,7 @@ if st.session_state.get('show_video'):
     st.markdown('<style>button p{} </style>', unsafe_allow_html=True)
 
     # Injetar JS que usa o p._ytPlayer existente
-    _yt_video_js = '(function(){var p=window.parent;var el=p.document.getElementById(&#x27;_yt_persist&#x27;);if(el){  el.style.cssText=&#x27;position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:99999;background:#000;&#x27;;}var ov=p.document.createElement(&#x27;div&#x27;);ov.id=&#x27;_yt_overlay_bg&#x27;;ov.style.cssText=&#x27;position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:99998;background:#000;&#x27;;p.document.body.appendChild(ov);var sk=p.document.createElement(&#x27;button&#x27;);sk.innerHTML=&#x27;&amp;#9197; Saltar&#x27;;sk.style.cssText=&#x27;position:fixed;bottom:24px;right:24px;z-index:100000;background:rgba(0,0,0,0.8);color:#fff;border:2px solid rgba(255,255,255,0.6);border-radius:8px;padding:10px 22px;font-size:15px;cursor:pointer;font-family:sans-serif;&#x27;;p.document.body.appendChild(sk);function done(){  if(el){el.style.cssText=&#x27;position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;&#x27;;}  var o=p.document.getElementById(&#x27;_yt_overlay_bg&#x27;);if(o)o.remove();  if(p.document.getElementById(&#x27;_sk_btn&#x27;))p.document.getElementById(&#x27;_sk_btn&#x27;).remove();  if(p._ytPlayer&amp;&amp;p._ytPlayer.loadVideoById){    p._ytPlayer.setVolume(70);    p._ytPlayer.loadVideoById({videoId:&#x27;ren6rd9FfV8&#x27;,startSeconds:0});  }  var btns=window.document.querySelectorAll(&#x27;button&#x27;);  for(var i=0;i&lt;btns.length;i++){    if(btns[i].innerText&amp;&amp;btns[i].innerText.indexOf(&#x27;VIDEO_DONE&#x27;)&gt;=0){btns[i].click();break;}  }}sk.id=&#x27;_sk_btn&#x27;;sk.onclick=done;function loadVid(){  if(p._ytPlayer&amp;&amp;p._ytPlayer.loadVideoById){    p._ytPlayer.setVolume(100);    p._ytPlayer.loadVideoById({videoId:&#x27;0d8EXkgwYN4&#x27;,startSeconds:0});    p._ytPlayer.addEventListener(&#x27;onStateChange&#x27;,function(e){      if(e.data===0){done();}    });  } else {    setTimeout(loadVid,500);  }}setTimeout(loadVid,500);})();'
+    _yt_video_js = '(function(){var p=window.parent;var el=p.document.getElementById(&#x27;_yt_persist&#x27;);if(el){  el.style.cssText=&#x27;position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:99999;background:#000;&#x27;;}var ov=p.document.createElement(&#x27;div&#x27;);ov.id=&#x27;_yt_overlay_bg&#x27;;ov.style.cssText=&#x27;position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:99998;background:#000;&#x27;;p.document.body.appendChild(ov);function done(){  if(el){el.style.cssText=&#x27;position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;&#x27;;}  var o=p.document.getElementById(&#x27;_yt_overlay_bg&#x27;);if(o)o.remove();  if(p._ytPlayer&amp;&amp;p._ytPlayer.loadVideoById){    p._ytPlayer.setVolume(70);    p._ytPlayer.loadVideoById({videoId:&#x27;ren6rd9FfV8&#x27;,startSeconds:0});  }  var btns=window.document.querySelectorAll(&#x27;button&#x27;);  for(var i=0;i&lt;btns.length;i++){    if(btns[i].innerText&amp;&amp;btns[i].innerText.indexOf(&#x27;VIDEO_DONE&#x27;)&gt;=0){btns[i].click();break;}  }}function loadVid(){  if(p._ytPlayer&amp;&amp;p._ytPlayer.loadVideoById){    p._ytPlayer.setVolume(100);    p._ytPlayer.loadVideoById({videoId:&#x27;0d8EXkgwYN4&#x27;,startSeconds:0});    p._ytPlayer.addEventListener(&#x27;onStateChange&#x27;,function(e){      if(e.data===0){setTimeout(done,5000);}    });  } else {    setTimeout(loadVid,500);  }}setTimeout(loadVid,500);})();'
     st.markdown(
         '<iframe srcdoc="<!DOCTYPE html><html><body><script>'
         + _yt_video_js +
