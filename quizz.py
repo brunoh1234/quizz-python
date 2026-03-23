@@ -2990,10 +2990,14 @@ if st.session_state.terminou and st.session_state.get("user_id") is not None:
 </div>
             """, unsafe_allow_html=True)
 
-    # -- Ranking dos Participantes ---------------------------------------------
+    # -- Ranking dos Participantes (atualiza a cada 15s sem recarregar a página) --
     st.markdown("<br>", unsafe_allow_html=True)
-    _res_rank = carregar_resultados()
-    if _res_rank:
+
+    @st.fragment(run_every=15)
+    def mostrar_ranking():
+        _res_rank = carregar_resultados()
+        if not _res_rank:
+            return
         _ranking = sorted(_res_rank.items(), key=lambda x: x[1]['score'], reverse=True)
         _rows_html = ""
         for _pos, (_nome, _dados) in enumerate(_ranking, start=1):
@@ -3025,9 +3029,6 @@ if st.session_state.terminou and st.session_state.get("user_id") is not None:
   .rk-title{{color:#ffd700;text-align:center;margin:0 0 14px 0;font-size:18px;font-weight:700;}}
   .rk-footer{{display:flex;justify-content:center;align-items:center;gap:8px;
     margin-top:12px;font-size:12px;color:#5a7ab0;}}
-  .rk-countdown{{color:#1e90ff;font-weight:bold;min-width:18px;text-align:center;}}
-  @keyframes spin{{from{{transform:rotate(0deg)}}to{{transform:rotate(360deg)}}}}
-  .rk-spin{{display:inline-block;animation:spin 1s linear infinite;}}
 </style>
 </head>
 <body>
@@ -3036,16 +3037,13 @@ if st.session_state.terminou and st.session_state.get("user_id") is not None:
     <div class="rk-title">&#127942; Ranking dos Participantes</div>
     {_rows_html}
     <div class="rk-footer">
-      <span>&#127942; Obrigado por participares!</span>
+      <span>&#9654; Atualiza automaticamente de 15 em 15 segundos</span>
     </div>
   </div>
 </div>
-<script>
-(function(){{
-  /* Auto-reload removido - não recarrega a página */
-}})();
-</script>
-</body></html>""", height={max(180, 54 + _rank_count * 46)}, scrolling=False)
+</body></html>""", height=max(180, 54 + _rank_count * 46), scrolling=False)
+
+    mostrar_ranking()
 
     # -- Desafiar Amigo --------------------------------------------------------
     st.markdown("<br>", unsafe_allow_html=True)
