@@ -14,28 +14,38 @@ def inject_persistent_music(is_intro=False):
     Injeta um player de YouTube em window.parent via iframe srcdoc (same-origin).
     O flag _ytMusicInit em window.parent garante que o player só é criado UMA VEZ,
     sobrevivendo a todos os st.rerun() do Streamlit sem quebrar a música.
-    Toca apenas a música do quiz em loop (sem intro do Quem Quer Ser Milionário).
     """
     import html as _html
+
+    is_intro_js = "true" if is_intro else "false"
 
     script = (
         "(function(){"
         "var p=window.parent;"
         "if(p._ytMusicInit)return;"
         "p._ytMusicInit=true;"
+        "var isIntro=" + is_intro_js + ";"
+        "var introVid='2oPVdx3QaAM';"
+        "var transVid='iahlZ4g6RQc';"
         "var quizVid='ren6rd9FfV8';"
+        "var phase=isIntro?0:2;"
         "var d=p.document.createElement('div');"
         "d.id='_yt_persist';"
         "d.style.cssText='position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;';"
         "p.document.body.appendChild(d);"
         "function build(){"
-        "  var pv={autoplay:1,controls:0,disablekb:1,fs:0,rel:0,loop:1,playlist:quizVid};"
+        "  var vid=phase===0?introVid:quizVid;"
+        "  var pv={autoplay:1,controls:0,disablekb:1,fs:0,rel:0};"
         "  p._ytPlayer=new p.YT.Player('_yt_persist',{"
-        "    width:'1',height:'1',videoId:quizVid,playerVars:pv,"
+        "    width:'1',height:'1',videoId:vid,playerVars:pv,"
         "    events:{"
         "      onReady:function(e){e.target.setVolume(70);},"
         "      onStateChange:function(e){"
-        "        if(e.data===0){p._ytPlayer.playVideo();}"
+        "        if(e.data===0){"
+        "          if(phase===0){phase=1;p._ytPlayer.loadVideoById(transVid);}"
+        "          else if(phase===1){phase=2;p._ytPlayer.loadVideoById(quizVid);}"
+        "          else if(phase===2){p._ytPlayer.playVideo();}"
+        "        }"
         "      }"
         "    }"
         "  });"
