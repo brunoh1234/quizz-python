@@ -2357,8 +2357,43 @@ function enterQuiz() {
             doneCalled = true;
             if (safetyTimer) clearTimeout(safetyTimer);
             if (pollTimer) clearInterval(pollTimer);
+
+            // Mostrar overlay "A preparar o quiz..." durante os 5 segundos
+            var overlay = p.document.createElement('div');
+            overlay.id = '_quiz_prep_overlay';
+            overlay.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:999999;background:rgba(0,0,0,0.92);display:flex;flex-direction:column;justify-content:center;align-items:center;';
+            overlay.innerHTML = `
+              <style>
+                @keyframes pulse { 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:0.6;transform:scale(0.95);} }
+                @keyframes dotdot { 0%{content:'.'} 33%{content:'..'} 66%{content:'...'} 100%{content:'.'} }
+                #_prep_dots::after { content:'.'; animation: dotdot 1.2s infinite; }
+                @keyframes spin2 { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+              </style>
+              <div style="font-size:70px;margin-bottom:20px;animation:pulse 1.2s ease-in-out infinite;">🧠</div>
+              <div style="color:#ffd700;font-size:28px;font-weight:bold;font-family:Arial,sans-serif;letter-spacing:2px;animation:pulse 1.2s ease-in-out infinite;">
+                A preparar o quiz<span id="_prep_dots"></span>
+              </div>
+              <div style="color:#5a7ab0;font-size:14px;font-family:Arial,sans-serif;margin-top:16px;letter-spacing:1px;">Prepara-te para responder! 🚀</div>
+              <div style="margin-top:30px;width:200px;height:6px;background:rgba(255,255,255,0.1);border-radius:4px;overflow:hidden;">
+                <div id="_prep_bar" style="width:0%;height:100%;background:linear-gradient(90deg,#1e90ff,#ffd700);border-radius:4px;transition:width 0.1s linear;"></div>
+              </div>
+            `;
+            p.document.body.appendChild(overlay);
+
+            // Animar barra de progresso
+            var prog = 0;
+            var barEl = overlay.querySelector('#_prep_bar');
+            var barTimer = setInterval(function() {
+                prog += 2;
+                if (barEl) barEl.style.width = Math.min(prog, 100) + '%';
+                if (prog >= 100) clearInterval(barTimer);
+            }, 100);
+
             // Aguardar 5 segundos e avancar para o quiz
             setTimeout(function() {
+                // Remover overlay
+                var ov = p.document.getElementById('_quiz_prep_overlay');
+                if (ov) ov.remove();
                 try {
                     p._ytPlayer.loadVideoById({videoId: 'ren6rd9FfV8', startSeconds: 0});
                     p._ytPhase = 2;
