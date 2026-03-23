@@ -2250,41 +2250,70 @@ html, body {
 function enterQuiz() {
     var p = window.parent;
 
-    // Iniciar música
-    if (!p._ytMusicInit) {
-        p._ytMusicInit = true;
-        p._ytPhase = 2;
-        var d = p.document.createElement('div');
-        d.id = '_yt_persist';
-        d.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;overflow:hidden;';
-        p.document.body.appendChild(d);
-        function buildPlayer() {
-            var quizVid = 'ren6rd9FfV8';
-            p._ytPlayer = new p.YT.Player('_yt_persist', {
-                width:'1', height:'1', videoId: quizVid,
-                playerVars: { autoplay:1, controls:0, disablekb:1, fs:0, rel:0 },
-                events: {
-                    onReady: function(e) { e.target.setVolume(70); },
-                    onStateChange: function(e) {
-                        if (e.data === 0 && p._ytPhase === 2) {
-                            p._ytPlayer.playVideo(); // loop
-                        }
-                    }
-                }
-            });
+    // --- ANIMAÇÃO COUNTDOWN (WELCOME / 3-2-1-GO) ---
+    var overlay = p.document.createElement('div');
+    overlay.id = 'cd-overlay';
+    overlay.style.cssText = [
+        'position:fixed','top:0','left:0','width:100vw','height:100vh',
+        'background:#02050a','display:flex','flex-direction:column',
+        'align-items:center','justify-content:center',
+        'z-index:99999','font-family:Arial,sans-serif'
+    ].join(';');
+
+    var style = p.document.createElement('style');
+    style.textContent = [
+        '@keyframes cdPop{0%{transform:scale(0.3);opacity:0}60%{transform:scale(1.2)}100%{transform:scale(1);opacity:1}}',
+        '@keyframes cdShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}',
+        '#cd-num{font-size:140px;font-weight:900;color:#fff;text-shadow:0 0 40px currentColor;animation:cdPop .4s ease-out;line-height:1}',
+        '#cd-lbl{font-size:28px;font-weight:700;letter-spacing:4px;margin-top:16px;color:rgba(255,255,255,0.7)}'
+    ].join('');
+    p.document.head.appendChild(style);
+
+    var content = p.document.createElement('div');
+    content.id = 'cd-num';
+    var label = p.document.createElement('div');
+    label.id = 'cd-lbl';
+    overlay.appendChild(content);
+    overlay.appendChild(label);
+    p.document.body.appendChild(overlay);
+
+    var steps = [
+        {delay:0,    num:'WELCOME',           lbl:'BEM-VINDO!',            cls:'',  color:'#FFD700'},
+        {delay:1200, num:'LADIES &',          lbl:'SENHORAS E...',         cls:'',  color:'#a78bfa'},
+        {delay:2400, num:'GENTLEMEN',         lbl:'...SENHORES!',          cls:'',  color:'#a78bfa'},
+        {delay:3600, num:'3',                 lbl:'PREPARA-TE...',         cls:'',  color:'#60a5fa'},
+        {delay:4600, num:'2',                 lbl:'QUASE...',              cls:'',  color:'#f97316'},
+        {delay:5600, num:'1',                 lbl:'JÁ!',                   cls:'',  color:'#ef4444'},
+        {delay:6600, num:'GO!',               lbl:'FORÇA!!! 🚀',           cls:'',  color:'#22c55e'},
+    ];
+
+    steps.forEach(function(s) {
+        setTimeout(function() {
+            content.textContent = s.num;
+            label.textContent = s.lbl;
+            content.style.color = s.color;
+            content.style.textShadow = '0 0 40px ' + s.color;
+            content.style.animation = 'none';
+            void content.offsetWidth;
+            content.style.animation = 'cdPop .4s ease-out';
+        }, s.delay);
+    });
+
+    // Após GO! clicar SPLASH_NAV para avançar para a página de registo
+    function clickSplashNav(attempts) {
+        var btns = p.document.querySelectorAll('button');
+        for (var b of btns) {
+            if (b.innerText && b.innerText.trim() === 'SPLASH_NAV') {
+                b.click();
+                return;
+            }
         }
-        if (p.YT && p.YT.Player) { buildPlayer(); }
-        else {
-            p.onYouTubeIframeAPIReady = buildPlayer;
-            var tag = p.document.createElement('script');
-            tag.src = 'https://www.youtube.com/iframe_api';
-            p.document.head.appendChild(tag);
-        }
+        if (attempts > 0) setTimeout(function(){ clickSplashNav(attempts-1); }, 150);
     }
 
-    // Ir direto para o login (sem animação)
-    navigateToLogin();
+    setTimeout(function() { clickSplashNav(15); }, 7400);
 }
+
 
 </script>
 </body></html>"""
