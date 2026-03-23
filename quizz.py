@@ -51,6 +51,8 @@ def inject_persistent_music(is_intro=False):
         "    }"
         "  });"
         "}"
+        "build();"
+        "})()"
         "if(p.YT&&p.YT.Player){build();}"
         "else{"
         "  p.onYouTubeIframeAPIReady=build;"
