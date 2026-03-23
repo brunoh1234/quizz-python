@@ -2473,7 +2473,6 @@ section[data-testid="stMain"] div[data-testid="stButton"] {
     # Botão oculto que o JS clica após o countdown
     if st.button("▶", key="btn_start_quiz_hidden"):
         st.session_state.show_countdown = False
-        st.session_state.show_video = True
         st.rerun()
 
     inject_persistent_music(is_intro=not st.session_state.quiz_completed)
