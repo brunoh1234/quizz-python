@@ -2671,8 +2671,8 @@ div[data-testid="column"] button {
                 st.error("Este utilizador j\u00e1 jogou.")
                 st.info(f"Pontua\u00e7\u00e3o anterior: {dados['score']}/10 - {dados['data']} \u00e0s {dados['hora']}")
             else:
-                st.session_state.pending_user_id = user_id.strip()
-                st.session_state.show_countdown = True
+                st.session_state.user_id = user_id.strip()
+                st.session_state.show_countdown = False
                 st.rerun()
 
     # JS to highlight selected avatar button with gold border
