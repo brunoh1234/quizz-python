@@ -598,7 +598,7 @@ def render_3d_avatar_preview(avatar_key: str):
         '</linearGradient>'
         '</defs>'
         '<circle cx="110" cy="150" r="90" fill="url(#bgl)"/>'
-        '<ellipse cx="110" cy="268" rx="65" ry="9" fill="#0a1a4a" stroke="#1166ff" stroke-width="2"/>'
+        '<ellipse cx="110" cy="268" rx="65" ry="9" fill="#0a1a4a" stroke="#1166ff" stroke-width="2" class="shadow-pulse"/>'
         '<g class="char-float">'
         # legs
         '<rect x="87" y="191" width="22" height="58" rx="7" fill="url(#lg2)"/>'
@@ -685,7 +685,7 @@ def render_3d_avatar_preview(avatar_key: str):
         '</linearGradient>'
         '</defs>'
         '<circle cx="110" cy="150" r="90" fill="url(#bgl)"/>'
-        '<ellipse cx="110" cy="268" rx="65" ry="9" fill="#0a1a4a" stroke="#1166ff" stroke-width="2"/>'
+        '<ellipse cx="110" cy="268" rx="65" ry="9" fill="#0a1a4a" stroke="#1166ff" stroke-width="2" class="shadow-pulse"/>'
         '<g class="char-float">'
         '<rect x="87" y="191" width="22" height="58" rx="7" fill="url(#lg2)"/>'
         '<rect x="111" y="191" width="22" height="58" rx="7" fill="url(#lg2)"/>'
@@ -759,7 +759,7 @@ def render_3d_avatar_preview(avatar_key: str):
         '</linearGradient>'
         '</defs>'
         '<circle cx="110" cy="150" r="90" fill="url(#bgl)"/>'
-        '<ellipse cx="110" cy="268" rx="65" ry="9" fill="#0a1a4a" stroke="#1166ff" stroke-width="2"/>'
+        '<ellipse cx="110" cy="268" rx="65" ry="9" fill="#0a1a4a" stroke="#1166ff" stroke-width="2" class="shadow-pulse"/>'
         '<g class="char-float">'
         '<rect x="87" y="191" width="22" height="58" rx="7" fill="url(#lg2)"/>'
         '<rect x="111" y="191" width="22" height="58" rx="7" fill="url(#lg2)"/>'
@@ -833,7 +833,7 @@ def render_3d_avatar_preview(avatar_key: str):
         '</linearGradient>'
         '</defs>'
         '<circle cx="110" cy="150" r="90" fill="url(#bgl)"/>'
-        '<ellipse cx="110" cy="268" rx="65" ry="9" fill="#0a1a4a" stroke="#1166ff" stroke-width="2"/>'
+        '<ellipse cx="110" cy="268" rx="65" ry="9" fill="#0a1a4a" stroke="#1166ff" stroke-width="2" class="shadow-pulse"/>'
         '<g class="char-float">'
         '<rect x="87" y="191" width="22" height="58" rx="7" fill="url(#lg2)"/>'
         '<rect x="111" y="191" width="22" height="58" rx="7" fill="url(#lg2)"/>'
@@ -910,7 +910,7 @@ def render_3d_avatar_preview(avatar_key: str):
         '</linearGradient>'
         '</defs>'
         '<circle cx="110" cy="150" r="90" fill="url(#bgl)"/>'
-        '<ellipse cx="110" cy="268" rx="65" ry="9" fill="#0a1a4a" stroke="#1166ff" stroke-width="2"/>'
+        '<ellipse cx="110" cy="268" rx="65" ry="9" fill="#0a1a4a" stroke="#1166ff" stroke-width="2" class="shadow-pulse"/>'
         '<g class="char-float">'
         '<rect x="87" y="191" width="22" height="58" rx="7" fill="url(#lg2)"/>'
         '<rect x="111" y="191" width="22" height="58" rx="7" fill="url(#lg2)"/>'
@@ -981,7 +981,7 @@ def render_3d_avatar_preview(avatar_key: str):
         '</linearGradient>'
         '</defs>'
         '<circle cx="110" cy="150" r="90" fill="url(#bgl)"/>'
-        '<ellipse cx="110" cy="268" rx="65" ry="9" fill="#0a1a4a" stroke="#1166ff" stroke-width="2"/>'
+        '<ellipse cx="110" cy="268" rx="65" ry="9" fill="#0a1a4a" stroke="#1166ff" stroke-width="2" class="shadow-pulse"/>'
         '<g class="char-float">'
         '<rect x="87" y="191" width="22" height="58" rx="7" fill="url(#lg2)"/>'
         '<rect x="111" y="191" width="22" height="58" rx="7" fill="url(#lg2)"/>'
@@ -1076,7 +1076,7 @@ def render_3d_avatar_preview(avatar_key: str):
         '</linearGradient>'
         '</defs>'
         '<circle cx="110" cy="150" r="90" fill="url(#bgl)"/>'
-        '<ellipse cx="110" cy="268" rx="65" ry="9" fill="#0a1a4a" stroke="#1166ff" stroke-width="2"/>'
+        '<ellipse cx="110" cy="268" rx="65" ry="9" fill="#0a1a4a" stroke="#1166ff" stroke-width="2" class="shadow-pulse"/>'
         '<g class="char-float">'
         # pajama pants - colorful stripes
         '<rect x="87" y="191" width="22" height="58" rx="7" fill="#aabbcc"/>'
@@ -1158,7 +1158,7 @@ def render_3d_avatar_preview(avatar_key: str):
         '</linearGradient>'
         '</defs>'
         '<circle cx="110" cy="150" r="90" fill="url(#bgl)"/>'
-        '<ellipse cx="110" cy="268" rx="65" ry="9" fill="#0a1a4a" stroke="#1166ff" stroke-width="2"/>'
+        '<ellipse cx="110" cy="268" rx="65" ry="9" fill="#0a1a4a" stroke="#1166ff" stroke-width="2" class="shadow-pulse"/>'
         '<g class="char-float">'
         '<rect x="87" y="191" width="22" height="58" rx="7" fill="url(#lg2)"/>'
         '<rect x="111" y="191" width="22" height="58" rx="7" fill="url(#lg2)"/>'
@@ -1319,60 +1319,101 @@ def render_3d_avatar_preview(avatar_key: str):
     overflow: hidden;
     font-family: 'Segoe UI', sans-serif;
   }}
-  /* ── baseline float ── */
+  /* ── baseline float with breathing ── */
   @keyframes float {{
-    0%, 100% {{ transform: translateY(0px); }}
-    50%       {{ transform: translateY(-8px); }}
+    0%, 100% {{ transform: translateY(0px) scale(1); }}
+    25%       {{ transform: translateY(-6px) scale(1.01); }}
+    50%       {{ transform: translateY(-10px) scale(1); }}
+    75%       {{ transform: translateY(-4px) scale(0.99); }}
   }}
-  .char-float {{ animation: float 2.5s ease-in-out infinite; }}
-  /* ── arm keyframes ── */
+  .char-float {{ animation: float 3s ease-in-out infinite; transform-origin: center bottom; }}
+  
+  /* ── realistic breathing animation for torso ── */
+  @keyframes breathe {{
+    0%, 100% {{ transform: scaleY(1) scaleX(1); }}
+    50%       {{ transform: scaleY(1.02) scaleX(1.01); }}
+  }}
+  .torso-breathe {{ animation: breathe 2.5s ease-in-out infinite; transform-origin: center bottom; }}
+  
+  /* ── subtle head movement ── */
+  @keyframes headSway {{
+    0%, 100% {{ transform: rotate(0deg) translateX(0); }}
+    25%       {{ transform: rotate(1.5deg) translateX(1px); }}
+    75%       {{ transform: rotate(-1deg) translateX(-1px); }}
+  }}
+  .head-sway {{ animation: headSway 4s ease-in-out infinite; transform-origin: center bottom; }}
+  
+  /* ── blinking eyes ── */
+  @keyframes blink {{
+    0%, 45%   {{ transform: scaleY(1); }}
+    48%       {{ transform: scaleY(0.1); }}
+    50%, 100% {{ transform: scaleY(1); }}
+  }}
+  .eye-blink {{ animation: blink 4s ease-in-out infinite; transform-origin: center; }}
+  
+  /* ── shadow pulse ── */
+  @keyframes shadowPulse {{
+    0%, 100% {{ opacity: 0.6; transform: scale(1); }}
+    50%       {{ opacity: 0.4; transform: scale(0.95); }}
+  }}
+  .shadow-pulse {{ animation: shadowPulse 3s ease-in-out infinite; transform-origin: center; }}
+  
+  /* ── arm keyframes with more natural movement ── */
   @keyframes armIdleL {{
-    0%, 100% {{ transform: rotate(8deg); }}
-    50%       {{ transform: rotate(14deg); }}
+    0%, 100% {{ transform: rotate(6deg) translateY(0); }}
+    33%       {{ transform: rotate(10deg) translateY(-1px); }}
+    66%       {{ transform: rotate(8deg) translateY(1px); }}
   }}
   @keyframes armIdleR {{
-    0%, 100% {{ transform: rotate(-8deg); }}
-    50%       {{ transform: rotate(-14deg); }}
+    0%, 100% {{ transform: rotate(-6deg) translateY(0); }}
+    33%       {{ transform: rotate(-10deg) translateY(-1px); }}
+    66%       {{ transform: rotate(-8deg) translateY(1px); }}
   }}
   @keyframes armWaveR {{
-    0%, 100% {{ transform: rotate(-65deg); }}
-    50%       {{ transform: rotate(-30deg); }}
+    0%, 100% {{ transform: rotate(-55deg); }}
+    25%       {{ transform: rotate(-35deg); }}
+    50%       {{ transform: rotate(-50deg); }}
+    75%       {{ transform: rotate(-40deg); }}
   }}
   @keyframes armWatchL {{
-    0%, 100% {{ transform: rotate(40deg); }}
-    50%       {{ transform: rotate(55deg); }}
+    0%, 100% {{ transform: rotate(38deg); }}
+    50%       {{ transform: rotate(48deg); }}
   }}
   @keyframes armThumbsR {{
-    0%, 100% {{ transform: rotate(-80deg); }}
-    50%       {{ transform: rotate(-60deg); }}
+    0%, 100% {{ transform: rotate(-70deg); }}
+    50%       {{ transform: rotate(-55deg); }}
   }}
   @keyframes armPointR {{
-    0%, 100% {{ transform: rotate(-55deg); }}
-    50%       {{ transform: rotate(-40deg); }}
+    0%, 100% {{ transform: rotate(-50deg); }}
+    50%       {{ transform: rotate(-42deg); }}
   }}
   @keyframes armRaiseL {{
-    0%, 100% {{ transform: rotate(125deg); }}
-    50%       {{ transform: rotate(110deg); }}
+    0%, 100% {{ transform: rotate(120deg); }}
+    50%       {{ transform: rotate(115deg); }}
   }}
   @keyframes armRaiseR {{
-    0%, 100% {{ transform: rotate(-125deg); }}
-    50%       {{ transform: rotate(-110deg); }}
+    0%, 100% {{ transform: rotate(-120deg); }}
+    50%       {{ transform: rotate(-115deg); }}
   }}
   @keyframes armWriteR {{
-    0%, 100% {{ transform: rotate(-15deg); }}
-    50%       {{ transform: rotate(-5deg) translateX(3px); }}
+    0%, 100% {{ transform: rotate(-12deg) translateX(0); }}
+    25%       {{ transform: rotate(-8deg) translateX(2px); }}
+    50%       {{ transform: rotate(-15deg) translateX(0); }}
+    75%       {{ transform: rotate(-10deg) translateX(-1px); }}
   }}
   @keyframes armPadL {{
-    0%, 100% {{ transform: rotate(30deg); }}
-    50%       {{ transform: rotate(35deg); }}
+    0%, 100% {{ transform: rotate(28deg); }}
+    50%       {{ transform: rotate(33deg); }}
   }}
   @keyframes armScratchR {{
-    0%, 100% {{ transform: rotate(-120deg); }}
-    50%       {{ transform: rotate(-105deg); }}
+    0%, 100% {{ transform: rotate(-115deg); }}
+    25%       {{ transform: rotate(-105deg); }}
+    50%       {{ transform: rotate(-118deg); }}
+    75%       {{ transform: rotate(-110deg); }}
   }}
   @keyframes armMugL {{
-    0%, 100% {{ transform: rotate(30deg); }}
-    50%       {{ transform: rotate(40deg); }}
+    0%, 100% {{ transform: rotate(28deg); }}
+    50%       {{ transform: rotate(35deg); }}
   }}
   /* ── prop / badge animations ── */
   @keyframes badgeFloat {{
@@ -1387,34 +1428,34 @@ def render_3d_avatar_preview(avatar_key: str):
     0%   {{ transform: translateY(0px); opacity: 0.7; }}
     100% {{ transform: translateY(-14px); opacity: 0; }}
   }}
-  /* ── apply animations ── */
+  /* ── apply animations with smoother timing ── */
   .arm-idle-l  {{ transform-box: fill-box; transform-origin: top center;
-                  animation: armIdleL  2.5s ease-in-out infinite; }}
+                  animation: armIdleL  3s ease-in-out infinite; }}
   .arm-idle-r  {{ transform-box: fill-box; transform-origin: top center;
-                  animation: armIdleR  2.5s ease-in-out infinite; }}
+                  animation: armIdleR  3s ease-in-out infinite; }}
   .arm-wave-r  {{ transform-box: fill-box; transform-origin: top center;
-                  animation: armWaveR  1.5s ease-in-out infinite; }}
+                  animation: armWaveR  2s ease-in-out infinite; }}
   .arm-watch-l {{ transform-box: fill-box; transform-origin: top center;
-                  animation: armWatchL 2.0s ease-in-out infinite; }}
+                  animation: armWatchL 2.5s ease-in-out infinite; }}
   .arm-thumbs-r {{ transform-box: fill-box; transform-origin: top center;
-                   animation: armThumbsR 1.8s ease-in-out infinite; }}
+                   animation: armThumbsR 2.2s ease-in-out infinite; }}
   .arm-point-r {{ transform-box: fill-box; transform-origin: top center;
-                  animation: armPointR 2.0s ease-in-out infinite; }}
+                  animation: armPointR 2.5s ease-in-out infinite; }}
   .arm-raise-l {{ transform-box: fill-box; transform-origin: top center;
-                  animation: armRaiseL 1.2s ease-in-out infinite; }}
+                  animation: armRaiseL 1.8s ease-in-out infinite; }}
   .arm-raise-r {{ transform-box: fill-box; transform-origin: top center;
-                  animation: armRaiseR 1.2s ease-in-out infinite; }}
+                  animation: armRaiseR 1.8s ease-in-out infinite; }}
   .arm-write-r {{ transform-box: fill-box; transform-origin: top center;
-                  animation: armWriteR 0.7s ease-in-out infinite; }}
+                  animation: armWriteR 1.2s ease-in-out infinite; }}
   .arm-pad-l   {{ transform-box: fill-box; transform-origin: top center;
-                  animation: armPadL   2.5s ease-in-out infinite; }}
+                  animation: armPadL   3s ease-in-out infinite; }}
   .arm-scratch-r {{ transform-box: fill-box; transform-origin: top center;
-                    animation: armScratchR 1.0s ease-in-out infinite; }}
+                    animation: armScratchR 1.5s ease-in-out infinite; }}
   .arm-mug-l   {{ transform-box: fill-box; transform-origin: top center;
-                  animation: armMugL   2.5s ease-in-out infinite; }}
-  .badge-float {{ animation: badgeFloat 2.0s ease-in-out infinite; }}
-  .wifi-pulse  {{ animation: wifiPulse  1.5s ease-in-out infinite; }}
-  .steam-rise  {{ animation: steamRise  1.8s ease-in-out infinite; }}
+                  animation: armMugL   3s ease-in-out infinite; }}
+  .badge-float {{ animation: badgeFloat 2.5s ease-in-out infinite; }}
+  .wifi-pulse  {{ animation: wifiPulse  2s ease-in-out infinite; }}
+  .steam-rise  {{ animation: steamRise  2.2s ease-in-out infinite; }}
   /* ── labels ── */
   .av-name {{
     color: #7eb8ff;
@@ -2671,17 +2712,6 @@ if st.session_state.get('show_video'):
 
 # Título principal
 st.markdown('<div class="main-title">🎯 QUEM QUER SER PRODUTIVO?</div>', unsafe_allow_html=True)
-
-# ------------------------------
-# BOTÃO DE RESET
-# ------------------------------
-
-col_reset, _, _ = st.columns([1, 3, 1])
-with col_reset:
-    if st.button("🔄 Reset Histórico"):
-        resetar_historico()
-        st.success("Histórico apagado com sucesso.")
-        st.rerun()
 
 # ------------------------------
 # LOGIN
