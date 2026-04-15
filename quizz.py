@@ -598,7 +598,7 @@ def render_3d_avatar_preview(avatar_key: str):
         '</linearGradient>'
         '</defs>'
         '<circle cx="110" cy="150" r="90" fill="url(#bgl)"/>'
-        '<ellipse cx="110" cy="268" rx="65" ry="9" fill="#0a1a4a" stroke="#1166ff" stroke-width="2" class="shadow-pulse"/>'
+        '<ellipse cx="110" cy="268" rx="65" ry="9" fill="#0a1a4a" stroke="#1166ff" stroke-width="2"/>'
         '<g class="char-float">'
         # legs
         '<rect x="87" y="191" width="22" height="58" rx="7" fill="url(#lg2)"/>'
@@ -685,7 +685,7 @@ def render_3d_avatar_preview(avatar_key: str):
         '</linearGradient>'
         '</defs>'
         '<circle cx="110" cy="150" r="90" fill="url(#bgl)"/>'
-        '<ellipse cx="110" cy="268" rx="65" ry="9" fill="#0a1a4a" stroke="#1166ff" stroke-width="2" class="shadow-pulse"/>'
+        '<ellipse cx="110" cy="268" rx="65" ry="9" fill="#0a1a4a" stroke="#1166ff" stroke-width="2"/>'
         '<g class="char-float">'
         '<rect x="87" y="191" width="22" height="58" rx="7" fill="url(#lg2)"/>'
         '<rect x="111" y="191" width="22" height="58" rx="7" fill="url(#lg2)"/>'
@@ -759,7 +759,7 @@ def render_3d_avatar_preview(avatar_key: str):
         '</linearGradient>'
         '</defs>'
         '<circle cx="110" cy="150" r="90" fill="url(#bgl)"/>'
-        '<ellipse cx="110" cy="268" rx="65" ry="9" fill="#0a1a4a" stroke="#1166ff" stroke-width="2" class="shadow-pulse"/>'
+        '<ellipse cx="110" cy="268" rx="65" ry="9" fill="#0a1a4a" stroke="#1166ff" stroke-width="2"/>'
         '<g class="char-float">'
         '<rect x="87" y="191" width="22" height="58" rx="7" fill="url(#lg2)"/>'
         '<rect x="111" y="191" width="22" height="58" rx="7" fill="url(#lg2)"/>'
@@ -833,7 +833,7 @@ def render_3d_avatar_preview(avatar_key: str):
         '</linearGradient>'
         '</defs>'
         '<circle cx="110" cy="150" r="90" fill="url(#bgl)"/>'
-        '<ellipse cx="110" cy="268" rx="65" ry="9" fill="#0a1a4a" stroke="#1166ff" stroke-width="2" class="shadow-pulse"/>'
+        '<ellipse cx="110" cy="268" rx="65" ry="9" fill="#0a1a4a" stroke="#1166ff" stroke-width="2"/>'
         '<g class="char-float">'
         '<rect x="87" y="191" width="22" height="58" rx="7" fill="url(#lg2)"/>'
         '<rect x="111" y="191" width="22" height="58" rx="7" fill="url(#lg2)"/>'
@@ -910,7 +910,7 @@ def render_3d_avatar_preview(avatar_key: str):
         '</linearGradient>'
         '</defs>'
         '<circle cx="110" cy="150" r="90" fill="url(#bgl)"/>'
-        '<ellipse cx="110" cy="268" rx="65" ry="9" fill="#0a1a4a" stroke="#1166ff" stroke-width="2" class="shadow-pulse"/>'
+        '<ellipse cx="110" cy="268" rx="65" ry="9" fill="#0a1a4a" stroke="#1166ff" stroke-width="2"/>'
         '<g class="char-float">'
         '<rect x="87" y="191" width="22" height="58" rx="7" fill="url(#lg2)"/>'
         '<rect x="111" y="191" width="22" height="58" rx="7" fill="url(#lg2)"/>'
@@ -981,7 +981,7 @@ def render_3d_avatar_preview(avatar_key: str):
         '</linearGradient>'
         '</defs>'
         '<circle cx="110" cy="150" r="90" fill="url(#bgl)"/>'
-        '<ellipse cx="110" cy="268" rx="65" ry="9" fill="#0a1a4a" stroke="#1166ff" stroke-width="2" class="shadow-pulse"/>'
+        '<ellipse cx="110" cy="268" rx="65" ry="9" fill="#0a1a4a" stroke="#1166ff" stroke-width="2"/>'
         '<g class="char-float">'
         '<rect x="87" y="191" width="22" height="58" rx="7" fill="url(#lg2)"/>'
         '<rect x="111" y="191" width="22" height="58" rx="7" fill="url(#lg2)"/>'
@@ -1076,7 +1076,7 @@ def render_3d_avatar_preview(avatar_key: str):
         '</linearGradient>'
         '</defs>'
         '<circle cx="110" cy="150" r="90" fill="url(#bgl)"/>'
-        '<ellipse cx="110" cy="268" rx="65" ry="9" fill="#0a1a4a" stroke="#1166ff" stroke-width="2" class="shadow-pulse"/>'
+        '<ellipse cx="110" cy="268" rx="65" ry="9" fill="#0a1a4a" stroke="#1166ff" stroke-width="2"/>'
         '<g class="char-float">'
         # pajama pants - colorful stripes
         '<rect x="87" y="191" width="22" height="58" rx="7" fill="#aabbcc"/>'
@@ -1158,7 +1158,7 @@ def render_3d_avatar_preview(avatar_key: str):
         '</linearGradient>'
         '</defs>'
         '<circle cx="110" cy="150" r="90" fill="url(#bgl)"/>'
-        '<ellipse cx="110" cy="268" rx="65" ry="9" fill="#0a1a4a" stroke="#1166ff" stroke-width="2" class="shadow-pulse"/>'
+        '<ellipse cx="110" cy="268" rx="65" ry="9" fill="#0a1a4a" stroke="#1166ff" stroke-width="2"/>'
         '<g class="char-float">'
         '<rect x="87" y="191" width="22" height="58" rx="7" fill="url(#lg2)"/>'
         '<rect x="111" y="191" width="22" height="58" rx="7" fill="url(#lg2)"/>'
@@ -1319,6 +1319,103 @@ def render_3d_avatar_preview(avatar_key: str):
     overflow: hidden;
     font-family: 'Segoe UI', sans-serif;
   }}
+  /* ── baseline float ── */
+  @keyframes float {{
+    0%, 100% {{ transform: translateY(0px); }}
+    50%       {{ transform: translateY(-8px); }}
+  }}
+  .char-float {{ animation: float 2.5s ease-in-out infinite; }}
+  /* ── arm keyframes ── */
+  @keyframes armIdleL {{
+    0%, 100% {{ transform: rotate(8deg); }}
+    50%       {{ transform: rotate(14deg); }}
+  }}
+  @keyframes armIdleR {{
+    0%, 100% {{ transform: rotate(-8deg); }}
+    50%       {{ transform: rotate(-14deg); }}
+  }}
+  @keyframes armWaveR {{
+    0%, 100% {{ transform: rotate(-65deg); }}
+    50%       {{ transform: rotate(-30deg); }}
+  }}
+  @keyframes armWatchL {{
+    0%, 100% {{ transform: rotate(40deg); }}
+    50%       {{ transform: rotate(55deg); }}
+  }}
+  @keyframes armThumbsR {{
+    0%, 100% {{ transform: rotate(-80deg); }}
+    50%       {{ transform: rotate(-60deg); }}
+  }}
+  @keyframes armPointR {{
+    0%, 100% {{ transform: rotate(-55deg); }}
+    50%       {{ transform: rotate(-40deg); }}
+  }}
+  @keyframes armRaiseL {{
+    0%, 100% {{ transform: rotate(125deg); }}
+    50%       {{ transform: rotate(110deg); }}
+  }}
+  @keyframes armRaiseR {{
+    0%, 100% {{ transform: rotate(-125deg); }}
+    50%       {{ transform: rotate(-110deg); }}
+  }}
+  @keyframes armWriteR {{
+    0%, 100% {{ transform: rotate(-15deg); }}
+    50%       {{ transform: rotate(-5deg) translateX(3px); }}
+  }}
+  @keyframes armPadL {{
+    0%, 100% {{ transform: rotate(30deg); }}
+    50%       {{ transform: rotate(35deg); }}
+  }}
+  @keyframes armScratchR {{
+    0%, 100% {{ transform: rotate(-120deg); }}
+    50%       {{ transform: rotate(-105deg); }}
+  }}
+  @keyframes armMugL {{
+    0%, 100% {{ transform: rotate(30deg); }}
+    50%       {{ transform: rotate(40deg); }}
+  }}
+  /* ── prop / badge animations ── */
+  @keyframes badgeFloat {{
+    0%, 100% {{ transform: translateY(0px); }}
+    50%       {{ transform: translateY(-5px); }}
+  }}
+  @keyframes wifiPulse {{
+    0%, 100% {{ opacity: 1; }}
+    50%       {{ opacity: 0.35; }}
+  }}
+  @keyframes steamRise {{
+    0%   {{ transform: translateY(0px); opacity: 0.7; }}
+    100% {{ transform: translateY(-14px); opacity: 0; }}
+  }}
+  /* ── apply animations ── */
+  .arm-idle-l  {{ transform-box: fill-box; transform-origin: top center;
+                  animation: armIdleL  2.5s ease-in-out infinite; }}
+  .arm-idle-r  {{ transform-box: fill-box; transform-origin: top center;
+                  animation: armIdleR  2.5s ease-in-out infinite; }}
+  .arm-wave-r  {{ transform-box: fill-box; transform-origin: top center;
+                  animation: armWaveR  1.5s ease-in-out infinite; }}
+  .arm-watch-l {{ transform-box: fill-box; transform-origin: top center;
+                  animation: armWatchL 2.0s ease-in-out infinite; }}
+  .arm-thumbs-r {{ transform-box: fill-box; transform-origin: top center;
+                   animation: armThumbsR 1.8s ease-in-out infinite; }}
+  .arm-point-r {{ transform-box: fill-box; transform-origin: top center;
+                  animation: armPointR 2.0s ease-in-out infinite; }}
+  .arm-raise-l {{ transform-box: fill-box; transform-origin: top center;
+                  animation: armRaiseL 1.2s ease-in-out infinite; }}
+  .arm-raise-r {{ transform-box: fill-box; transform-origin: top center;
+                  animation: armRaiseR 1.2s ease-in-out infinite; }}
+  .arm-write-r {{ transform-box: fill-box; transform-origin: top center;
+                  animation: armWriteR 0.7s ease-in-out infinite; }}
+  .arm-pad-l   {{ transform-box: fill-box; transform-origin: top center;
+                  animation: armPadL   2.5s ease-in-out infinite; }}
+  .arm-scratch-r {{ transform-box: fill-box; transform-origin: top center;
+                    animation: armScratchR 1.0s ease-in-out infinite; }}
+  .arm-mug-l   {{ transform-box: fill-box; transform-origin: top center;
+                  animation: armMugL   2.5s ease-in-out infinite; }}
+  .badge-float {{ animation: badgeFloat 2.0s ease-in-out infinite; }}
+  .wifi-pulse  {{ animation: wifiPulse  1.5s ease-in-out infinite; }}
+  .steam-rise  {{ animation: steamRise  1.8s ease-in-out infinite; }}
+  /* ── labels ── */
   .av-name {{
     color: #7eb8ff;
     font-size: 15px;
@@ -1337,129 +1434,7 @@ def render_3d_avatar_preview(avatar_key: str):
 </head>
 <body>
 <svg width="220" height="280" viewBox="0 0 220 280">
-  <defs>
-    <!-- Gradients -->
-    <linearGradient id="sg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#FFCC99"/>
-      <stop offset="100%" stop-color="#E8906A"/>
-    </linearGradient>
-    
-    <!-- Shadow filter -->
-    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="3" result="blur"/>
-      <feMerge>
-        <feMergeNode in="blur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
-  </defs>
-  
-  <!-- Background glow -->
-  <circle cx="110" cy="150" r="90" fill="url(#bgl)" opacity="0.5">
-    <animate attributeName="opacity" values="0.4;0.6;0.4" dur="3s" repeatCount="indefinite"/>
-  </circle>
-  
-  <!-- Shadow on ground with pulse -->
-  <ellipse cx="110" cy="268" rx="65" ry="9" fill="#0a1a4a" stroke="#1166ff" stroke-width="2" opacity="0.6">
-    <animate attributeName="rx" values="65;62;65" dur="2s" repeatCount="indefinite"/>
-    <animate attributeName="opacity" values="0.6;0.4;0.6" dur="2s" repeatCount="indefinite"/>
-  </ellipse>
-  
-  <!-- Main character group with floating animation -->
-  <g>
-    <animateTransform attributeName="transform" type="translate" 
-      values="0,0; 0,-8; 0,0; 0,-4; 0,0" 
-      keyTimes="0; 0.25; 0.5; 0.75; 1"
-      dur="3s" repeatCount="indefinite" calcMode="spline"
-      keySplines="0.4 0 0.2 1; 0.4 0 0.2 1; 0.4 0 0.2 1; 0.4 0 0.2 1"/>
-    
-    <!-- Body/torso with breathing effect -->
-    <g>
-      <animateTransform attributeName="transform" type="scale"
-        values="1,1; 1.015,1.02; 1,1"
-        dur="2.5s" repeatCount="indefinite" additive="sum"/>
-      
-      <!-- Legs -->
-      <rect x="87" y="191" width="22" height="58" rx="7" fill="url(#lg2)"/>
-      <rect x="111" y="191" width="22" height="58" rx="7" fill="url(#lg2)"/>
-      <!-- Shoes -->
-      <rect x="82" y="244" width="28" height="13" rx="5" fill="#111122"/>
-      <rect x="108" y="244" width="28" height="13" rx="5" fill="#111122"/>
-      <!-- Body -->
-      <rect x="76" y="118" width="68" height="74" rx="9" fill="url(#bg2)"/>
-    </g>
-    
-    <!-- Left arm with idle animation -->
-    <g transform="translate(63,120)">
-      <animateTransform attributeName="transform" type="rotate"
-        values="6; 10; 6; 8; 6"
-        keyTimes="0; 0.33; 0.5; 0.66; 1"
-        dur="3s" repeatCount="indefinite" additive="sum"/>
-      <rect x="-9" y="0" width="18" height="52" rx="7" fill="url(#bg2)"/>
-      <ellipse cx="0" cy="56" rx="9" ry="9" fill="url(#sg)"/>
-    </g>
-    
-    <!-- Right arm with wave animation -->
-    <g transform="translate(157,120)">
-      <animateTransform attributeName="transform" type="rotate"
-        values="-55; -35; -50; -40; -55"
-        keyTimes="0; 0.25; 0.5; 0.75; 1"
-        dur="2s" repeatCount="indefinite" additive="sum"/>
-      <rect x="-9" y="0" width="18" height="52" rx="7" fill="url(#bg2)"/>
-      <ellipse cx="0" cy="56" rx="9" ry="9" fill="url(#sg)"/>
-    </g>
-    
-    <!-- Head group with independent movement -->
-    <g transform="translate(110, 72)">
-      <!-- Head sway animation -->
-      <animateTransform attributeName="transform" type="rotate"
-        values="0; 1.5; 0; -1; 0"
-        keyTimes="0; 0.25; 0.5; 0.75; 1"
-        dur="4s" repeatCount="indefinite" additive="sum"/>
-      <animateTransform attributeName="transform" type="translate"
-        values="0,0; 1,0; 0,0; -1,0; 0,0"
-        keyTimes="0; 0.25; 0.5; 0.75; 1"
-        dur="4s" repeatCount="indefinite" additive="sum"/>
-      
-      <!-- Head shape -->
-      <ellipse cx="0" cy="0" rx="33" ry="36" fill="url(#sg)"/>
-      
-      <!-- Hair -->
-      <ellipse cx="0" cy="-25" rx="33" ry="16" fill="#2a1800"/>
-      <rect x="-33" y="-24" width="66" height="14" fill="#2a1800"/>
-      <ellipse cx="0" cy="-15" rx="28" ry="6" fill="#3d2400"/>
-      
-      <!-- Eyes with blinking -->
-      <g transform="translate(-11, -4)">
-        <ellipse cx="0" cy="0" rx="7.5" ry="7.5" fill="white"/>
-        <circle cx="1" cy="0" r="4" fill="#1a1a33"/>
-        <circle cx="3" cy="-2" r="1.5" fill="white"/>
-        <!-- Blink animation -->
-        <ellipse cx="0" cy="0" rx="7.5" ry="7.5" fill="#E8906A" opacity="0">
-          <animate attributeName="opacity" values="0;0;1;0;0" keyTimes="0;0.45;0.48;0.5;1" dur="4s" repeatCount="indefinite"/>
-        </ellipse>
-      </g>
-      <g transform="translate(11, -4)">
-        <ellipse cx="0" cy="0" rx="7.5" ry="7.5" fill="white"/>
-        <circle cx="-1" cy="0" r="4" fill="#1a1a33"/>
-        <circle cx="1" cy="-2" r="1.5" fill="white"/>
-        <!-- Blink animation -->
-        <ellipse cx="0" cy="0" rx="7.5" ry="7.5" fill="#E8906A" opacity="0">
-          <animate attributeName="opacity" values="0;0;1;0;0" keyTimes="0;0.45;0.48;0.5;1" dur="4s" repeatCount="indefinite"/>
-        </ellipse>
-      </g>
-      
-      <!-- Eyebrows -->
-      <path d="M-17 -13 Q-11 -15 -5 -13" stroke="#2a1800" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-      <path d="M5 -13 Q11 -15 17 -13" stroke="#2a1800" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-      
-      <!-- Nose -->
-      <ellipse cx="0" cy="5" rx="3" ry="2" fill="#cc7755"/>
-      
-      <!-- Smile -->
-      <path d="M-7 12 Q0 18 7 12" stroke="#cc5533" stroke-width="2" fill="none" stroke-linecap="round"/>
-    </g>
-  </g>
+{_av_svg}
 </svg>
 <div class="av-name">{_av_name}</div>
 <div class="av-hint">&#10024; clica e vai jogar!</div>
@@ -2698,6 +2673,17 @@ if st.session_state.get('show_video'):
 st.markdown('<div class="main-title">🎯 QUEM QUER SER PRODUTIVO?</div>', unsafe_allow_html=True)
 
 # ------------------------------
+# BOTÃO DE RESET
+# ------------------------------
+
+col_reset, _, _ = st.columns([1, 3, 1])
+with col_reset:
+    if st.button("🔄 Reset Histórico"):
+        resetar_historico()
+        st.success("Histórico apagado com sucesso.")
+        st.rerun()
+
+# ------------------------------
 # LOGIN
 # ------------------------------
 
@@ -3851,5 +3837,3 @@ if resposta_dada == -1:
     else:
         _time.sleep(1)
         st.rerun()
-
-        
