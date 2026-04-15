@@ -2673,17 +2673,6 @@ if st.session_state.get('show_video'):
 st.markdown('<div class="main-title">🎯 QUEM QUER SER PRODUTIVO?</div>', unsafe_allow_html=True)
 
 # ------------------------------
-# BOTÃO DE RESET
-# ------------------------------
-
-col_reset, _, _ = st.columns([1, 3, 1])
-with col_reset:
-    if st.button("🔄 Reset Histórico"):
-        resetar_historico()
-        st.success("Histórico apagado com sucesso.")
-        st.rerun()
-
-# ------------------------------
 # LOGIN
 # ------------------------------
 
